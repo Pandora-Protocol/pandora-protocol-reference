@@ -1,0 +1,4 @@
+module.exports = {
+    PANDORA_LOCATION_TYPE_STREAM: 0,
+    PANDORA_LOCATION_TYPE_DIRECTORY: 1,
+}

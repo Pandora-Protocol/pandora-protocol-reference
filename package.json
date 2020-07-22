@@ -1,0 +1,10 @@
+{
+  "name": "pandora-protocol-reference",
+  "scripts": {
+    "start": "examples/example.js"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "rimraf": "^3.0.2"
+  }
+}
