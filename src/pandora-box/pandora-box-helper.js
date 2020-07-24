@@ -15,7 +15,7 @@ module.exports.computePandoraBoxHash = function (version, name, streams){
         sum.update( streams[i].hash );
     }
 
-    return sum.digest('buffer');
+    return sum.digest();
 
 };
 

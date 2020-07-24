@@ -8,6 +8,7 @@
   },
   "main": "index.js",
   "dependencies": {
+    "path-parse": "^1.0.6",
     "rimraf": "^3.0.2"
   },
   "devDependencies": {

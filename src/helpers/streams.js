@@ -15,7 +15,7 @@ module.exports =  {
             }
         })
         stream.on('end', ()=>{
-            cb(null, sum.digest('buffer') )
+            cb(null, sum.digest() )
         })
         stream.on('error',()=>{
             cb(new Error('Stream raised an error'), null);
@@ -46,7 +46,7 @@ module.exports =  {
                     index += diff;
 
                     if (bufferPosition === chunkSize){
-                        const hashChunk = crypto.createHash('sha256').update(buffer).digest('buffer');
+                        const hashChunk = crypto.createHash('sha256').update(buffer).digest();
                         chunks.push(hashChunk);
                         bufferPosition = 0;
                     }
@@ -67,13 +67,13 @@ module.exports =  {
                     buffer.copy(buffer2, 0, 0, bufferPosition);
                 }
 
-                const hashChunk = crypto.createHash('sha256').update(buffer2).digest('buffer');
+                const hashChunk = crypto.createHash('sha256').update(buffer2).digest();
                 chunks.push(hashChunk);
 
             }
 
             cb(null, {
-                hash: sum.digest('buffer'),
+                hash: sum.digest(),
                 chunks,
             } )
         })
