@@ -52,6 +52,11 @@ nodes.forEach( (it, index) => {
     it.contact.privateKey = keyPairs[index].privateKey
     it.contact.identity = it.contact.computeContactIdentity();
     it.contact.signature = it.contact.sign( );
+
+    if (index === 0)
+        console.log("BOOTSTRAP INFO:", KAD.library.bencode.encode( nodes[0].contact.toArray() ).toString('hex') )
+
+
     it.locations.removeDirectorySync( it.locations.trailingSlash( it.locations._prefix ) );
     it.start();
 } );

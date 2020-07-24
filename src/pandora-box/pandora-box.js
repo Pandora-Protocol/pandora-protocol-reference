@@ -73,8 +73,9 @@ module.exports = class PandoraBox extends EventEmitter {
 
                         if (err) return cb(err, null);
 
+                        const newPath = path.relative( boxLocation, location.path ) || '';
                         const newStream = new PandoraBoxStream( this,
-                            '/' + path.relative( boxLocation, location.path ),
+                            (newPath[0] !== '/' ? '/' : '') + newPath,
                             location.info.type,
                             location.info.size,
                             chunkSize,
@@ -92,8 +93,9 @@ module.exports = class PandoraBox extends EventEmitter {
                 })
             } else { //directory
 
+                const newPath = path.relative( boxLocation, location.path ) || '';
                 const newStream = new PandoraBoxStream( this,
-                    '/' + path.relative( boxLocation, location.path ),
+                    (newPath[0] !== '/' ? '/' : '') + newPath,
                     location.info.type,
                     0,
                     0,
