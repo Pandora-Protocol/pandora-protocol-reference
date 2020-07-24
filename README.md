@@ -14,6 +14,7 @@ npm install
 download, and install the other repositories
 ```
 npm link pandora-protocol-kad-reference ;
+npm link webpack-config ;
 ```
 
 
