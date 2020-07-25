@@ -11,8 +11,8 @@ const COUNT = 5;
 //const protocol = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_HTTP;
 const protocol = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_WEBSOCKET;
 
-function newStore(){
-    return new KAD.StoreMemory();
+function newStore(index){
+    return new KAD.StoreMemory(index);
 }
 
 const keyPairs = [];
@@ -43,7 +43,7 @@ const nodes = contacts.map(
     (contact, index) => new PANDORA_PROTOCOL.PandoraProtocolNode(
         [ ],
         contact,
-        newStore(),
+        newStore(index),
         undefined,
         './examples/_temp/'+index
     ) )
@@ -71,7 +71,7 @@ async.eachLimit(  nodes, 1, (node, next) => {
 
     console.log('NODES BOOTSTRAPPED');
 
-    nodes[3].seedPandoraBox( './examples/public/data1', (err, out )=>{
+    nodes[3].seedPandoraBox( './examples/public/data1',  'Example1', 'Example1 Description',  undefined,(err, out )=>{
 
         console.info('pandora box hash', out.pandoraBox.hash.toString('hex'))
         if (err) return console.log(err);

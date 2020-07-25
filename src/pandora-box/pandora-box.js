@@ -10,7 +10,7 @@ const EventEmitter = require('events')
 
 module.exports = class PandoraBox extends EventEmitter {
 
-    constructor(pandoraProtocolNode, absolutePath, version, name, hash, streams) {
+    constructor(pandoraProtocolNode, absolutePath, version, name, description, hash, streams) {
 
         super();
 
@@ -19,10 +19,11 @@ module.exports = class PandoraBox extends EventEmitter {
         for (const stream of streams)
             stream._pandoraBox = this;
 
-        PandoraBoxHelper.validatePandoraBox(version, name, hash, streams);
+        PandoraBoxHelper.validatePandoraBox(version, name, description, hash, streams);
 
         this._version = version;
         this._name = name;
+        this._description = description;
         this._hash = hash;
         this._streams = streams
 
@@ -39,6 +40,10 @@ module.exports = class PandoraBox extends EventEmitter {
 
     get name(){
         return this._name;
+    }
+
+    get description(){
+        return this._description;
     }
 
     get hash(){
@@ -58,7 +63,7 @@ module.exports = class PandoraBox extends EventEmitter {
 
     }
 
-    static createPandoraBox(pandoraProtocolNode, boxLocation, chunkSize = 32 * 1024, cb){
+    static createPandoraBox(pandoraProtocolNode, boxLocation, name, description, chunkSize = 32 * 1024, cb){
 
         const streams = [];
 
@@ -114,9 +119,11 @@ module.exports = class PandoraBox extends EventEmitter {
 
 
             const version = '0.1';
-            const name = path.basename(boxLocation);
-            const hash = PandoraBoxHelper.computePandoraBoxHash(version, name, streams);
-            const pandoraBox = new PandoraBox(pandoraProtocolNode, boxLocation, version, name, hash, streams );
+            const finalName = name || path.basename(boxLocation);
+            const finalDescription = description;
+
+            const hash = PandoraBoxHelper.computePandoraBoxHash(version, finalName, finalDescription, streams);
+            const pandoraBox = new PandoraBox(pandoraProtocolNode, boxLocation, version, finalName, finalDescription, hash, streams );
 
             cb(null, pandoraBox );
         })
@@ -133,17 +140,18 @@ module.exports = class PandoraBox extends EventEmitter {
 
     toArray(){
         const streams = this.streams.map( it => it.toArray() );
-        return [ this.version, this.name, this.hash, streams ];
+        return [ this.version, this.name, this.description, this.hash, streams ];
     }
 
     static fromArray(pandoraProtocolNode, arr){
-        const streams = arr[3].map ( it => PandoraBoxStream.fromArray(this, it )  );
-        return new PandoraBox(pandoraProtocolNode, undefined, arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2], streams );
+        const streams = arr[4].map ( it => PandoraBoxStream.fromArray(this, it )  );
+        return new PandoraBox(pandoraProtocolNode, undefined, arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3], streams );
     }
 
     toJSON(){
         return {
             name: this.name,
+            description: this.description,
             hash: this.hash.toString('hex'),
             streams: this.streams.map( it => it.toJSON() ),
         }

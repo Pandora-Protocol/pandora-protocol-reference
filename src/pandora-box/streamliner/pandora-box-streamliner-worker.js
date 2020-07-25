@@ -70,7 +70,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                     it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING;
 
-                    return  this._pandoraProtocolNode.locations.createLocationStream(it.stream.absolutePath, it.stream.size, (err, out)=>{
+                    return  this._pandoraProtocolNode.locations.createLocationEmptyStream(it.stream.absolutePath, it.stream.size, (err, out)=>{
 
                         it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED;
                         next();
