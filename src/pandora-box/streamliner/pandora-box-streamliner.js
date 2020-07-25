@@ -70,5 +70,14 @@ module.exports = class PandoraBoxStreamliner {
 
     }
 
+    removeQueueStream(stream){
+
+        for (let i=0; i < this.queue.length; i++ )
+            if (this.queue[i].stream === stream){
+                this.queue.splice(i, 1);
+                return;
+            }
+
+    }
 
 }

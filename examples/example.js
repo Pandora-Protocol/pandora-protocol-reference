@@ -1,6 +1,7 @@
 const KAD = require('pandora-protocol-kad-reference')
 const PANDORA_PROTOCOL = require('./../index')
 const async = require('pandora-protocol-kad-reference').library.async;
+const path = require('path');
 
 KAD.init({});
 PANDORA_PROTOCOL.init({});
@@ -12,7 +13,7 @@ const COUNT = 5;
 const protocol = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_WEBSOCKET;
 
 function newStore(index){
-    return new KAD.StoreMemory(index);
+    return new KAD.storage.StoreMemory(index);
 }
 
 const keyPairs = [];
@@ -45,7 +46,7 @@ const nodes = contacts.map(
         contact,
         newStore(index),
         undefined,
-        './examples/_temp/'+index
+        path.resolve( __dirname + '/_temp/' + index )
     ) )
 
 nodes.forEach( (it, index) => {
@@ -53,8 +54,11 @@ nodes.forEach( (it, index) => {
     it.contact.identity = it.contact.computeContactIdentity();
     it.contact.signature = it.contact.sign( );
 
-    it.locations.removeDirectorySync( it.locations.trailingSlash( it.locations._prefix ) );
-    it.start();
+    it.locations.removeDirectory( it.locations.trailingSlash( it.locations._prefix ), ()=>{
+
+        it.start();
+
+    } );
 } );
 
 console.info("BOOTSTRAP INFO:", KAD.library.bencode.encode( nodes[0].contact.toArray() ).toString('hex') )

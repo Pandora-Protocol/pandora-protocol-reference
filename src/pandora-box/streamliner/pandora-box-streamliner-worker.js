@@ -54,14 +54,17 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                 it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING;
 
-                this._pandoraProtocolNode.locations.createEmptyDirectory( it.stream.absolutePath );
+                this._pandoraProtocolNode.locations.createEmptyDirectory( it.stream.absolutePath, (err, out)=>{
 
-                this._pandoraBoxStreamliner.queue.splice(i,1);
+                    this._pandoraBoxStreamliner.removeQueueStream(it.stream);
 
-                it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;
-                it.stream.isDone = it.stream.calculateIsDone;
+                    it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;
+                    it.stream.isDone = it.stream.calculateIsDone;
 
-                return next();
+                    return next();
+
+                } );
+
 
             } else
             if (it.stream.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM) {
@@ -72,7 +75,11 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                     return  this._pandoraProtocolNode.locations.createLocationEmptyStream(it.stream.absolutePath, it.stream.size, (err, out)=>{
 
-                        it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED;
+                        if (!err && out)
+                            it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED;
+                        else
+                            it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED;
+
                         next();
 
                     })
@@ -129,12 +136,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                         //we finished all...
                                         if ( !it.stream.statusUndoneChunks.length ){
 
-                                            for (let i=0; i < this._pandoraBoxStreamliner.queue.length; i++ )
-                                                if (this._pandoraBoxStreamliner.queue[i] === it){
-                                                    this._pandoraBoxStreamliner.queue.splice(i, 1);
-                                                    break;
-                                                }
-
+                                            this._pandoraBoxStreamliner.removeQueueStream(it.stream);
 
                                             it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;
                                             it.stream.isDone = it.stream.calculateIsDone;

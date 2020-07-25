@@ -9,6 +9,7 @@ const KADPluginPandoraBox = require('./kad-plugins/kad-plugin-pandora-box/kad-pl
 module.exports = class PandoraNode extends KAD.KademliaNode {
 
     constructor( plugins = [], contactArgs = {}, store, options = {}, directoryPrefix) {
+
         super( [
             KAD.plugins.PluginSortedList.plugin,
             KAD.plugins.PluginKademliaNodeMock.plugin,
@@ -29,7 +30,6 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
     start(){
         super.start(...arguments);
         this.pandoraBoxes.startStreamlining();
-        this.locations.createEmptyDirectory( this.locations.trailingSlash( this.locations._prefix ) );
     }
 
     stop(){

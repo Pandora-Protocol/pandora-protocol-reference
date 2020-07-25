@@ -1,8 +1,8 @@
-const crypto = require('crypto')
+const {createHash} = require('crypto')
 
 module.exports.computePandoraBoxHash = function (version, name, description, streams){
 
-    const sum = crypto.createHash('sha256');
+    const sum = createHash('sha256');
 
     sum.update(Buffer.from(version, 'ascii'));
     sum.update(Buffer.from(name, 'ascii'));
