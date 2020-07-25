@@ -7,18 +7,20 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
     constructor(pandoraProtocolNode, prefix ) {
         super(pandoraProtocolNode, prefix, 'browser');
 
-        this._store = new Storage('locations');
+        this._storeInfo = new Storage('locInfo');
+        this._storeDirectories = new Storage('locDir');
+        this._storeChunks = new Storage('locChunks');
 
     }
 
     createEmptyDirectory(location = '', cb){
 
-        this._store.getItem(location, (err, out)=>{
+        this._storeInfo.getItem(location, (err, out)=>{
 
             if (err) return cb(err);
 
             if (out) return cb(new Error('Directory already exists') );
-            this._store.setItem(location, {type: PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY, size: 0  }, cb );
+            this._storeInfo.setItem(location, {type: PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY, size: 0  }, cb );
 
         })
 
@@ -26,7 +28,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     getLocationName(location, cb){
 
-        this._store.getItem(location, (err, out)=>{
+        this._storeInfo.getItem(location, (err, out)=>{
 
             if (err) return cb(err);
             if (!out) return cb(new Error("Location doesn't exit"));
@@ -39,7 +41,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     getLocationInfo(location, cb){
 
-        this._store.getItem(location, (err, out)=>{
+        this._storeInfo.getItem(location, (err, out)=>{
 
             if (err) return cb(err);
             if (!out) return cb(new Error("Location doesn't exit"));
@@ -50,40 +52,19 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    walkLocation(location, cb, done ){
+    getLocationDirectoryFiles(location, cb){
 
-        this._store.getItem(location, (err, out)=>{
+        this._storeDirectories.getItem( location, (err, out)=>{
 
             if (err) return cb(err);
-            if (!out) return cb(new Error('Location not found'), );
+            if (!out) return cb(new Error("Location doesn't exit"));
 
-            this.getLocationInfo(location, (err, info )=>{
+            return out;
 
-                if (err) return cb(err);
-
-                if (info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM) {
-                    cb(null, { path: location, info }, done);
-                }
-                else if (info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) {
-                    cb(null, { path: location, info }, ()=>{
-
-                        const streams = fs.readdirSync(location);
-                        async.eachLimit( streams, 1, (stream, next)=>{
-
-                            this.walkLocation(this.trailingSlash(location) + stream, cb,next );
-
-                        }, done );
-
-                    });
-
-                } else
-                    cb( new Error("Stream Type invalid"))
-
-            })
-
-        });
+        })
 
     }
+
 
 
 }

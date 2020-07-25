@@ -2,6 +2,11 @@ const path = require('path');
 const rimraf = require("rimraf");
 const fs = require('fs');
 const PandoraStreamType = require('../../pandora-box/stream/pandora-box-stream-type')
+const PandoraBoxStream = require('../../pandora-box/stream/pandora-box-stream')
+const PandoraBox = require('../../pandora-box/pandora-box')
+const PandoraBoxStreamStatus = require('../../pandora-box/stream/pandora-box-stream-status')
+const Streams = require('../../helpers/streams')
+const PandoraBoxHelper = require('./../../pandora-box/pandora-box-helper')
 
 const InterfacePandoraLocations = require('../interface-pandora-locations')
 
@@ -21,13 +26,20 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     createEmptyDirectory(location = '', cb){
 
-        this.locationExists(location, ( out)=>{
+        const path = this.extractFilePath(location);
+        this.locationExists(path, out =>{
 
-            if (out) return cb(new Error('Directory already exists') );
+            if (!out) return cb(new Error("Parent directory doesn't exist"))
 
-            fs.mkdir( location, cb );
+            this.locationExists(location, ( out)=>{
 
-        })
+                if (out) return cb(new Error('Directory already exists') );
+
+                fs.mkdir( location, cb );
+
+            })
+
+        });
 
     }
 
@@ -67,7 +79,6 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
         });
 
     }
-
 
     getLocationStream(location, cb){
 
@@ -148,6 +159,60 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
             cb(null, true);
 
         });
+
+    }
+
+    createPandoraBox( boxLocation, name, description, chunkSize = 32 * 1024, cb){
+
+        const streams = [];
+
+        this.walkLocation( boxLocation, (err, location, next )=>{
+
+            if (err) return cb(err,)
+
+            if (location.info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM ){
+
+                const newPath = this.startWithSlash( path.relative( boxLocation, location.path ) || '' );
+                this._explodeStreamPath(streams, newPath);
+
+                this.getLocationStream(location.path, (err, stream)=>{
+
+                    Streams.computeStreamHashAndChunks( stream,  chunkSize, (err, {hash, chunks} )=>{
+
+                        if (err) return cb(err, null);
+
+                        const newStream = new PandoraBoxStream( this,
+                            newPath,
+                            location.info.type,
+                            location.info.size,
+                            chunkSize,
+                            hash,
+                            chunks,
+                            new Array(chunks.length).fill(1),
+                            PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
+                        );
+
+                        streams.push( newStream );
+                        next();
+
+                    });
+
+                })
+            } else
+                next();
+
+        }, (err, out)=>{
+
+
+            const version = '0.1';
+            const finalName = name || path.basename(boxLocation);
+            const finalDescription = description;
+
+            const hash = PandoraBoxHelper.computePandoraBoxHash(version, finalName, finalDescription, streams);
+            const pandoraBox = new PandoraBox( this._pandoraProtocolNode, boxLocation, version, finalName, finalDescription, hash, streams );
+
+            cb(null, pandoraBox );
+        })
 
     }
 

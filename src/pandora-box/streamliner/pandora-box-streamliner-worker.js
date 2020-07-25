@@ -56,6 +56,11 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                 this._pandoraProtocolNode.locations.createEmptyDirectory( it.stream.absolutePath, (err, out)=>{
 
+                    if (err){
+                        it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED;
+                        return next();
+                    }
+
                     this._pandoraBoxStreamliner.removeQueueStream(it.stream);
 
                     it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;

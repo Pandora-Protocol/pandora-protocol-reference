@@ -1,5 +1,7 @@
 const PandoraStreamType = require('../pandora-box/stream/pandora-box-stream-type')
 const async = require('pandora-protocol-kad-reference').library.async;
+const PandoraBoxStream = require('../pandora-box/stream/pandora-box-stream')
+const PandoraBoxStreamStatus = require('../pandora-box/stream/pandora-box-stream-status')
 
 module.exports = class InterfacePandoraLocations {
 
@@ -20,6 +22,10 @@ module.exports = class InterfacePandoraLocations {
 
     extractFilePath(filename){
 
+        //in case of "data1/data2/data3/"
+        if (filename.substr(-1) === '/')
+            filename = filename.substr(0, filename.length-1 );
+
         let base = filename.substring( 0, filename.lastIndexOf('/') + 1);
         if (base.substr(-1) === '/')
             base = base.substr(0, base.length-1 );
@@ -32,6 +38,10 @@ module.exports = class InterfacePandoraLocations {
             str = str + '/';            // Append a slash to it.
 
         return str
+    }
+
+    startWithSlash(str = ''){
+        return (str[0] !== '/' ? '/' : '') + str;
     }
 
     walkLocation(location, cb, done ){
@@ -66,5 +76,44 @@ module.exports = class InterfacePandoraLocations {
 
     }
 
+    _explodeStreamPath(streams, path){
+
+        //deconstruct relative path
+        const dirStreams = [];
+
+        while (path !== '/'){
+
+            const directory = this.startWithSlash( this.extractFilePath(path) );
+
+            //let's check if directory exists
+            let found;
+            for (let i = streams.length-1; i >= 0; i--)
+                if (streams[i].type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY && streams[i].path === directory ){
+                    found = true;
+                    break;
+                }
+            if (!found){
+
+                const newStream = new PandoraBoxStream( this,
+                    directory,
+                    PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY,
+                    0,
+                    0,
+                    Buffer.alloc(global.KAD_OPTIONS.NODE_ID_LENGTH),
+                    [],
+                    [],
+                    PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
+                );
+
+                dirStreams.push( newStream );
+
+            }
+            path = directory;
+        }
+
+        for (let i=dirStreams.length-1; i >= 0; i--)
+            streams.push(dirStreams[i]);
+
+    }
 
 }

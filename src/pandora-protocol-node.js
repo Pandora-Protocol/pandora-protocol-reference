@@ -39,7 +39,7 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
 
     seedPandoraBox( location, name, description, chunkSize = 32*1024, cb ){
 
-        PandoraBox.createPandoraBox(this, location,  name, description, chunkSize, (err, pandoraBox )=>{
+        this.locations.createPandoraBox( location,  name, description, chunkSize, (err, pandoraBox )=>{
 
             if (err) return cb(err, null);
 
