@@ -5,7 +5,7 @@ const PandoraStreamType = require('../../pandora-box/stream/pandora-box-stream-t
 const PandoraBoxStream = require('../../pandora-box/stream/pandora-box-stream')
 const PandoraBox = require('../../pandora-box/pandora-box')
 const PandoraBoxStreamStatus = require('../../pandora-box/stream/pandora-box-stream-status')
-const Streams = require('../../helpers/streams')
+const Streams = require('../../helpers/streams/streams')
 const PandoraBoxHelper = require('./../../pandora-box/pandora-box-helper')
 
 const InterfacePandoraLocations = require('../interface-pandora-locations')

@@ -1,18 +1,13 @@
-const fs = require('fs');
-const crypto = require('crypto');
+const {createHash} = require('crypto');
 
-module.exports =  {
+module.exports = {
 
     computeStreamHash( stream, cb){
 
         const sum = crypto.createHash('sha256');
 
         stream.on('data', (chunk)=>{
-            try {
-                sum.update(chunk)
-            } catch (ex) {
-                return cb(ex, null)
-            }
+            sum.update(chunk)
         })
         stream.on('end', ()=>{
             cb(null, sum.digest() )
@@ -25,7 +20,7 @@ module.exports =  {
 
     computeStreamHashAndChunks( stream, chunkSize, cb){
 
-        const sum = crypto.createHash('sha256');
+        const sum = createHash('sha256');
         const chunks = [];
 
         let buffer = Buffer.alloc(chunkSize);
@@ -46,7 +41,7 @@ module.exports =  {
                     index += diff;
 
                     if (bufferPosition === chunkSize){
-                        const hashChunk = crypto.createHash('sha256').update(buffer).digest();
+                        const hashChunk = createHash('sha256').update(buffer).digest();
                         chunks.push(hashChunk);
                         bufferPosition = 0;
                     }
@@ -67,7 +62,7 @@ module.exports =  {
                     buffer.copy(buffer2, 0, 0, bufferPosition);
                 }
 
-                const hashChunk = crypto.createHash('sha256').update(buffer2).digest();
+                const hashChunk = createHash('sha256').update(buffer2).digest();
                 chunks.push(hashChunk);
 
             }
@@ -82,5 +77,6 @@ module.exports =  {
         })
 
     },
+
 
 }
