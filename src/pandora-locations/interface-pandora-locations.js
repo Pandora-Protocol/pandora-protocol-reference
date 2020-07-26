@@ -94,7 +94,7 @@ module.exports = class InterfacePandoraLocations {
                 }
             if (!found){
 
-                const newStream = new PandoraBoxStream( this,
+                const pandoraStream = new PandoraBoxStream( this,
                     directory,
                     PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY,
                     0,
@@ -105,7 +105,7 @@ module.exports = class InterfacePandoraLocations {
                     PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
                 );
 
-                dirStreams.push( newStream );
+                dirStreams.push( pandoraStream );
 
             }
             path = directory;

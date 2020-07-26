@@ -1,3 +1,5 @@
+const {createHash} = require('crypto')
+
 const InterfacePandoraLocations = require('../interface-pandora-locations')
 const Storage = require('pandora-protocol-kad-reference').storage.Storage;
 const PandoraStreamType = require('../../pandora-box/stream/pandora-box-stream-type')
@@ -71,6 +73,11 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
+    writeLocationStreamChunk(location, buffer, chunkIndex, chunkSize, cb){
+
+        this._storeChunks.setItem( location+ ':@:' + chunkIndex, buffer, cb );
+
+    }
 
     createPandoraBox( selectedStreams, name, description, chunkSize = 32 * 1024, cb){
 
@@ -83,23 +90,36 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             const newPath = this.startWithSlash( selectedStream.path || '' );
             this._explodeStreamPath(streams, newPath);
 
-            Streams.computeStreamHashAndChunks( selectedStream.stream, chunkSize, (err, {hash, chunks} )=>{
+            const sum = createHash('sha256');
+            const chunks = [];
+
+            Streams.splitStreamIntoChunks( selectedStream.stream, chunkSize, (err, { done, chunk } )=>{
 
                 if (err) return cb(err, null);
 
-                const newStream = new PandoraBoxStream( this,
-                    newPath,
-                    PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM,
-                    selectedStream.size,
-                    chunkSize,
-                    hash,
-                    chunks,
-                    new Array(chunks.length).fill(1),
-                    PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
-                );
+                if (done) {
+                    const pandoraStream = new PandoraBoxStream(this,
+                        newPath,
+                        PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM,
+                        selectedStream.size,
+                        chunkSize,
+                        sum.digest(),
+                        chunks,
+                        new Array(chunks.length).fill(1),
+                        PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
+                    );
 
-                streams.push( newStream );
-                next();
+                    streams.push( pandoraStream );
+                    selectedStream.pandoraStream = pandoraStream;
+
+                    return next();
+
+                } else {
+                    sum.update(chunk)
+                    const hashChunk = createHash('sha256').update(chunk).digest();
+                    chunks.push(hashChunk)
+                }
+
 
             })
 
@@ -112,11 +132,32 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             const hash = PandoraBoxHelper.computePandoraBoxHash(version, finalName, finalDescription, streams);
             const pandoraBox = new PandoraBox( this._pandoraProtocolNode, '', version, finalName, finalDescription, hash, streams );
 
-            cb(null, pandoraBox );
+            async.eachLimit( selectedStreams, 1, (selectedStream, next) =>{
+
+                if (selectedStream.pandoraStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM){
+
+                    Streams.splitStreamIntoChunks( selectedStream.stream, chunkSize, (err, { done, chunk, chunkIndex } )=> {
+
+                        if (err) return cb(err, null);
+                        if (done) return next();
+
+                        this.writeLocationStreamChunk( selectedStream.pandoraStream.hash.toString('hex'), chunk, chunkIndex, chunkSize, (err, out) =>{
+
+
+                        } )
+
+                    });
+
+                }
+
+            }, (err, out) =>{
+
+                cb(null, pandoraBox );
+
+            } )
+
 
         } );
-
-
 
     }
 

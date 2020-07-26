@@ -1,14 +1,9 @@
-const {createHash} = require('crypto');
-
 module.exports = {
 
-    computeStreamHashAndChunks(stream, chunkSize, cb) {
+    splitStreamIntoChunks(stream, chunkSize, cb) {
 
-        const sum = createHash('sha256');
-        const chunks = [];
-
-        const size   = stream.size;
-        let offset     = 0;
+        const size = stream.size;
+        let offset = 0, chunkIndex = 0;
 
         const onLoadHandler = function(evt) {
 
@@ -16,21 +11,16 @@ module.exports = {
 
                 offset += (evt.target.result.length || evt.target.result.byteLength);
 
-                const buffer = evt.target.result;
+                const chunk = evt.target.result;
 
-                sum.update(buffer);
-
-                const hashChunk = createHash('sha256').update(buffer).digest();
-                chunks.push(hashChunk);
+                cb(null, {done: false, chunk, chunkIndex: chunkIndex++})
 
             } else
                 return cb(evt.target.error)
 
-            if (offset >= size)
-                return cb(null, {
-                    hash: sum.digest(),
-                    chunks,
-                } )
+            if (offset >= size){
+                return cb(null, {done: true })
+            }
 
             readBlock(offset, chunkSize, stream);
         }

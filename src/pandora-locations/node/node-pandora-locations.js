@@ -1,6 +1,8 @@
 const path = require('path');
 const rimraf = require("rimraf");
 const fs = require('fs');
+const {createHash} = require('crypto')
+
 const PandoraStreamType = require('../../pandora-box/stream/pandora-box-stream-type')
 const PandoraBoxStream = require('../../pandora-box/stream/pandora-box-stream')
 const PandoraBox = require('../../pandora-box/pandora-box')
@@ -177,23 +179,34 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
                 this.getLocationStream(location.path, (err, stream)=>{
 
-                    Streams.computeStreamHashAndChunks( stream,  chunkSize, (err, {hash, chunks} )=>{
+                    const sum = createHash('sha256');
+                    const chunks = [];
+
+                    Streams.splitStreamIntoChunks( stream,  chunkSize, (err, { done, chunk } )=>{
 
                         if (err) return cb(err, null);
 
-                        const newStream = new PandoraBoxStream( this,
-                            newPath,
-                            location.info.type,
-                            location.info.size,
-                            chunkSize,
-                            hash,
-                            chunks,
-                            new Array(chunks.length).fill(1),
-                            PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
-                        );
+                        if (done) {
 
-                        streams.push( newStream );
-                        next();
+                            const pandoraStream = new PandoraBoxStream( this,
+                                newPath,
+                                location.info.type,
+                                location.info.size,
+                                chunkSize,
+                                sum.digest(),
+                                chunks,
+                                new Array(chunks.length).fill(1),
+                                PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
+                            );
+
+                            streams.push( pandoraStream );
+                            return next();
+                        }
+                        else {
+                            sum.update(chunk)
+                            const hashChunk = createHash('sha256').update(chunk).digest();
+                            chunks.push(hashChunk)
+                        }
 
                     });
 
@@ -203,7 +216,6 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
         }, (err, out)=>{
 
-
             const version = '0.1';
             const finalName = name || path.basename(boxLocation);
             const finalDescription = description;
@@ -212,6 +224,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
             const pandoraBox = new PandoraBox( this._pandoraProtocolNode, boxLocation, version, finalName, finalDescription, hash, streams );
 
             cb(null, pandoraBox );
+
         })
 
     }

@@ -1,35 +1,12 @@
-const {createHash} = require('crypto');
-
 module.exports = {
 
-    computeStreamHash( stream, cb){
-
-        const sum = crypto.createHash('sha256');
-
-        stream.on('data', (chunk)=>{
-            sum.update(chunk)
-        })
-        stream.on('end', ()=>{
-            cb(null, sum.digest() )
-        })
-        stream.on('error',()=>{
-            cb(new Error('Stream raised an error'), null);
-        })
-
-    },
-
-    computeStreamHashAndChunks( stream, chunkSize, cb){
-
-        const sum = createHash('sha256');
-        const chunks = [];
+    splitStreamIntoChunks( stream, chunkSize, cb){
 
         let buffer = Buffer.alloc(chunkSize);
-        let bufferPosition = 0;
+        let bufferPosition = 0, chunkIndex = 0;
 
         stream.on('data', (chunk)=>{
             try {
-
-                sum.update(chunk)
 
                 let index = 0;
                 while (index < chunk.length){
@@ -41,15 +18,14 @@ module.exports = {
                     index += diff;
 
                     if (bufferPosition === chunkSize){
-                        const hashChunk = createHash('sha256').update(buffer).digest();
-                        chunks.push(hashChunk);
+                        cb(null, {done: false, chunk: buffer, chunkIndex: chunkIndex++})
                         bufferPosition = 0;
                     }
 
                 }
 
             } catch (ex) {
-                return cb(ex, null)
+                return cb(ex, {} )
             }
         })
         stream.on('end', ()=>{
@@ -62,18 +38,15 @@ module.exports = {
                     buffer.copy(buffer2, 0, 0, bufferPosition);
                 }
 
-                const hashChunk = createHash('sha256').update(buffer2).digest();
-                chunks.push(hashChunk);
+                cb(null, {done: false, chunk: buffer2, chunkIndex: chunkIndex++})
 
             }
 
-            cb(null, {
-                hash: sum.digest(),
-                chunks,
-            } )
+            cb(null, {done: true })
+
         })
         stream.on('error',()=>{
-            cb(new Error('Stream raised an error'), null);
+            cb(new Error('Stream raised an error'), { });
         })
 
     },
