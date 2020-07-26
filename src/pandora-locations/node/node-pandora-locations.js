@@ -9,6 +9,7 @@ const PandoraBox = require('../../pandora-box/pandora-box')
 const PandoraBoxStreamStatus = require('../../pandora-box/stream/pandora-box-stream-status')
 const Streams = require('../../helpers/streams/streams')
 const PandoraBoxHelper = require('./../../pandora-box/pandora-box-helper')
+const async = require('pandora-protocol-kad-reference').library.async;
 
 const InterfacePandoraLocations = require('../interface-pandora-locations')
 
@@ -45,16 +46,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
-    getLocationName(location, cb){
 
-        this.locationExists(location, (out)=> {
-
-            if (!out) return cb(new Error('Location not found'));
-            cb(null, path.basename(location));
-
-        });
-
-    }
 
     getLocationInfo(location, cb){
 
@@ -164,11 +156,43 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
+    _walkLocation(location, cb, done ){
+
+        this.getLocationInfo(location, (err, info )=>{
+
+            if (err) return cb(err);
+            if (!info) return cb(new Error('Info not found'));
+
+            if (info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM) {
+                cb(null, { path: location, info }, done);
+            }
+            else if (info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) {
+                cb(null, { path: location, info }, ()=>{
+
+                    this.getLocationDirectoryFiles(location, (err, streams)=>{
+
+                        if (err) return done(err);
+                        async.eachLimit( streams, 1, (stream, next)=>{
+
+                            this._walkLocation(this.trailingSlash(location) + stream, cb,next );
+
+                        }, done );
+
+                    })
+
+                });
+
+            } else
+                cb( new Error("Stream Type invalid"))
+        })
+
+    }
+
     createPandoraBox( boxLocation, name, description, chunkSize = 32 * 1024, cb){
 
         const streams = [];
 
-        this.walkLocation( boxLocation, (err, location, next )=>{
+        this._walkLocation( boxLocation, (err, location, next )=>{
 
             if (err) return cb(err,)
 

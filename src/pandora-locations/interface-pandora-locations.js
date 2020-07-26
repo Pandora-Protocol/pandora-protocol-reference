@@ -1,5 +1,4 @@
 const PandoraStreamType = require('../pandora-box/stream/pandora-box-stream-type')
-const async = require('pandora-protocol-kad-reference').library.async;
 const PandoraBoxStream = require('../pandora-box/stream/pandora-box-stream')
 const PandoraBoxStreamStatus = require('../pandora-box/stream/pandora-box-stream-status')
 
@@ -44,37 +43,7 @@ module.exports = class InterfacePandoraLocations {
         return (str[0] !== '/' ? '/' : '') + str;
     }
 
-    walkLocation(location, cb, done ){
 
-        this.getLocationInfo(location, (err, info )=>{
-
-            if (err) return cb(err);
-            if (!info) return cb(new Error('Info not found'));
-
-            if (info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM) {
-                cb(null, { path: location, info }, done);
-            }
-            else if (info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) {
-                cb(null, { path: location, info }, ()=>{
-
-                    this.getLocationDirectoryFiles(location, (err, streams)=>{
-
-                        if (err) return done(err);
-                        async.eachLimit( streams, 1, (stream, next)=>{
-
-                            this.walkLocation(this.trailingSlash(location) + stream, cb,next );
-
-                        }, done );
-
-                    })
-
-                });
-
-            } else
-                cb( new Error("Stream Type invalid"))
-        })
-
-    }
 
     _explodeStreamPath(streams, path){
 
