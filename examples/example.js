@@ -82,7 +82,7 @@ async.eachLimit(  nodes, 1, (node, next) => {
 
         nodes[4].getPandoraBox( out.pandoraBox.hash, (err, out )=>{
 
-            out.pandoraBox.on("streamliner-done", (data)=>{
+            out.pandoraBox.on("streamliner/done", (data)=>{
                 console.log("streamliner done!");
             })
 
