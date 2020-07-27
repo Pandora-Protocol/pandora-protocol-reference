@@ -38,7 +38,8 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
             if (!this._pandoraBox.isDone){
                 this._pandoraBox.isDone = this._pandoraBox.calculateIsDone;
-                this._pandoraBox.emit('streamliner-done', );
+                this._pandoraBox.emit('streamliner/done', );
+                this._pandoraProtocolNode.pandoraBoxes.emit('pandora-box/done', {pandoraBox: this._pandoraBox} );
             }
 
             this.stop();
@@ -103,7 +104,6 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                             return this._pandoraProtocolNode.rules.sendGetStreamChunk( peer, [ it.stream.hash, undoneChunk.index ], (err, out )=>{
 
-
                                 if (err || !out || !Buffer.isBuffer(out) || out.length > it.stream.chunkSize ){
                                     undoneChunk.pending = false;
                                     it.stream.statusUndoneChunksPending -= 1;
@@ -136,7 +136,9 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                                 break;
                                             }
 
+                                        it.stream._pandoraBox.totalChunksAvailable += 1;
                                         this._pandoraBox.emit('stream-chunk-done', {stream: it.stream, index: undoneChunk.index });
+                                        this._pandoraBox.emit('total-chunks-available', { totalChunksAvailable: it.stream._pandoraBox.totalChunksAvailable, totalChunks: it.stream._pandoraBox.totalChunks  });
 
                                         //we finished all...
                                         if ( !it.stream.statusUndoneChunks.length ){
@@ -149,8 +151,8 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                         }
 
 
-                                        next();
                                     }
+                                    next();
 
                                 } ) ;
 

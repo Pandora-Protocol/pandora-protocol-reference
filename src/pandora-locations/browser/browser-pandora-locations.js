@@ -23,9 +23,18 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
         cb(null, true);
     }
 
+    createLocationEmptyStream(location, size, cb){
+        cb(null, true);
+    }
+
     writeLocationStreamChunk(location, buffer, chunkIndex, chunkSize, cb){
 
-        this._storeChunks.setItem( location+ ':@:' + chunkIndex, buffer, cb );
+        this._storeChunks.setItem( location+ ':@:' + chunkIndex, buffer, (err, out)=>{
+
+            if (err || out.length !== buffer.length) return cb(err);
+            cb(null, true);
+
+        } );
 
     }
 

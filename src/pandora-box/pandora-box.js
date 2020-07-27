@@ -2,6 +2,7 @@ const PandoraBoxHelper = require('./pandora-box-helper')
 const PandoraBoxStream = require('./stream/pandora-box-stream')
 const PandoraBoxStreamliner = require('./streamliner/pandora-box-streamliner')
 const EventEmitter = require('events')
+const PandoraBoxStreamType = require('./stream/pandora-box-stream-type')
 
 module.exports = class PandoraBox extends EventEmitter {
 
@@ -22,11 +23,14 @@ module.exports = class PandoraBox extends EventEmitter {
         this._hash = hash;
         this._streams = streams
 
+        this.totalChunks = this._calculateTotalChunks(false);
+
         this.absolutePath = absolutePath;
 
         this.streamliner = new PandoraBoxStreamliner(pandoraProtocolNode, this);
 
         this.isDone = this.calculateIsDone;
+        this.totalChunksAvailable = this._calculateTotalChunks(true);
     }
 
     get version(){
@@ -55,6 +59,18 @@ module.exports = class PandoraBox extends EventEmitter {
             if ( !stream.isDone ) return false;
 
         return true;
+    }
+
+    _calculateTotalChunks(done){
+
+        let totalChunks = 0;
+        for (const stream of this.streams) {
+            if (stream.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM  )
+                if ( !done || (done && stream.isDone)  )
+                    totalChunks += stream.chunksCount;
+        }
+
+        return totalChunks;
     }
 
     toArray(){
