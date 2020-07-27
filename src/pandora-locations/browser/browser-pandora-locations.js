@@ -1,4 +1,5 @@
 const {createHash} = require('crypto')
+const streamsaver = require('streamsaver')
 
 const InterfacePandoraLocations = require('../interface-pandora-locations')
 const Storage = require('pandora-protocol-kad-reference').storage.Storage;
@@ -31,10 +32,80 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         this._storeChunks.setItem( location+ ':@:' + chunkIndex, buffer, (err, out)=>{
 
-            if (err || out.length !== buffer.length) return cb(err);
+            if (err ) return cb(err);
+            if (out.length !== buffer.length) return cb(new Error('Lengths are not matching'));
+
             cb(null, true);
 
         } );
+
+    }
+
+    getLocationStreamChunk(location, chunkIndex, chunkSize, chunkRealSize, cb){
+
+        this._storeChunks.getItem( location+ ':@:' + chunkIndex,  (err, buffer )=>{
+
+            if (err ) return cb(err);
+            if (buffer.length !== chunkRealSize) return cb(new Error('Lengths are not matching'));
+
+            cb(null, buffer);
+
+        });
+
+    }
+
+    savePandoraBoxStreamAs(pandoraBoxStream, name, cb ){
+
+        if (!pandoraBoxStream || !(pandoraBoxStream instanceof PandoraBoxStream) ) return cb(new Error('PandoraBoxStream is invalid'))
+        if (!pandoraBoxStream.isDone ) return cb(new Error('PandoraBoxStream is not done!'));
+        if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) return cb(new Error("In Browser you can't save a directory"))
+
+        if (!name)
+            name = this.extractLocationName(pandoraBoxStream.path);
+
+        const streamer = streamsaver.createWriteStream( name, { size: pandoraBoxStream.size })
+        const writer = streamer.getWriter();
+
+        let stopped = false;
+
+        const chunks = [];
+        for (let i=0; i < pandoraBoxStream.chunksCount; i++)
+            chunks.push(i);
+
+        async.each( chunks, ( chunkIndex, next )=>{
+
+            this.getLocationStreamChunk( pandoraBoxStream.absolutePath, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex), (err, buffer) =>{
+
+                if (err) return next(err);
+                if (stopped) return next(new Error('stopped'));
+
+                writer.write(buffer);
+                cb({ done: false, chunkIndex: chunkIndex });
+
+                if (chunkIndex === chunks.length-1) {
+                    writer.close();
+                    cb({ done: true, chunkIndex: chunkIndex });
+                }
+
+            } );
+
+        }, (err, out) =>{
+
+        } )
+
+        return {
+            stop: ()=> stopped = true,
+        }
+
+    }
+
+    savePandoraBoxAs(pandoraBox, name, cb){
+        if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) return cb(new Error('PandoraBox is invalid'))
+        if (!pandoraBox.isDone ) return cb(new Error('PandoraBox is not ready!'));
+
+        if (!name)
+            name = this.extractLocationName(pandoraBox.path);
+
 
     }
 

@@ -9,7 +9,8 @@
   "main": "index.js",
   "dependencies": {
     "path-parse": "^1.0.6",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "streamsaver": "^2.0.4"
   },
   "devDependencies": {
     "@babel/core": "^7.1.0",

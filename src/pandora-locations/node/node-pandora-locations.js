@@ -29,8 +29,8 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     createEmptyDirectory(location = '', cb){
 
-        const path = this.extractFilePath(location);
-        this.locationExists(path, out =>{
+        const directory = this.extractLocationBase(location);
+        this.locationExists(directory, out =>{
 
             if (!out) return cb(new Error("Parent directory doesn't exist"))
 
@@ -115,8 +115,8 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     createLocationEmptyStream(location, size, cb){
 
-        const path = this.extractFilePath(location);
-        this.locationExists(path, out =>{
+        const directory = this.extractLocationBase(location);
+        this.locationExists(directory, out =>{
 
             if (!out) return cb(new Error("Parent folder doesn't exist"))
 
@@ -241,7 +241,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
         }, (err, out)=>{
 
             const version = '0.1';
-            const finalName = name || path.basename(boxLocation);
+            const finalName = name || this.extractLocationName(boxLocation);
             const finalDescription = description;
 
             const hash = PandoraBoxHelper.computePandoraBoxHash(version, finalName, finalDescription, streams);

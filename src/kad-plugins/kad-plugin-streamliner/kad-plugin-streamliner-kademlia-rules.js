@@ -19,11 +19,7 @@ module.exports = function (kademliaRules){
         if (chunkIndex >= pandoraBoxStream.chunksCount) return cb( new Error('Chunk index out of bound') );
         if (!pandoraBoxStream.statusChunks[chunkIndex]) return cb( new Error('Chunk not ready'));
 
-        let length = pandoraBoxStream.chunkSize;
-        if (chunkIndex === pandoraBoxStream.chunksCount -1 )
-            length = pandoraBoxStream.size % pandoraBoxStream.chunkSize;
-
-        this._kademliaNode.locations.getLocationStreamChunk( pandoraBoxStream.absolutePath,  chunkIndex,  pandoraBoxStream.chunkSize, length,  cb );
+        this._kademliaNode.locations.getLocationStreamChunk( pandoraBoxStream.absolutePath,  chunkIndex,  pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex),  cb );
 
     }
 

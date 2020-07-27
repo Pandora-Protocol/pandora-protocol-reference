@@ -92,4 +92,8 @@ module.exports = class PandoraBox extends EventEmitter {
         }
     }
 
+    get percent(){
+        return this.chunksTotalAvailable / ( this.chunksTotal || 1) * 100;
+    }
+
 }

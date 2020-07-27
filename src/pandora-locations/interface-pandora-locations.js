@@ -10,22 +10,35 @@ module.exports = class InterfacePandoraLocations {
         this._type = type;
     }
 
-    extractFileBase(filename){
+    /**
+     * Returns the name of the location. Example
+     *  /home/user/stream1.data => stream1
+     * @param path
+     * @returns {string}
+     */
+    extractLocationName(path){
 
-        let base = filename.substring( filename.lastIndexOf('/') + 1);
+        let base = path.substring( path.lastIndexOf('/') + 1);
         if (base.lastIndexOf(".") !== -1)
             base = base.substring(0, base.lastIndexOf("."));
 
         return base;
     }
 
-    extractFilePath(filename){
+    /**
+     * Returns the base of a location. Example
+     *  /home/user/stream1.data => /home/user
+     *  /home/user/ => /home
+     * @param path
+     * @returns {string}
+     */
+    extractLocationBase(path){
 
         //in case of "data1/data2/data3/"
-        if (filename.substr(-1) === '/')
-            filename = filename.substr(0, filename.length-1 );
+        if (path.substr(-1) === '/')
+            path = path.substr(0, path.length-1 );
 
-        let base = filename.substring( 0, filename.lastIndexOf('/') + 1);
+        let base = path.substring( 0, path.lastIndexOf('/') + 1);
         if (base.substr(-1) === '/')
             base = base.substr(0, base.length-1 );
         return base;
@@ -52,7 +65,7 @@ module.exports = class InterfacePandoraLocations {
 
         while (path !== '/'){
 
-            const directory = this.startWithSlash( this.extractFilePath(path) );
+            const directory = this.startWithSlash( this.extractLocationBase(path) );
 
             //let's check if directory exists
             let found;

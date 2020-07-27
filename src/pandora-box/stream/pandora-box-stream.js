@@ -103,4 +103,16 @@ module.exports = class PandoraBoxStream {
         }
     }
 
+    chunkRealSize(chunkIndex){
+        return ( chunkIndex === this.chunksCount -1 ) ? this.size % this.chunkSize : this.chunkSize;
+    }
+
+    get percent(){
+
+        if (this.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM )
+            return (this.chunksCount - this.statusUndoneChunks.length) / (this.chunksCount || 1) * 100 ;
+        else
+            return this.isDone ? 100 : 0;
+    }
+
 }
