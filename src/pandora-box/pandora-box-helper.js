@@ -36,3 +36,12 @@ module.exports.validatePandoraBox = function (version, name, description, hash, 
     if (!newHash.equals(hash)) throw Error('hash is invalid');
 
 }
+
+module.exports.isSemiAbsolutePath = function (str) {
+
+    if (str.indexOf('../' ) >= 0) return false;
+    if (str.indexOf('./' ) >= 0) return false;
+    if (/^[\^$%@!\\<>:"|\?*]$/.test(str) ) return false;
+
+    return true;
+}

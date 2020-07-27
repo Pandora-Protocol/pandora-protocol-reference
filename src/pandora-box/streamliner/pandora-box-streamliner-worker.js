@@ -67,6 +67,8 @@ module.exports = class PandoraBoxStreamlinerWorker {
                     it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;
                     it.stream.isDone = it.stream.calculateIsDone;
 
+                    this._pandoraBox.emit('stream/done', {stream: it.stream})
+
                     return next();
 
                 } );
@@ -147,9 +149,9 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                         }
 
                                         it.stream._pandoraBox.chunksTotalAvailable += 1;
-                                        this._pandoraBox.emit('chunks/total-available', { chunksTotalAvailable: it.stream._pandoraBox.chunksTotalAvailable, chunksTotal: it.stream._pandoraBox.chunksTotal  });
 
-                                        this._pandoraBox.emit('stream-chunk/done', {stream: it.stream, index: undoneChunk.index });
+                                        this._pandoraBox.emit('chunks/total-available', { chunksTotalAvailable: it.stream._pandoraBox.chunksTotalAvailable, chunksTotal: it.stream._pandoraBox.chunksTotal  });
+                                        this._pandoraBox.emit('stream-chunk/done', {stream: it.stream, chunkIndex: undoneChunk.index });
 
 
                                     }

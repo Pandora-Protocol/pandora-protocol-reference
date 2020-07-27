@@ -1,4 +1,5 @@
-const isSemiAbsolutePath = require('./is-semi-absolute-path')
+const {isSemiAbsolutePath} = require('./../pandora-box-helper')
+
 const PandoraBoxStreamType = require('./pandora-box-stream-type')
 const PandoraBoxStreamStatus = require('./pandora-box-stream-status')
 
