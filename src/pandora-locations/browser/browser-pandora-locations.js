@@ -70,9 +70,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         let stopped = false;
 
-        const chunks = [];
-        for (let i=0; i < pandoraBoxStream.chunksCount; i++)
-            chunks.push(i);
+        const chunks = new Array(pandoraBoxStream.chunksCount).map( (it, index) => index );
 
         async.each( chunks, ( chunkIndex, next )=>{
 
@@ -112,83 +110,69 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
         if (!name)
             name = pandoraBox.name;
 
-        const streamer = streamsaver.createWriteStream( name + '.zip', )
+        const iterator = pandoraBox.streams.values();
 
-        const {readable, writable } = new Writer();
-        readable.pipeTo(streamer);
+        new ReadableStream({
+            // - streamSaver: hey conflux, give me more data!
+            // - conflux: uh? i don't have any data. I'm just a transform stream.
+            // - conflux: wait a sec i pull data from the parent readableStream and then forwards it to you.
+            async pull (ctrl) {
 
-        const writer = writable.getWriter();
+                const { pandoraBoxStream, done } = iterator.next()
+                if (done) return ctrl.close()
 
-        let stopped = false;
+                // do something with value
 
-        async.eachLimit( pandoraBox.streams, 1, (pandoraBoxStream, next) => {
+                if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY){
 
-            if (stopped) return next(new Error('stopped'));
-
-            if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY){
-
-                if (pandoraBoxStream.path !== '/')
-                    writer.write({
-                        name: pandoraBoxStream.path,
-                        lastModified: new Date(0),
-                        folder: true
-                    });
-
-                next();
-
-            } else if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM){
-
-                const mystream = new stream.PassThrough();
-
-                const chunks = [];
-                for (let i=0; i < pandoraBoxStream.chunksCount; i++)
-                    chunks.push(i);
-
-                async.each( chunks, ( chunkIndex, next2 )=>{
-
-                    this.getLocationStreamChunk( pandoraBoxStream.absolutePath, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex), (err, buffer) => {
-
-                        if (err) return next(err);
-                        if (stopped) return next(new Error('stopped'));
-
-                        mystream.write(buffer);
-
-                        next2();
-
-                    });
-
-                }, (err, out ) => {
-
-                    if (!err) {
-
-                        // Add a file
-                        writer.write({
+                    if (pandoraBoxStream.path !== '/')
+                        ctrl.enqueue({
                             name: pandoraBoxStream.path,
                             lastModified: new Date(0),
-                            stream: mystream,
+                            folder: true
                         });
 
-                        mystream.end();
-                    }
+                } else if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM){
 
-                    next();
+                    const mystream = new stream.PassThrough();
 
-                });
+                    const chunks = new Array(pandoraBoxStream.chunksCount).map( (it, index) => index );
+
+                    ctrl.enqueue({
+                        name: pandoraBoxStream.path,
+                        lastModified: new Date(0),
+                        stream: mystream,
+                    });
+
+                    async.each( chunks, ( chunkIndex, next2 )=>{
+
+                        this.getLocationStreamChunk( pandoraBoxStream.absolutePath, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex), (err, buffer) => {
+
+                            if (err) return next(err);
+                            if (stopped) return next(new Error('stopped'));
+
+                            mystream.write(buffer);
+
+                            next2();
+
+                        });
+
+                    }, (err, out ) => {
+
+                        if (!err)
+                            mystream.end();
+
+                    });
+
+                }
+
 
             }
+        })
+            .pipeThrough( new Writer() )
+            .pipeTo(streamsaver.createWriteStream(name + '.zip'))
 
-        }, (err) => {
 
-            if (!err)
-                writer.close();
-
-            cb(null, { done: true } )
-
-        } );
-
-        return {
-            stop: ()=> stopped = true,
-        }
 
     }
 
