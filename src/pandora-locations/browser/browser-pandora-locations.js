@@ -115,6 +115,8 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
         const streamer = streamsaver.createWriteStream( name + '.zip', )
 
         const {readable, writable } = new Writer();
+        readable.pipeTo(streamer);
+
         const writer = writable.getWriter();
 
         let stopped = false;
@@ -177,10 +179,8 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         }, (err) => {
 
-            if (!err) {
-                readable.pipeTo(streamer);
+            if (!err)
                 writer.close();
-            }
 
             cb(null, { done: true } )
 
