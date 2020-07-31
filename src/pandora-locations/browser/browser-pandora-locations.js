@@ -1,6 +1,5 @@
 const {createHash} = require('crypto')
 const streamsaver = require('streamsaver')
-const archiver = require('archiver');
 const stream = require('stream')
 
 const InterfacePandoraLocations = require('../interface-pandora-locations')
@@ -12,6 +11,7 @@ const Streams = require('../../helpers/streams/streams')
 const PandoraBoxHelper = require('./../../pandora-box/pandora-box-helper')
 const PandoraBoxStream = require('../../pandora-box/stream/pandora-box-stream')
 const PandoraBox = require('../../pandora-box/pandora-box')
+const { Writer } = require("@transcend-io/conflux");
 
 module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations {
 
@@ -86,12 +86,15 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
                 if (chunkIndex === chunks.length-1) {
                     writer.close();
-                    cb({ done: true, chunkIndex: chunkIndex });
+                    next();
                 }
 
             } );
 
         }, (err, out) =>{
+
+            if (!err)
+                cb({ done: true });
 
         } )
 
@@ -109,24 +112,10 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
         if (!name)
             name = pandoraBox.name;
 
-        const archive = archiver('zip', {
-            zlib: { level: 9 } // Sets the compression level.
-        });
+        const streamer = streamsaver.createWriteStream( name + '.zip', )
 
-        const streamer = streamsaver.createWriteStream( name, )
-        const writer = streamer.getWriter();
-
-        const converter = new stream.Writable()
-        converter._write = (chunk, encoding, cb ) => {
-            console.log("chunk", chunk);
-            writer.write(chunk);
-            cb();
-        }
-        converter.on('finish', () => {
-            writer.close();
-        })
-
-        archive.pipe(converter);
+        const {readable, writable } = new Writer();
+        const writer = writable.getWriter();
 
         let stopped = false;
 
@@ -137,7 +126,11 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY){
 
                 if (pandoraBoxStream.path !== '/')
-                    archive.append('', { name: pandoraBoxStream.path });
+                    writer.write({
+                        name: pandoraBoxStream.path,
+                        lastModified: new Date(0),
+                        folder: true
+                    });
 
                 next();
 
@@ -165,7 +158,14 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
                 }, (err, out ) => {
 
                     if (!err) {
-                        archive.append( mystream, { name: pandoraBoxStream.path });
+
+                        // Add a file
+                        writer.write({
+                            name: pandoraBoxStream.path,
+                            lastModified: new Date(0),
+                            stream: mystream,
+                        });
+
                         mystream.end();
                     }
 
@@ -177,8 +177,10 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         }, (err) => {
 
-            if (!err)
-                archive.finalize()
+            if (!err) {
+                readable.pipeTo(streamer);
+                writer.close();
+            }
 
             cb(null, { done: true } )
 
