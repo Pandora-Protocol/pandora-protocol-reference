@@ -1,5 +1,7 @@
 const {createHash} = require('crypto')
 const streamsaver = require('streamsaver')
+const archiver = require('archiver');
+const stream = require('stream')
 
 const InterfacePandoraLocations = require('../interface-pandora-locations')
 const Storage = require('pandora-protocol-kad-reference').storage.Storage;
@@ -100,12 +102,91 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
     }
 
     savePandoraBoxAs(pandoraBox, name, cb){
+
         if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) return cb(new Error('PandoraBox is invalid'))
         if (!pandoraBox.isDone ) return cb(new Error('PandoraBox is not ready!'));
 
         if (!name)
-            name = this.extractLocationName(pandoraBox.path);
+            name = pandoraBox.name;
 
+        const archive = archiver('zip', {
+            zlib: { level: 9 } // Sets the compression level.
+        });
+
+        const streamer = streamsaver.createWriteStream( name, )
+        const writer = streamer.getWriter();
+
+        const converter = new stream.Writable()
+        converter._write = (chunk, encoding, cb ) => {
+            console.log("chunk", chunk);
+            writer.write(chunk);
+            cb();
+        }
+        converter.on('finish', () => {
+            writer.close();
+        })
+
+        archive.pipe(converter);
+
+        let stopped = false;
+
+        async.eachLimit( pandoraBox.streams, 1, (pandoraBoxStream, next) => {
+
+            if (stopped) return next(new Error('stopped'));
+
+            if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY){
+
+                if (pandoraBoxStream.path !== '/')
+                    archive.append('', { name: pandoraBoxStream.path });
+
+                next();
+
+            } else if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM){
+
+                const mystream = new stream.PassThrough();
+
+                const chunks = [];
+                for (let i=0; i < pandoraBoxStream.chunksCount; i++)
+                    chunks.push(i);
+
+                async.each( chunks, ( chunkIndex, next2 )=>{
+
+                    this.getLocationStreamChunk( pandoraBoxStream.absolutePath, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex), (err, buffer) => {
+
+                        if (err) return next(err);
+                        if (stopped) return next(new Error('stopped'));
+
+                        mystream.write(buffer);
+
+                        next2();
+
+                    });
+
+                }, (err, out ) => {
+
+                    if (!err) {
+                        archive.append( mystream, { name: pandoraBoxStream.path });
+                        mystream.end();
+                    }
+
+                    next();
+
+                });
+
+            }
+
+        }, (err) => {
+
+            if (!err)
+                archive.finalize()
+
+            cb(null, { done: true } )
+
+        } );
+
+        return {
+            stop: ()=> stopped = true,
+        }
 
     }
 
