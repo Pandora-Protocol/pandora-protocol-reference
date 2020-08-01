@@ -74,7 +74,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
-    getLocationStream(location, cb){
+    getLocationStream(location, chunkSize, cb){
 
         this.getLocationInfo(location, (err, out)=>{
 
@@ -82,7 +82,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
             if (out.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY ) return cb(new Error('Location is a directory'));
             if (out.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM) {
-                const readStream = fs.createReadStream(location);
+                const readStream = fs.createReadStream(location, { highWaterMark: chunkSize });
                 cb(null, readStream);
             } else
                 cb(new Error('Stream Type error'));
@@ -201,7 +201,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                 const newPath = this.startWithSlash( path.relative( boxLocation, location.path ) || '' );
                 this._explodeStreamPath(streams, newPath);
 
-                this.getLocationStream(location.path, (err, stream)=>{
+                this.getLocationStream(location.path,  chunkSize,(err, stream)=>{
 
                     const sum = createHash('sha256');
                     const chunks = [];
