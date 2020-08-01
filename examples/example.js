@@ -3,10 +3,26 @@ const PANDORA_PROTOCOL = require('./../index')
 const async = require('pandora-protocol-kad-reference').library.async;
 const path = require('path');
 
-KAD.init({});
+console.log("SIMPLE Encrypted PANDORA PROTOCOL REFERENCE");
+
+//const sybilKeys = KAD.helpers.ECCUtils.createPair();
+const sybilKeys = {
+    privateKey: Buffer.from("b485c3728923b3cc3ad88d8b10c69b3c68818594ca0d213542caad212fa7c063", 'hex'),
+    publicKey: Buffer.from("04e67b866b907ad108d1bb1fbddf2672dfe96c8f1e24a9f922f57e330eca7ab1af821a40e4a29594df1e014083ab2112c5a3d1f1333c7717b7e73d63cea7feeef8", 'hex'),
+}
+
+KAD.init({
+    PLUGINS:{
+        CONTACT_SYBIL_PROTECT: {
+            SYBIL_PUBLIC_KEYS: [ sybilKeys.publicKey ],
+        }
+    }
+});
 PANDORA_PROTOCOL.init({});
 
-console.log("SIMPLE Encrypted PANDORA PROTOCOL REFERENCE");
+console.info("SYBIL PRIVATE KEY", sybilKeys.privateKey.toString('hex') );
+console.info("SYBIL PUBLIC KEY", sybilKeys.publicKey.toString('hex') );
+
 
 const COUNT = 5;
 //const protocol = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_HTTP;
@@ -16,30 +32,31 @@ function newStore(index){
     return new KAD.storage.StoreMemory(index);
 }
 
-const keyPairs = [];
-for (let i=0; i < COUNT; i++) {
-    const privateKey = KAD.helpers.ECCUtils.createPrivateKey();
-    keyPairs[i] = {
-        publicKey: KAD.helpers.ECCUtils.getPublicKey(privateKey),
-        privateKey
-    }
-}
+const keyPairs = new Array(COUNT).fill(1).map( it => KAD.helpers.ECCUtils.createPair() );
 
 const contacts = [];
-for (let i=0; i < COUNT; i++)
-    contacts.push( [
+for (let i=0; i < COUNT; i++) {
+
+    const sybilSignature = KAD.helpers.ECCUtils.sign( sybilKeys.privateKey, KAD.helpers.CryptoUtils.sha256( keyPairs[i].publicKey ) );
+    const nonce = Buffer.concat([
+        Buffer.from("00", "hex"),
+        sybilSignature,
+    ]);
+
+    contacts.push([
         0,
-        Buffer.alloc( global.KAD_OPTIONS.NODE_ID_LENGTH ), //empty identity
+        Buffer.alloc(global.KAD_OPTIONS.NODE_ID_LENGTH), //empty identity
         protocol,
         '127.0.0.1',
         10000 + i,
         '',
         keyPairs[i].publicKey,
-        new Date().getTime(),
-        KAD.helpers.BufferUtils.genBuffer( 64 ),
+        nonce,
+        Math.floor(new Date().getTime() / 1000),
         Buffer.alloc(64), //empty signature
         true,
-    ] )
+    ])
+}
 
 const nodes = contacts.map(
     (contact, index) => new PANDORA_PROTOCOL.PandoraProtocolNode(
@@ -76,21 +93,35 @@ async.eachLimit(  nodes, 1, (node, next) => {
 
     console.log('NODES BOOTSTRAPPED');
 
-    nodes[3].seedPandoraBox( './examples/public/data1',  'Example1', 'Example1 Description',  undefined,(err, out )=>{
+    nodes[3].seedPandoraBox( './examples/public/data1',  'Example1', 'Example1 Description',  undefined,
+        (err, out) => {
 
-        console.info('pandora box hash', out.pandoraBox.hash.toString('hex'))
-        if (err) return console.log(err);
+            if (out.chunkIndex % 100 === 0)
+                console.log("update", out);
 
-        nodes[4].getPandoraBox( out.pandoraBox.hash, (err, out )=>{
+        },
+        (err, out )=>{
 
-            out.pandoraBox.on("streamliner/done", (data)=>{
-                console.log("streamliner done!");
+            console.info('pandora box hash', out.pandoraBox.hash.toString('hex'))
+            if (err) return console.log(err);
+
+            nodes[4].getPandoraBox( out.pandoraBox.hash, (err, out )=>{
+
+                out.pandoraBox.on("stream-chunk/done", (data)=>{
+
+                    if (data.chunkIndex % 100 === 0)
+                        console.log(data.stream.path, data.chunkIndex);
+
+                });
+
+                out.pandoraBox.on("streamliner/done", (data)=>{
+                    console.log("streamliner done!");
+                })
+
+                console.log( JSON.stringify( out.pandoraBox.toJSON(), null, 4 ) );
+
             })
 
-            console.log( JSON.stringify( out.pandoraBox.toJSON(), null, 4 ) );
-
-        })
-
-    } );
+        });
 
 });

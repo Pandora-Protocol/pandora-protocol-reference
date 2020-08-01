@@ -53,8 +53,13 @@ module.exports = function(crawler){
             const peers = [];
             for (const peer of out.result){
                 const decoded = bencode.decode( Buffer.from( peer[0], 'hex') );
+                const contact = Contact.fromArray(this._kademliaNode, decoded)
+
+                if (contact.identity.equals( this._kademliaNode.contact.identity ))
+                    continue;
+
                 peers.push({
-                    contact: Contact.fromArray(this._kademliaNode, decoded),
+                    contact: contact,
                     score: peer[1],
                 })
             }
