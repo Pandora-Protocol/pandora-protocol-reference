@@ -11,7 +11,8 @@
     "@transcend-io/conflux": "^2.0.2",
     "path-parse": "^1.0.6",
     "rimraf": "^3.0.2",
-    "streamsaver": "^2.0.4"
+    "streamsaver": "^2.0.4",
+    "web-streams-polyfill": "^2.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.1.0",

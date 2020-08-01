@@ -1,6 +1,12 @@
 const {createHash} = require('crypto')
+
+const { WritableStream, ReadableStream, TransformStream } = require('web-streams-polyfill/ponyfill')
 const streamsaver = require('streamsaver')
 const stream = require('stream')
+
+// change streamsaver WritableStream to be a polyfilled version instead
+// see https://github.com/Pandora-Protocol/pandora-protocol-reference/issues/6 @jimmywarting
+streamsaver.WritableStream = WritableStream
 
 const InterfacePandoraLocations = require('../interface-pandora-locations')
 const Storage = require('pandora-protocol-kad-reference').storage.Storage;
@@ -104,6 +110,8 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     savePandoraBoxAs(pandoraBox, name, cb){
 
+        const self = this;
+
         if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) return cb(new Error('PandoraBox is invalid'))
         if (!pandoraBox.isDone ) return cb(new Error('PandoraBox is not ready!'));
 
@@ -120,7 +128,9 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             // - conflux: wait a sec i pull data from the parent readableStream and then forwards it to you.
             async pull (ctrl) {
 
-                const { pandoraBoxStream, done } = iterator.next()
+                const { value, done } = iterator.next()
+                const pandoraBoxStream = value;
+
                 if (done) return ctrl.close()
 
                 // do something with value
@@ -145,8 +155,8 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
                             // or remove this altogether
                         },
                         pull (ctrl) {
-                            return new Promise(resolve, reject => {
-                                this.getLocationStreamChunk(absolutePath, i, chunkSize, pandoraBoxStream.chunkRealSize(i), (err, buffer) => {
+                            return new Promise( (resolve, reject) => {
+                                self.getLocationStreamChunk(absolutePath, i, chunkSize, pandoraBoxStream.chunkRealSize(i), (err, buffer) => {
                                     if (err) return reject(err)
                                     if (stopped) return reject(new Error('stopped'))
                                     ctrl.enqueue(buffer)
