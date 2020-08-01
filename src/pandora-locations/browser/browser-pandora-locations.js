@@ -161,6 +161,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
                                     if (stopped) return reject(new Error('stopped'))
                                     ctrl.enqueue(buffer)
                                     if (++i === chunksCount) ctrl.close() // done writing this file now
+                                    resolve(true);
                                 })
                             })
                         },
