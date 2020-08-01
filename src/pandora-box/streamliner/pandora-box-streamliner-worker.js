@@ -131,6 +131,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                     if (out === true){
 
                                         it.stream.statusChunks[undoneChunk.index] = 1;
+                                        it.stream.statusUndoneChunksPending -= 1;
 
                                         for (let i=0; i < it.stream.statusUndoneChunks.length; i++ )
                                             if (it.stream.statusUndoneChunks[i] === undoneChunk){
