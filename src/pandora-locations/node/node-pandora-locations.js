@@ -188,7 +188,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
-    createPandoraBox( boxLocation, name, description, chunkSize = 32 * 1024, cb){
+    createPandoraBox( boxLocation, name, description, chunkSize, cbProgress, cb){
 
         const streams = [];
 
@@ -206,11 +206,15 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                     const sum = createHash('sha256');
                     const chunks = [];
 
-                    Streams.splitStreamIntoChunks( stream,  chunkSize, (err, { done, chunk } )=>{
+                    cbProgress(null, {done: false, status: 'location/stream', path: location.path });
+
+                    Streams.splitStreamIntoChunks( stream,  chunkSize, (err, { done, chunk, chunkIndex } )=>{
 
                         if (err) return cb(err, null);
 
                         if (done) {
+
+                            cbProgress(null, {done: false, status: 'location/stream/done', path: location.path });
 
                             const pandoraStream = new PandoraBoxStream( this,
                                 newPath,
@@ -227,6 +231,10 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                             return next();
                         }
                         else {
+
+                            if ( chunkIndex % 25 === 0)
+                                cbProgress(null, {done: false, status: 'location/stream/update', path: location.path, chunkIndex });
+
                             sum.update(chunk)
                             const hashChunk = createHash('sha256').update(chunk).digest();
                             chunks.push(hashChunk)
@@ -246,6 +254,8 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
             const hash = PandoraBoxHelper.computePandoraBoxHash(version, finalName, finalDescription, streams);
             const pandoraBox = new PandoraBox( this._pandoraProtocolNode, boxLocation, version, finalName, finalDescription, hash, streams );
+
+            cbProgress(null, {done: true });
 
             cb(null, pandoraBox );
 

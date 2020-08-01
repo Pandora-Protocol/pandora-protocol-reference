@@ -193,7 +193,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    createPandoraBox( selectedStreams, name, description, chunkSize = 32 * 1024, cb){
+    createPandoraBox( selectedStreams, name, description, chunkSize, cbProgress, cb){
 
         if (!selectedStreams || !Array.isArray(selectedStreams) || selectedStreams.length === 0) return cb(new Error('Selected streams needs to a non empty array'));
 
@@ -207,11 +207,16 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             const sum = createHash('sha256');
             const chunks = [];
 
-            Streams.splitStreamIntoChunks( selectedStream.stream, chunkSize, (err, { done, chunk } )=>{
+            cbProgress(null, {done: false, status: 'location/stream', path: location.path });
+
+            Streams.splitStreamIntoChunks( selectedStream.stream, chunkSize, (err, { done, chunk, chunkIndex } )=>{
 
                 if (err) return cb(err, null);
 
                 if (done) {
+
+                    cbProgress(null, {done: false, status: 'location/stream/done', path: location.path });
+
                     const pandoraStream = new PandoraBoxStream(this,
                         newPath,
                         PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM,
@@ -229,6 +234,10 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
                     return next();
 
                 } else {
+
+                    if ( chunkIndex % 25 === 0)
+                        cbProgress(null, {done: false, status: 'location/stream/update', path: location.path, chunkIndex });
+
                     sum.update(chunk)
                     const hashChunk = createHash('sha256').update(chunk).digest();
                     chunks.push(hashChunk)
@@ -265,6 +274,8 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
                 }
 
             }, (err, out) =>{
+
+                cbProgress(null, {done: true });
 
                 cb(null, pandoraBox );
 

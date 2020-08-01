@@ -19,7 +19,7 @@ module.exports = class PandoraBoxStream {
         if (typeof chunkSize !== "number" ) throw new Error('Stream.chunkSize is not a number');
 
         if (type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM ) {
-            if (chunkSize < 1024 || chunkSize >= 32 * 1024 * 1024) throw new Error('Stream.size is invalid');
+            if (chunkSize < 1024 || chunkSize >= 256 * 1024 * 1024) throw new Error('Stream.size is invalid');
         } else if (type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_DIRECTORY ) {
             if (chunkSize !== 0) throw new Error('Stream.size is invalid');
         }

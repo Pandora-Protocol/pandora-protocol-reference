@@ -8,14 +8,13 @@ module.exports = {
         stream.on('data', (chunk)=>{
             try {
 
-                let index = 0;
-                while (index < chunk.length){
+                let readAlready = 0;
+                while (readAlready < chunk.length){
 
-                    const diff = Math.min( chunkSize, Math.max( 0, (chunk.length -index) - bufferPosition ) );
-                    chunk.copy(buffer, bufferPosition, index, index + diff );
+                    const diff = Math.min( chunkSize, Math.min( chunk.length - readAlready, chunkSize - bufferPosition ) );
+                    chunk.copy(buffer, bufferPosition, readAlready, readAlready + diff );
                     bufferPosition += diff;
-
-                    index += diff;
+                    readAlready += diff;
 
                     if (bufferPosition === chunkSize){
                         cb(null, {done: false, chunk: buffer, chunkIndex: chunkIndex++})

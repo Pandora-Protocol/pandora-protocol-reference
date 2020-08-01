@@ -38,9 +38,9 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
         this.pandoraBoxes.stopStreamlining();
     }
 
-    seedPandoraBox( location, name, description, chunkSize = 32*1024, cb ){
+    seedPandoraBox( location, name, description, chunkSize = 1*1024*1024, cbProgress, cb ){
 
-        this.locations.createPandoraBox( location,  name, description, chunkSize, (err, pandoraBox )=>{
+        this.locations.createPandoraBox( location,  name, description, chunkSize, cbProgress, (err, pandoraBox )=>{
 
             if (err) return cb(err, null);
 
