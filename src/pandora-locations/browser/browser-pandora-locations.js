@@ -112,6 +112,8 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         const iterator = pandoraBox.streams.values();
 
+        let stopped = false;
+
         new ReadableStream({
             // - streamSaver: hey conflux, give me more data!
             // - conflux: uh? i don't have any data. I'm just a transform stream.
