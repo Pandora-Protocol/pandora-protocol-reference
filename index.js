@@ -10,10 +10,7 @@ module.exports = {
         KAD.plugins.PluginKademliaNodeHTTP.initialize();
         KAD.plugins.PluginKademliaNodeWebSocket.initialize();
 
-        global.PANDORA_PROTOCOL_OPTIONS = {
-            config,
-            ...Config,
-        };
+        global.PANDORA_PROTOCOL_OPTIONS = KAD.helpers.Utils.mergeDeep(Config, config);
 
     },
 

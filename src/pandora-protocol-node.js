@@ -17,6 +17,7 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
             KAD.plugins.PluginKademliaNodeWebSocket.plugin,
             KAD.plugins.PluginContactEncrypted.plugin,
             KAD.plugins.PluginContactSpartacus.plugin,
+            KAD.plugins.PluginContactSybilProtect.plugin,
             KADPluginStreamliner,
             KADPluginPandoraBox,
             ...plugins,
