@@ -134,38 +134,42 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
                 } else if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM){
 
-                    const mystream = new stream.PassThrough();
+                    const {chunksCount, absolutePath, chunkSize} = pandoraBoxStream
+                    let i = 0
 
-                    const chunks = new Array(pandoraBoxStream.chunksCount).map( (it, index) => index );
+                    const mystream = new ReadableStream({
+                        start (ctrl) {
+                            // return a promise if you have to wait for something
+                            // or remove this altogether
+                        },
+                        pull (ctrl) {
+                            return new Promise(resolve, reject => {
+                                this.getLocationStreamChunk(absolutePath, i, chunkSize, pandoraBoxStream.chunkRealSize(i), (err, buffer) => {
+                                    if (err) return reject(err)
+                                    if (stopped) return reject(new Error('stopped'))
+                                    ctrl.enqueue(buffer)
+                                    if (++i === chunksCount) ctrl.close() // done writing this file now
+                                })
+                            })
+                        },
+                        cancel() {
+                            // something cancel
+                            // user could have cancel from browser UI
+                            // You could remove this also...
+                        }
+                    })
 
                     ctrl.enqueue({
                         name: pandoraBoxStream.path,
                         lastModified: new Date(0),
-                        stream: mystream,
-                    });
-
-                    async.each( chunks, ( chunkIndex, next2 )=>{
-
-                        this.getLocationStreamChunk( pandoraBoxStream.absolutePath, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex), (err, buffer) => {
-
-                            if (err) return next(err);
-                            if (stopped) return next(new Error('stopped'));
-
-                            mystream.write(buffer);
-
-                            next2();
-
-                        });
-
-                    }, (err, out ) => {
-
-                        if (!err)
-                            mystream.end();
-
+                        stream () {
+                            // You could also move all of the above in here too.
+                            // (thought it created too much indentation)
+                            return mystream
+                        },
                     });
 
                 }
-
 
             }
         })
