@@ -205,7 +205,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
                     cbProgress(null, {done: false, status: 'location/stream', path: location.path });
 
-                    Streams.splitStreamIntoChunks( stream, location.info.size, chunkSize, (err, { done, chunk, chunkIndex } )=>{
+                    Streams.splitStreamIntoChunks( stream, chunkSize, (err, { done, chunk, chunkIndex } )=>{
 
                         if (err) return cb(err, null);
 
