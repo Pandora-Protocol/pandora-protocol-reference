@@ -119,24 +119,21 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
         this.locationExists(directory, out =>{
 
             if (!out) return cb(new Error("Parent folder doesn't exist"))
+            if ( size < 0 ) return cb(new Error("Size is invalid"));
 
-            const chunk = 32*1024*1024;
-            let i = 0,  buffer ;
-            while (i < size){
-
-                const currentSize = Math.min( chunk, size - i);
-                i += currentSize;
-                if (!Buffer.isBuffer(buffer) || buffer.length !== currentSize)
-                    buffer = Buffer.alloc(currentSize);
+            setTimeout(()=>{
 
                 const flag = fs.existsSync(location) ? 'a' : 'w';
                 const stream = fs.createWriteStream(location, {flags: flag});
-                stream.write(buffer);
+
+                stream.write(Buffer.alloc(1), 0, 1, size-1);
+
                 stream.close();
 
-            }
+                cb(null, true);
 
-            cb(null, true);
+            }, 0)
+
 
         })
 
@@ -201,14 +198,14 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                 const newPath = this.startWithSlash( path.relative( boxLocation, location.path ) || '' );
                 this._explodeStreamPath(streams, newPath);
 
-                this.getLocationStream(location.path,  chunkSize,(err, stream)=>{
+                this.getLocationStream(location.path,  chunkSize,(err, stream )=>{
 
                     const sum = createHash('sha256');
                     const chunks = [];
 
                     cbProgress(null, {done: false, status: 'location/stream', path: location.path });
 
-                    Streams.splitStreamIntoChunks( stream,  chunkSize, (err, { done, chunk, chunkIndex } )=>{
+                    Streams.splitStreamIntoChunks( stream, location.info.size, chunkSize, (err, { done, chunk, chunkIndex } )=>{
 
                         if (err) return cb(err, null);
 
