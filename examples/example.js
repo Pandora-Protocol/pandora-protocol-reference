@@ -97,7 +97,7 @@ async.eachLimit(  nodes, 1, (node, next) => {
         (err, out) => {
 
             if (out.chunkIndex % 100 === 0)
-                console.log("update", out);
+                console.log("update", out.chunkIndex, out.path );
 
         },
         (err, out )=>{

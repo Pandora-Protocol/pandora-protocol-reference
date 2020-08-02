@@ -124,7 +124,6 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                         if (err || out !== true){
                                             undoneChunk.pending = false;
                                             it.stream.statusUndoneChunksPending -= 1;
-                                            return next();
                                         }
 
 
@@ -152,9 +151,9 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                         this._pandoraBox.emit('chunks/total-available', { chunksTotalAvailable: it.stream._pandoraBox.chunksTotalAvailable, chunksTotal: it.stream._pandoraBox.chunksTotal  });
                                         this._pandoraBox.emit('stream-chunk/done', {stream: it.stream, chunkIndex: undoneChunk.index });
 
-                                        next();
-
                                     } ) ;
+
+                                    return next();
 
                                 }catch(err){
                                     undoneChunk.pending = false;
