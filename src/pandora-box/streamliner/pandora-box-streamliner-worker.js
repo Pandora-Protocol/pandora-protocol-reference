@@ -19,7 +19,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
         this._workerAsyncInterval = setAsyncInterval(
             next => this._work(next),
-            1,
+            0,
         );
 
     }
@@ -55,7 +55,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                 it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING;
 
-                this._pandoraProtocolNode.locations.createEmptyDirectory( it.stream.absolutePath, (err, out)=>{
+                return this._pandoraProtocolNode.locations.createEmptyDirectory( it.stream.absolutePath, (err, out)=>{
 
                     if (err){
                         it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED;
@@ -81,7 +81,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                     it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING;
 
-                    return  this._pandoraProtocolNode.locations.createLocationEmptyStream(it.stream.absolutePath, it.stream.size, (err, out)=>{
+                    return this._pandoraProtocolNode.locations.createLocationEmptyStream(it.stream.absolutePath, it.stream.size, (err, out)=>{
 
                         if (!err && out)
                             it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED;
@@ -106,29 +106,27 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                             return this._pandoraProtocolNode.rules.sendGetStreamChunk( peer, [ it.stream.hash, undoneChunk.index ], (err, out )=>{
 
-                                if (err || !out || !Buffer.isBuffer(out) || out.length > it.stream.chunkSize ){
-                                    undoneChunk.pending = false;
-                                    it.stream.statusUndoneChunksPending -= 1;
-                                    return next();
-                                }
+                                try{
 
-                                //verify hash
-                                const newHash = CryptoHelpers.sha256(out);
-                                if ( !newHash.equals( it.stream.chunks[undoneChunk.index] )){
-                                    undoneChunk.pending = false;
-                                    it.stream.statusUndoneChunksPending -= 1;
-                                    return next();
-                                }
+                                    if (err || !out  )
+                                        throw "chunk was not received";
 
-                                this._pandoraProtocolNode.locations.writeLocationStreamChunk( it.stream.absolutePath, out, undoneChunk.index, it.stream.chunkSize, (err, out) =>{
+                                    if (!Buffer.isBuffer(out) || out.length !== it.stream.chunkRealSize(undoneChunk.index))
+                                        throw "invalid chunk"
 
-                                    if (err || !out){
-                                        undoneChunk.pending = false;
-                                        it.stream.statusUndoneChunksPending -= 1;
-                                        return next();
-                                    }
+                                    //verify hash
+                                    const newHash = CryptoHelpers.sha256(out);
+                                    if ( !newHash.equals( it.stream.chunks[undoneChunk.index] ))
+                                        throw "hash is invalid"
 
-                                    if (out === true){
+                                    this._pandoraProtocolNode.locations.writeLocationStreamChunk( it.stream.absolutePath, out, undoneChunk.index, it.stream.chunkSize, (err, out) =>{
+
+                                        if (err || out !== true){
+                                            undoneChunk.pending = false;
+                                            it.stream.statusUndoneChunksPending -= 1;
+                                            return next();
+                                        }
+
 
                                         it.stream.statusChunks[undoneChunk.index] = 1;
                                         it.stream.statusUndoneChunksPending -= 1;
@@ -154,14 +152,15 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                         this._pandoraBox.emit('chunks/total-available', { chunksTotalAvailable: it.stream._pandoraBox.chunksTotalAvailable, chunksTotal: it.stream._pandoraBox.chunksTotal  });
                                         this._pandoraBox.emit('stream-chunk/done', {stream: it.stream, chunkIndex: undoneChunk.index });
 
+                                        next();
 
-                                    }
-                                    next();
+                                    } ) ;
 
-                                } ) ;
-
-
-
+                                }catch(err){
+                                    undoneChunk.pending = false;
+                                    it.stream.statusUndoneChunksPending -= 1;
+                                    return next();
+                                }
 
                             } );
 

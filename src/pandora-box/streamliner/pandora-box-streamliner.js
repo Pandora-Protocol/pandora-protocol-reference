@@ -22,7 +22,7 @@ module.exports = class PandoraBoxStreamliner {
         this.queue = [];
         this.updateQueueStreams(this._pandoraBox.streams);
 
-        this.workersCount = 5;
+        this.workersCount = 30;
 
     }
 
@@ -54,7 +54,7 @@ module.exports = class PandoraBoxStreamliner {
         for (let i = newValue; i < this._workers.length; i++)
             this._workers[i].stop();
 
-        this._workers.splice(0, newValue);
+        this._workers.splice(newValue);
     }
 
     updateQueueStreams(streams, priority = 1){

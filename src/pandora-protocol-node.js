@@ -80,7 +80,12 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
 
             if (err) return cb(err);
 
-            this.crawler.iterativeFindPandoraBoxPeersList( pandoraBox.hash, (err, peers ) =>{
+            this.crawler.iterativeFindPandoraBoxPeersList( pandoraBox.hash, (err, peers ) => {
+
+                for (let i=0; i < peers.length; i++)
+                    if (peers[i].contact.identity.equals(this.contact.identity) ){
+                        peers.splice(i, 1);
+                    }
 
                 if (err) return cb(err, null);
 
@@ -89,6 +94,7 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
                     if (err) return cb(err, null);
 
                     pandoraBox.streamliner.peers = peers;
+
                     this.pandoraBoxes.addPandoraBox( pandoraBox );
 
                     cb(null, {
