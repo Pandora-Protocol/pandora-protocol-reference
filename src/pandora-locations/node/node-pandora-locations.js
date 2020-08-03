@@ -116,13 +116,13 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
                 if (err) return cb(err);
 
-                const obj = {
+                const found = {
                     fd,
                     timestamp: new Date().getTime(),
                 }
 
-                this._fdOpenMap[location] = obj;
-                this._fdOpen.push(obj);
+                this._fdOpenMap[location] = found;
+                this._fdOpen.push(found);
 
                 if (this._fdOpen.length > 1000){
                     this._fdOpen.sort((a,b)=>b.timestamp - a.timestamp);
@@ -132,7 +132,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                     this._fdOpen.splice( 1000 );
                 }
 
-                this._getLocationStreamChunk(obj.fd, chunkIndex, chunkSize, chunkRealSize, cb);
+                this._getLocationStreamChunk(found.fd, chunkIndex, chunkSize, chunkRealSize, cb);
 
             });
         } else {

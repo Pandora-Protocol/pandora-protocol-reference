@@ -124,6 +124,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                         if (err || out !== true){
                                             undoneChunk.pending = false;
                                             it.stream.statusUndoneChunksPending -= 1;
+                                            return next();
                                         }
 
 
@@ -157,6 +158,8 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
 
                                 }catch(err){
+                                    console.error(err);
+
                                     undoneChunk.pending = false;
                                     it.stream.statusUndoneChunksPending -= 1;
                                     return next();

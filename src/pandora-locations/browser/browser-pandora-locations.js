@@ -76,7 +76,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         let stopped = false;
 
-        const chunks = new Array(pandoraBoxStream.chunksCount).map( (it, index) => index );
+        const chunks = new Array(pandoraBoxStream.chunksCount).fill(1).map( (it, index) => index );
 
         async.each( chunks, ( chunkIndex, next )=>{
 
