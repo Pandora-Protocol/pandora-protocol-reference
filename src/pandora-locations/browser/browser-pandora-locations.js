@@ -69,7 +69,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
         if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) return cb(new Error("In Browser you can't save a directory"))
 
         if (!name)
-            name = this.extractLocationName(pandoraBoxStream.path);
+            name = this.extractLocationName(pandoraBoxStream.path, true);
 
         const streamer = streamsaver.createWriteStream( name, { size: pandoraBoxStream.size })
         const writer = streamer.getWriter();

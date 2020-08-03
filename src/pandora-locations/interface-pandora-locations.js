@@ -16,10 +16,11 @@ module.exports = class InterfacePandoraLocations {
      * @param path
      * @returns {string}
      */
-    extractLocationName(path){
+    extractLocationName(path, includeExtension = false ){
 
         let base = path.substring( path.lastIndexOf('/') + 1);
-        if (base.lastIndexOf(".") !== -1)
+
+        if (!includeExtension && base.lastIndexOf(".") !== -1)
             base = base.substring(0, base.lastIndexOf("."));
 
         return base;

@@ -17,6 +17,10 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     constructor(pandoraProtocolNode, prefix ) {
       super(pandoraProtocolNode, prefix, 'node');
+
+      this._fdOpen = [];
+      this._fdOpenMap = {};
+
     }
 
     removeDirectory(location  = '', cb){
@@ -91,26 +95,50 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
-    getLocationStreamChunk(location, chunkIndex, chunkSize, chunkRealSize, cb){
+    _getLocationStreamChunk(fd, chunkIndex, chunkSize, chunkRealSize, cb){
 
-        fs.open( location, (err, fd) =>{
+        const buffer = Buffer.alloc(chunkRealSize);
+        fs.read(fd, buffer, 0, chunkRealSize, chunkIndex * chunkSize, (err, out)=>{
 
             if (err) return cb(err);
+            else cb(null, buffer );
 
-            const buffer = Buffer.alloc(chunkRealSize);
-            fs.read(fd, buffer, 0, chunkRealSize, chunkIndex * chunkSize, (err, out)=>{
+        });
 
-                fs.close(fd, ()=>{
+    }
 
-                });
+    getLocationStreamChunk(location, chunkIndex, chunkSize, chunkRealSize, cb){
+
+        let found = this._fdOpenMap[location];
+
+        if (!found){
+            fs.open( location, (err, fd) =>{
 
                 if (err) return cb(err);
-                else cb(null, buffer );
+
+                const obj = {
+                    fd,
+                    timestamp: new Date().getTime(),
+                }
+
+                this._fdOpenMap[location] = obj;
+                this._fdOpen.push(obj);
+
+                if (this._fdOpen.length > 1000){
+                    this._fdOpen.sort((a,b)=>b.timestamp - a.timestamp);
+                    fs.close(this._fdOpen[1000].fd, ()=>{
+
+                    });
+                    this._fdOpen.splice( 1000 );
+                }
+
+                this._getLocationStreamChunk(obj.fd, chunkIndex, chunkSize, chunkRealSize, cb);
 
             });
-
-        } );
-
+        } else {
+            found.timestamp = new Date().getTime();
+            this._getLocationStreamChunk(found.fd, chunkIndex, chunkSize, chunkRealSize, cb);
+        }
     }
 
     createLocationEmptyStream(location, size, cb){
