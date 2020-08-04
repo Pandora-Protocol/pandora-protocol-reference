@@ -18,13 +18,16 @@ module.exports = class PandoraBoxStream {
         if (typeof size !== "number" || size < 0 || size >= Number.MAX_SAFE_INTEGER ) throw new Error('Stream.size is not a number');
         if (typeof chunkSize !== "number" ) throw new Error('Stream.chunkSize is not a number');
 
+        if ( !Buffer.isBuffer(hash) ) throw new Error('Stream.hash is not a buffer');
+
         if (type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM ) {
             if (chunkSize < 1024 || chunkSize >= 256 * 1024 * 1024) throw new Error('Stream.size is invalid');
+            if (  hash.length !== KAD_OPTIONS.NODE_ID_LENGTH ) throw new Error('Stream.hash is invalid');
         } else if (type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_DIRECTORY ) {
             if (chunkSize !== 0) throw new Error('Stream.size is invalid');
+            if ( hash.length ) throw new Error('Stream.hash is invalid');
         }
 
-        if ( !Buffer.isBuffer(hash) || hash.length !== KAD_OPTIONS.NODE_ID_LENGTH ) throw new Error('Stream.hash is invalid');
 
         if (!Array.isArray(statusChunks)) throw new Error('Stream.statusChunks is not a n array');
         if (statusChunks.length > chunks) throw new Error('Stream.statusChunks length is invalid');
