@@ -44,8 +44,9 @@ for (let i=0; i < COUNT; i++) {
     ]);
 
     contacts.push([
-        0,
-        Buffer.alloc(global.KAD_OPTIONS.NODE_ID_LENGTH), //empty identity
+        KAD_OPTIONS.VERSION.APP,
+        KAD_OPTIONS.VERSION.VERSION,
+        Buffer.alloc(KAD_OPTIONS.NODE_ID_LENGTH), //empty identity
         protocol,
         '127.0.0.1',
         10000 + i,
@@ -69,6 +70,7 @@ const nodes = contacts.map(
 
 nodes.forEach( (it, index) => {
     it.contact.privateKey = keyPairs[index].privateKey
+    //it.contact.identity = KAD.helpers.BufferUtils.genBuffer(KAD_OPTIONS.NODE_ID_LENGTH);
     it.contact.identity = it.contact.computeContactIdentity();
     it.contact.signature = it.contact.sign( );
 

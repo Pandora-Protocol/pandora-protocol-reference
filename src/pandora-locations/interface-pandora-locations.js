@@ -82,7 +82,7 @@ module.exports = class InterfacePandoraLocations {
                     PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY,
                     0,
                     0,
-                    Buffer.alloc(global.KAD_OPTIONS.NODE_ID_LENGTH),
+                    Buffer.alloc(KAD_OPTIONS.NODE_ID_LENGTH),
                     [],
                     [],
                     PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,

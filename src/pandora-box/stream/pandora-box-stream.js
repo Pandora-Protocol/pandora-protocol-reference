@@ -24,7 +24,7 @@ module.exports = class PandoraBoxStream {
             if (chunkSize !== 0) throw new Error('Stream.size is invalid');
         }
 
-        if ( !Buffer.isBuffer(hash) || hash.length !== global.KAD_OPTIONS.NODE_ID_LENGTH ) throw new Error('Stream.hash is invalid');
+        if ( !Buffer.isBuffer(hash) || hash.length !== KAD_OPTIONS.NODE_ID_LENGTH ) throw new Error('Stream.hash is invalid');
 
         if (!Array.isArray(statusChunks)) throw new Error('Stream.statusChunks is not a n array');
         if (statusChunks.length > chunks) throw new Error('Stream.statusChunks length is invalid');

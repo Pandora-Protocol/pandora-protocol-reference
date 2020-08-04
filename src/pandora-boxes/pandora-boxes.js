@@ -50,7 +50,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
 
         this._boxesMap[pandoraBox.hash.toString('hex')] = pandoraBox;
 
-        const empty =  Buffer.alloc( global.KAD_OPTIONS.NODE_ID_LENGTH );
+        const empty =  Buffer.alloc( KAD_OPTIONS.NODE_ID_LENGTH );
         const streams = pandoraBox.streams;
         for (const stream of streams) {
 
