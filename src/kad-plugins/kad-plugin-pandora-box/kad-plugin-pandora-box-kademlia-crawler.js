@@ -29,6 +29,7 @@ module.exports = function(crawler){
 
                 if (!out.result) throw Error(`PandoraBox couldn't be found`);
                 const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( Buffer.from(out.result, 'hex') ) );
+
                 cb(null, pandoraBox);
 
             }catch(err){

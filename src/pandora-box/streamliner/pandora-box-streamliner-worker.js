@@ -34,7 +34,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
     _work(next){
 
-        if (this._pandoraBoxStreamliner.queue.length === 0){
+        if ( !this._pandoraBoxStreamliner.queue.length ){
 
             if (!this._pandoraBox.isDone){
                 this._pandoraBox.isDone = this._pandoraBox.calculateIsDone;

@@ -73,7 +73,7 @@ module.exports = class PandoraBoxStream {
     }
 
     get absolutePath(){
-        const abs = (this._pandoraBox.absolutePath === undefined) ? this._pandoraBox._pandoraProtocolNode.locations._prefix : this._pandoraBox.absolutePath;
+        const abs = (this._pandoraBox.absolutePath === undefined) ? this._pandoraBox._pandoraProtocolNode.locations._prefix + this._pandoraBox.name : this._pandoraBox.absolutePath;
         return this._pandoraBox._pandoraProtocolNode.locations.trailingSlash( abs  ).slice(0, -1) + this.path;
     }
 

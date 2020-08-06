@@ -8,9 +8,9 @@ const KADPluginPandoraBox = require('./kad-plugins/kad-plugin-pandora-box/kad-pl
 
 module.exports = class PandoraNode extends KAD.KademliaNode {
 
-    constructor( plugins = [], contactArgs = {}, store, options = {}, directoryPrefix) {
+    constructor( index = '', plugins = [], contactArgs = {}, store, options = {} ) {
 
-        super( [
+        super( index, [
             KAD.plugins.PluginSortedList.plugin,
             KAD.plugins.PluginKademliaNodeMock.plugin,
             KAD.plugins.PluginKademliaNodeHTTP.plugin,
@@ -23,7 +23,7 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
             ...plugins,
         ], contactArgs, store, options);
 
-        this.locations = new PandoraLocations(this, directoryPrefix);
+        this.locations = new PandoraLocations(this, index);
         this.pandoraBoxes = new PandoraBoxes(this);
 
     }

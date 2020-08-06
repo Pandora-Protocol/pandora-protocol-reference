@@ -40,7 +40,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
             this.locationExists(location, ( out)=>{
 
-                if (out) return cb(new Error('Directory already exists') );
+                if (out) return cb(null, true );
 
                 fs.mkdir( location, cb );
 
