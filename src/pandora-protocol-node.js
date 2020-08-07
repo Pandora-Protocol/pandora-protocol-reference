@@ -52,13 +52,15 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
 
                     if (err) return cb(err, null);
 
-                    this.pandoraBoxes.addPandoraBox( pandoraBox );
+                    this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out)=>{
 
-                    cb(null, {
-                        pandoraBox,
-                        stored: out,
-                        storedContact: out2,
-                    })
+                        cb(null, {
+                            pandoraBox,
+                            stored: out,
+                            storedContact: out2,
+                        })
+
+                    } );
 
                 } );
 
@@ -95,11 +97,15 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
 
                     pandoraBox.streamliner.peers = peers;
 
-                    this.pandoraBoxes.addPandoraBox( pandoraBox );
+                    this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out) =>{
 
-                    cb(null, {
-                        pandoraBox,
-                    })
+                        cb(null, {
+                            pandoraBox,
+                        })
+
+                    } );
+
+
 
                 });
 

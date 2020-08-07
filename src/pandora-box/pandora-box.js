@@ -21,6 +21,8 @@ module.exports = class PandoraBox extends EventEmitter {
         this._name = name;
         this._description = description;
         this._hash = hash;
+        this._hashHex = hash.toString('hex')
+
         this._streams = streams
 
         this.chunksTotal = this._calculateChunksTotal(false);
@@ -47,6 +49,10 @@ module.exports = class PandoraBox extends EventEmitter {
 
     get hash(){
         return this._hash;
+    }
+
+    get hashHex(){
+        return this._hashHex;
     }
 
     get streams(){

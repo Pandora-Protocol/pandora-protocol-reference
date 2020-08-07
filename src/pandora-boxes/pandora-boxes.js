@@ -16,6 +16,14 @@ module.exports = class PandoraBoxes extends EventEmitter{
         this._startedStreamlining = false;
     }
 
+    get boxesMap(){
+        return this._boxesMap;
+    }
+
+    get boxes(){
+        return Object.values( this._boxesMap );
+    }
+
     get startedStreamling(){
         return this._startedStreamlining;
     }
@@ -41,7 +49,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
         this.emit('status', false);
     }
 
-    addPandoraBox( pandoraBox ){
+    addPandoraBox( pandoraBox, save = true, cb ){
 
         if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw Error('PandoraBox arg is invalid');
 
@@ -68,6 +76,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
         return true;
 
     }
+
 
 
 }
