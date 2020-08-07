@@ -43,6 +43,8 @@ module.exports = class PandoraBoxStream {
         this.chunksCount = chunkSize ? Math.ceil( size / chunkSize ) : 0;
 
         this.hash = hash;
+        this.hashHex = hash.toString('hex');
+
         this.chunks = chunks;
 
         this.statusChunks = statusChunks

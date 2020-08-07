@@ -1,3 +1,0 @@
-stream2:
-HELLO WORLD 2
-END OF STREAM

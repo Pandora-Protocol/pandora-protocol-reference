@@ -12,6 +12,18 @@ module.exports = class PandoraBoxesSaveManager {
 
     }
 
+    remove(box, cb){
+
+        this._pandoraProtocolNode.storage.removeItem('pandoraBoxes:box:hash:'+box.hashHex, (err, out)=>{
+
+            if (err) return cb(err);
+
+            this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash-exists:'+box.hashHex, cb )
+
+        } )
+
+    }
+
     save( boxes = this._pandoraBoxes.boxes, cb ) {
 
         this._pandoraProtocolNode.storage.setItem('pandoraBoxes:count', boxes.length.toString(), (err, out)=>{
@@ -44,9 +56,9 @@ module.exports = class PandoraBoxesSaveManager {
             }, (err, out)=>{
 
                 if (err) return cb(err);
-                cb(null, boxes.length );
 
                 this._saved = true;
+                cb(null, boxes.length );
 
             });
 

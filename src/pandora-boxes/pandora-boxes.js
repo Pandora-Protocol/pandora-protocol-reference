@@ -1,6 +1,7 @@
 const PandoraBox = require('./../pandora-box/pandora-box')
 const PandoraStreamType = require('../pandora-box/stream/pandora-box-stream-type')
 const EventEmitter = require('events')
+const PandoraBoxesSaveManager = require('./pandora-boxes-save-manager')
 
 module.exports = class PandoraBoxes extends EventEmitter{
 
@@ -14,6 +15,8 @@ module.exports = class PandoraBoxes extends EventEmitter{
         this._streamsMap = {};
 
         this._startedStreamlining = false;
+        this._saveManager = new PandoraBoxesSaveManager(pandoraProtocolNode, this);
+
     }
 
     get boxesMap(){
@@ -53,30 +56,65 @@ module.exports = class PandoraBoxes extends EventEmitter{
 
         if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw Error('PandoraBox arg is invalid');
 
-        if (this._boxesMap[pandoraBox.hash.toString('hex')])
-            return false; //already
+        if (this._boxesMap[pandoraBox.hashHex])
+            return cb(null, false); //already
 
-        this._boxesMap[pandoraBox.hash.toString('hex')] = pandoraBox;
+        this._boxesMap[pandoraBox.hashHex] = pandoraBox;
 
-        const empty =  Buffer.alloc( KAD_OPTIONS.NODE_ID_LENGTH );
-        const streams = pandoraBox.streams;
-        for (const stream of streams) {
+        for (const stream of pandoraBox.streams)
+            if (!stream.hash.equals(KAD_OPTIONS.NODE_ID_EMPTY) && !this._streamsMap[stream.hashHex])
+                this._streamsMap[stream.hashHex] = stream;
 
-            if (!stream.hash.equals(empty) && !this._streamsMap[stream.hash.toString('hex')])
-                this._streamsMap[stream.hash.toString('hex')] = stream;
+        if (!save)
+            return this._addedBox(pandoraBox, cb);
 
-        }
+        this._saveManager.save([pandoraBox], (err, out)=>{
+
+            if (err) return cb(err);
+            this._addedBox(pandoraBox, cb);
+
+        })
+
+    }
+
+    removeBox(pandoraBox, cb){
+
+        if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw Error('PandoraBox arg is invalid');
+
+        if (!this._boxesMap[pandoraBox.hashHex])
+            return cb(null, false); //already
+
+        pandoraBox.streamliner.stop();
+
+        delete this._boxesMap[pandoraBox.hashHex];
+
+        for (const stream of pandoraBox.streams)
+            if ( this._streamsMap[stream.hashHex] === stream)
+                delete this._streamsMap[stream.hashHex];
+
+        this._saveManager.remove(pandoraBox, (err, out)=>{
+            if (err) return cb(err);
+
+            this._removedBox(pandoraBox, cb);
+        });
+
+    }
+
+    _addedBox(pandoraBox, cb){
 
         if (this.startedStreamling)
             if (!pandoraBox.calculateIsDone)
                 pandoraBox.streamliner.start();
 
         this.emit('pandora-box/added', pandoraBox);
-
-        return true;
-
+        cb(null, pandoraBox )
     }
 
+    _removedBox(pandoraBox, cb){
 
+        this.emit('pandora-box/removed', pandoraBox);
+        cb(null, pandoraBox)
+
+    }
 
 }
