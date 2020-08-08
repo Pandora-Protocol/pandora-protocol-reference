@@ -13,21 +13,29 @@ module.exports = class PandoraBoxStreamliner {
         this._workers = [];
 
         this._started = false;
+        this._initialized = false;
     }
 
     start(){
 
-        if (this._started) return false;
-        this._started = true;
+        if (!this._started) {
 
-        this.queue = [];
-        this.updateQueueStreams(this._pandoraBox.streams);
+            this._started = true;
 
-        this.workersCount = 30;
+            this.queue = [];
+            this.updateQueueStreams(this._pandoraBox.streams);
+
+            this.workersCount = 20;
+
+        }
+
+        if (!this._initialized)
+            return this.initialize(()=>{} );
 
     }
 
     stop(){
+
         if (!this._started) return false;
         this._started = false;
 
@@ -78,6 +86,50 @@ module.exports = class PandoraBoxStreamliner {
                 this.queue.splice(i, 1);
                 return;
             }
+
+    }
+
+    addPeers(peers){
+
+        for (const peer of peers)
+            if ( !peer.contact.identity.equals(this._pandoraProtocolNode.contact.identity) ){
+
+                let found = false;
+                for (let j=0; j < this.peers.length; j++)
+                    if (this.peers[j].contact.identity.equals(peer.contact.identity)){
+                        found = true;
+                        this.peers[j].contact.updateContactNewer( peer.contact );
+                        break;
+                    }
+
+                if (!found)
+                    this.peers.push(peer);
+
+            }
+
+    }
+
+    initialize(cb){
+
+        if (!this._started) return cb(null, false);
+        if (this._initialized) return cb(null, false);
+
+        this._pandoraProtocolNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox.hash, (err, peers ) => {
+
+            if (err) return cb(err, null);
+
+            this.addPeers(peers);
+
+            this._pandoraProtocolNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox.hash, this._pandoraProtocolNode.contact, new Date().getTime(), (err, out2)=>{
+
+                if (err) return cb(err, null);
+
+                this._initialized = true;
+                cb(null, true);
+
+            });
+
+        } );
 
     }
 

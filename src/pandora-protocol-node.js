@@ -84,36 +84,21 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
         this.findPandoraBox(hash, (err, pandoraBox )=>{
 
             if (err) return cb(err);
+            if (!pandoraBox) return cb(new Error('PandoraBox was not found'))
 
-            this.crawler.iterativeFindPandoraBoxPeersList( pandoraBox.hash, (err, peers ) => {
+            this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out) =>{
 
-                for (let i=0; i < peers.length; i++)
-                    if (peers[i].contact.identity.equals(this.contact.identity) ){
-                        peers.splice(i, 1);
-                    }
+                pandoraBox.streamliner.initialize((err, out )=>{
 
-                if (err) return cb(err, null);
-
-                this.crawler.iterativeStorePandoraBoxPeer( pandoraBox.hash, this.contact, new Date().getTime(), (err, out2)=>{
-
-                    if (err) return cb(err, null);
-
-                    pandoraBox.streamliner.peers = peers;
-
-                    this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out) =>{
-
-                        cb(null, {
-                            pandoraBox,
-                            added: out,
-                        })
-
-                    } );
-
-
+                    cb(null, {
+                        pandoraBox,
+                        added: out,
+                    })
 
                 });
 
             } );
+
 
         });
 

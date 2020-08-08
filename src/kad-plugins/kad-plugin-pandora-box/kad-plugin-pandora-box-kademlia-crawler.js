@@ -51,6 +51,8 @@ module.exports = function(crawler){
 
             if (err) return cb(err, null);
 
+            if ( !out.result) return cb( new Error('Peers not found') );
+
             const peers = [];
             for (const peer of out.result){
                 const decoded = bencode.decode( Buffer.from( peer[0], 'hex') );
