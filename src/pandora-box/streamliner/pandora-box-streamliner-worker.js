@@ -135,6 +135,8 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                         it.stream.statusChunks[undoneChunk.index] = 1;
                                         it.stream.statusUndoneChunksPending -= 1;
 
+                                        it.stream._pandoraBox.chunksTotalAvailable += 1;
+
                                         for (let i=0; i < it.stream.statusUndoneChunks.length; i++ )
                                             if (it.stream.statusUndoneChunks[i] === undoneChunk){
                                                 it.stream.statusUndoneChunks.splice(i, 1);
@@ -149,9 +151,13 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                             it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
 
                                             this._pandoraBox.emit('stream/done', {stream: it.stream})
+                                        } else {
+
+                                            if (it.stream._pandoraBox.chunksTotalAvailable % 10 === 0) // to avoid
+                                                it.stream.saveStatus(()=>{});
+
                                         }
 
-                                        it.stream._pandoraBox.chunksTotalAvailable += 1;
 
                                         this._pandoraBox.emit('chunks/total-available', { chunksTotalAvailable: it.stream._pandoraBox.chunksTotalAvailable, chunksTotal: it.stream._pandoraBox.chunksTotal  });
                                         this._pandoraBox.emit('stream-chunk/done', {stream: it.stream, chunkIndex: undoneChunk.index });

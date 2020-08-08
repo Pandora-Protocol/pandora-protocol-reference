@@ -16,6 +16,7 @@ module.exports = class PandoraBoxStreamliner {
     }
 
     start(){
+
         if (this._started) return false;
         this._started = true;
 

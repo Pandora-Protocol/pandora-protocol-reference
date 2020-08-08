@@ -82,6 +82,7 @@ async.eachLimit( array, 1, (index, next )=> nodes[index].initializeNode( {protoc
                     })
 
                     console.log( JSON.stringify( out.pandoraBox.toJSON(), null, 4 ) );
+                    console.log('isDone', out.pandoraBox.isDone)
 
                 })
 
