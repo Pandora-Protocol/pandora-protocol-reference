@@ -39,10 +39,11 @@ module.exports = class PandoraBoxStreamlinerWorker {
             const time = new Date().getTime();
 
             if ( (this._pandoraBoxStreamliner._initialized < time - KAD_OPTIONS.T_STORE_GARBAGE_COLLECTOR - 5 * 1000) ||
-                 (!this._pandoraBoxStreamliner.peers.length && this._pandoraBoxStreamliner._initialized < time - 10*1000 ) ){
+                 (!this._pandoraBoxStreamliner.peers.length && this._pandoraBoxStreamliner._initialized < time - 5*1000 ) ){
 
                 return this._pandoraBoxStreamliner.initialize( (err, out)=>{
 
+                    console.log("initialized");
                     next();
 
                 } )
@@ -52,7 +53,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
         }
 
         //no peers
-        if ( !this._pandoraBoxStreamliner.peers.length ) return next();
+        if ( !this._pandoraBoxStreamliner.peers.length ) return next(1000);
 
         if ( !this._pandoraBoxStreamliner.queue.length ){
 

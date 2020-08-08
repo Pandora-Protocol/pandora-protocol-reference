@@ -22,6 +22,7 @@ module.exports = class PandoraBoxStreamliner {
     start(){
 
         if (this._started) return true;
+        if (this._pandoraBox.isDone) return true;
 
         this._started = true;
 
@@ -49,6 +50,7 @@ module.exports = class PandoraBoxStreamliner {
     }
 
     set workersCount(newValue){
+
         if (this._workers.length === newValue) return;
 
         for (let i=0; i < newValue; i++)
@@ -118,6 +120,7 @@ module.exports = class PandoraBoxStreamliner {
 
             if (err) {
                 this._initializing = false;
+                this._initialized = new Date().getTime();
                 return cb(err, null);
             }
 
@@ -125,11 +128,14 @@ module.exports = class PandoraBoxStreamliner {
 
             this._pandoraProtocolNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox.hash, this._pandoraProtocolNode.contact, new Date().getTime(), (err, out2)=>{
 
-                if (err) return cb(err, null);
+                if (err) {
+                    this._initializing = false;
+                    this._initialized = new Date().getTime();
+                    return cb(err, null);
+                }
 
                 this._initialized = new Date().getTime();
                 this._initializing = false;
-
                 cb(null, true);
 
             });

@@ -85,7 +85,7 @@ module.exports = class PandoraBoxesSaveManager {
 
                     PandoraBox.load(this._pandoraProtocolNode, hash, (err, box )=>{
 
-                        if (err) next(err);
+                        if (err) return next(err);
 
                         boxes.push( box );
                         next();

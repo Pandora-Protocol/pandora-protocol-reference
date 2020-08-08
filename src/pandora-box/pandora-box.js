@@ -30,11 +30,11 @@ module.exports = class PandoraBox extends EventEmitter {
 
         this._streams = streams;
 
-        this.chunksTotal = this._calculateChunksTotal(false);
-
         this.streamliner = new PandoraBoxStreamliner(pandoraProtocolNode, this);
 
         this.isDone = this.calculateIsDone;
+
+        this.chunksTotal = this._calculateChunksTotal(false);
         this.chunksTotalAvailable = this._calculateChunksTotal(true);
     }
 
@@ -75,8 +75,10 @@ module.exports = class PandoraBox extends EventEmitter {
         let chunksTotal = 0;
         for (const stream of this.streams) {
             if (stream.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM  )
-                if ( !done || (done && stream.isDone)  )
+                if ( !done )
                     chunksTotal += stream.chunksCount;
+                else
+                    chunksTotal += stream.chunksDone;
         }
 
         return chunksTotal;

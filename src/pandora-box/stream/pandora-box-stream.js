@@ -96,7 +96,7 @@ module.exports = class PandoraBoxStream {
     }
 
     get absolutePath(){
-        const abs = (this._pandoraBox.absolutePath === undefined) ? this._pandoraProtocolNode.locations._prefix + this._pandoraBox.name : this._pandoraBox.absolutePath;
+        const abs = ( !this._pandoraBox.absolutePath ) ? this._pandoraProtocolNode.locations._prefix + this._pandoraBox.name : this._pandoraBox.absolutePath;
         return this._pandoraProtocolNode.locations.trailingSlash( abs  ).slice(0, -1) + this.path;
     }
 
@@ -133,6 +133,12 @@ module.exports = class PandoraBoxStream {
         return ( chunkIndex === this.chunksCount -1 ) ? this.size % this.chunkSize : this.chunkSize;
     }
 
+    get chunksDone(){
+        if (this.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM )
+            return this.chunksCount - this.statusUndoneChunks.length;
+        return this.isDone ? 1 : 0;
+    }
+
     get percent(){
 
         if (this.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM )
@@ -146,13 +152,14 @@ module.exports = class PandoraBoxStream {
             statusChunks: this.statusChunks,
             streamStatus: this.streamStatus,
         }
-        this._pandoraProtocolNode.storage.setItem('pandoraBoxes:streams:path:'+this.absolutePath+':status', JSON.stringify(obj), cb );
+        this._pandoraProtocolNode.storage.setItem('pandoraBoxes:streams:status:'+this.absolutePath, JSON.stringify(obj), cb );
     }
 
     loadStatus(cb){
-        this._pandoraProtocolNode.storage.getItem('pandoraBoxes:streams:path:'+this.absolutePath+':status', (err, out) => {
+        this._pandoraProtocolNode.storage.getItem('pandoraBoxes:streams:status:'+this.absolutePath, (err, out) => {
 
             if (err) return cb(err);
+            if (!out) return cb(new Error('Status not found'));
 
             out = JSON.parse(out);
 
