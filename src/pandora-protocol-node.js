@@ -88,14 +88,10 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
             this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out) =>{
 
-                pandoraBox.streamliner.initialize((err, out )=>{
-
-                    cb(null, {
-                        pandoraBox,
-                        added: out,
-                    })
-
-                });
+                cb(null, {
+                    pandoraBox,
+                    added: out,
+                })
 
             } );
 

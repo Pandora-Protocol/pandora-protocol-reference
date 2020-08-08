@@ -34,6 +34,23 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
     _work(next){
 
+        if ( !this._pandoraBoxStreamliner._initializing ){
+
+            const time = new Date().getTime();
+
+            if ( (this._pandoraBoxStreamliner._initialized < time - KAD_OPTIONS.T_STORE_GARBAGE_COLLECTOR - 5 * 1000) ||
+                 (!this._pandoraBoxStreamliner.peers.length && this._pandoraBoxStreamliner._initialized < time - 10*1000 ) ){
+
+                return this._pandoraBoxStreamliner.initialize( (err, out)=>{
+
+                    next();
+
+                } )
+
+            }
+
+        }
+
         //no peers
         if ( !this._pandoraBoxStreamliner.peers.length ) return next();
 

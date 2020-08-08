@@ -88,7 +88,7 @@ module.exports = class PandoraBox extends EventEmitter {
     }
 
     static fromArray(pandoraProtocolNode, arr){
-        return new PandoraBox(pandoraProtocolNode, undefined, arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3], arr[4] );
+        return new PandoraBox(pandoraProtocolNode, '', arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3], arr[4] );
     }
 
     toJSON(){

@@ -13,24 +13,22 @@ module.exports = class PandoraBoxStreamliner {
         this._workers = [];
 
         this._started = false;
-        this._initialized = false;
+
+        this._initialized = 0;
+        this._initializing = false;
+
     }
 
     start(){
 
-        if (!this._started) {
+        if (this._started) return true;
 
-            this._started = true;
+        this._started = true;
 
-            this.queue = [];
-            this.updateQueueStreams(this._pandoraBox.streams);
+        this.queue = [];
+        this.updateQueueStreams(this._pandoraBox.streams);
 
-            this.workersCount = 20;
-
-        }
-
-        if (!this._initialized)
-            return this.initialize(()=>{} );
+        this.workersCount = 20;
 
     }
 
@@ -112,11 +110,16 @@ module.exports = class PandoraBoxStreamliner {
     initialize(cb){
 
         if (!this._started) return cb(null, false);
-        if (this._initialized) return cb(null, false);
+        if (this._initializing) return cb(null, false);
+
+        this._initializing = true;
 
         this._pandoraProtocolNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox.hash, (err, peers ) => {
 
-            if (err) return cb(err, null);
+            if (err) {
+                this._initializing = false;
+                return cb(err, null);
+            }
 
             this.addPeers(peers);
 
@@ -124,7 +127,9 @@ module.exports = class PandoraBoxStreamliner {
 
                 if (err) return cb(err, null);
 
-                this._initialized = true;
+                this._initialized = new Date().getTime();
+                this._initializing = false;
+
                 cb(null, true);
 
             });
