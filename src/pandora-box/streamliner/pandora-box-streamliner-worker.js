@@ -56,19 +56,18 @@ module.exports = class PandoraBoxStreamlinerWorker {
             if (it.stream.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_DIRECTORY &&
                 it.stream.streamStatus === PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED ){
 
-                it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING;
+                it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING );
 
                 return this._pandoraProtocolNode.locations.createEmptyDirectory( it.stream.absolutePath, (err, out)=>{
 
                     if (err){
-                        it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED;
+                        it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED)
                         return next();
                     }
 
                     this._pandoraBoxStreamliner.removeQueueStream(it.stream);
 
-                    it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;
-                    it.stream.isDone = it.stream.calculateIsDone;
+                    it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
 
                     this._pandoraBox.emit('stream/done', {stream: it.stream})
 
@@ -82,14 +81,14 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                 if ( it.stream.streamStatus === PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED ){
 
-                    it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING;
+                    it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING);
 
                     return this._pandoraProtocolNode.locations.createLocationEmptyStream(it.stream.absolutePath, it.stream.size, (err, out)=>{
 
                         if (!err && out)
-                            it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED;
+                            it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED, true);
                         else
-                            it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED;
+                            it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED );
 
                         next();
 
@@ -111,18 +110,20 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                                 try{
 
-                                    if (err || !out  )
-                                        throw "chunk was not received";
+                                    if (err || !out || !Array.isArray(out) || out.length !== 2 ) throw "chunk was not received";
+                                    if ( out[0] !== 1 ) throw out[1].toString('ascii') || 'Unexpected error';
 
-                                    if (!Buffer.isBuffer(out) || out.length !== it.stream.chunkRealSize(undoneChunk.index))
+                                    const buffer = out[1];
+
+                                    if (!Buffer.isBuffer( buffer ) || buffer.length !== it.stream.chunkRealSize(undoneChunk.index) )
                                         throw "invalid chunk"
 
                                     //verify hash
-                                    const newHash = CryptoHelpers.sha256(out);
+                                    const newHash = CryptoHelpers.sha256(buffer);
                                     if ( !newHash.equals( it.stream.chunks[undoneChunk.index] ))
                                         throw "hash is invalid"
 
-                                    this._pandoraProtocolNode.locations.writeLocationStreamChunk( it.stream.absolutePath, out, undoneChunk.index, it.stream.chunkSize, (err, out) =>{
+                                    this._pandoraProtocolNode.locations.writeLocationStreamChunk( it.stream.absolutePath, buffer, undoneChunk.index, it.stream.chunkSize, (err, out) =>{
 
                                         if (err || out !== true){
                                             undoneChunk.pending = false;
@@ -145,8 +146,8 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                                             this._pandoraBoxStreamliner.removeQueueStream(it.stream);
 
-                                            it.stream.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;
-                                            it.stream.isDone = it.stream.calculateIsDone;
+                                            it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
+
                                             this._pandoraBox.emit('stream/done', {stream: it.stream})
                                         }
 

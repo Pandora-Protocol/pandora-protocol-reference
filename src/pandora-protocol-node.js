@@ -104,6 +104,7 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
                         cb(null, {
                             pandoraBox,
+                            added: out,
                         })
 
                     } );

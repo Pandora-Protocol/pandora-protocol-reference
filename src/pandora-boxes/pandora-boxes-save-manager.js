@@ -1,4 +1,3 @@
-const bencode = require('pandora-protocol-kad-reference').library.bencode;
 const async = require('pandora-protocol-kad-reference').library.async;
 const PandoraBox = require('./../pandora-box/pandora-box')
 
@@ -40,26 +39,12 @@ module.exports = class PandoraBoxesSaveManager {
 
                 this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:index:'+index, boxes[index].hashHex, (err, out)=>{
 
-                    if (err) return cb(err);
+                    if (err) return next(err);
 
-                    this._pandoraProtocolNode.storage.getItem('pandoraBoxes:box:hash-exists:'+boxes[index].hashHex, (err, out) =>{
+                    boxes[index].save((err, out)=>{
 
-                        if (err) return cb(err);
-
-                        if ( out && out === "1" ) return next();
-
-                        const json = {
-                            encoded: bencode.encode( boxes[index].toArray() ).toString('base64'),
-                            absolutePath: boxes[index].absolutePath,
-                        }
-
-                        this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash:'+boxes[index].hashHex, JSON.stringify(json), (err, out)=>{
-
-                            if (err) return cb(err);
-
-                            this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash-exists:'+boxes[index].hashHex, "1", next )
-
-                        } )
+                        if (err) return next(err);
+                        next();
 
                     });
 
@@ -95,24 +80,17 @@ module.exports = class PandoraBoxesSaveManager {
             async.eachLimit( array, 1, ( index, next )=>{
                 this._pandoraProtocolNode.storage.getItem('pandoraBoxes:box:index:'+index, (err, hash )=>{
 
-                    if (err) return cb(err);
-                    if (!hash) return cb(new Error('PandoraBox hash was not found by index'))
+                    if (err) return next(err);
+                    if (!hash) return next(new Error('PandoraBox hash was not found by index'))
 
-                    this._pandoraProtocolNode.storage.getItem('pandoraBoxes:box:hash:'+hash, (err, out)=>{
+                    PandoraBox.load(this._pandoraProtocolNode, hash, (err, box )=>{
 
-                        if (err) return cb(err);
-                        if (!out) return cb(new Error('PandoraBox was not found by hash'))
-
-                        const json = JSON.parse(out);
-
-                        const decoded = bencode.decode( Buffer.from( json.encoded, 'base64') );
-                        const box = PandoraBox.fromArray(this._pandoraProtocolNode, decoded ) ;
-                        box.absolutePath = json.absolutePath;
+                        if (err) next(err);
 
                         boxes.push( box );
                         next();
 
-                    } )
+                    })
 
                 } )
             }, (err, out)=>{
@@ -135,5 +113,6 @@ module.exports = class PandoraBoxesSaveManager {
         });
 
     }
+
 
 }

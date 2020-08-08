@@ -255,6 +255,9 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             const hash = PandoraBoxHelper.computePandoraBoxHash(version, finalName, finalDescription, streams);
             const pandoraBox = new PandoraBox( this._pandoraProtocolNode, '', version, finalName, finalDescription, hash, streams );
 
+            for (const stream of pandoraBox.streams)
+                stream.setPandoraBox(pandoraBox);
+
             async.eachLimit( selectedStreams, 1, (selectedStream, next) =>{
 
                 if (selectedStream.pandoraStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM){

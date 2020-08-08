@@ -64,9 +64,11 @@ async.eachLimit( array, 1, (index, next )=> nodes[index].initializeNode( {protoc
             (err, out )=>{
 
                 console.info('pandora box hash', out.pandoraBox.hash.toString('hex'))
-                if (err) return console.log(err);
+                if (err) return console.error(err);
 
                 nodes[4].getPandoraBox( out.pandoraBox.hash, (err, out )=>{
+
+                    if (err) return console.error(err);
 
                     out.pandoraBox.on("stream-chunk/done", (data)=>{
 

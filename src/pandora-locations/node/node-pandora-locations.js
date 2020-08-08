@@ -286,6 +286,9 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
             const hash = PandoraBoxHelper.computePandoraBoxHash(version, finalName, finalDescription, streams);
             const pandoraBox = new PandoraBox( this._pandoraProtocolNode, boxLocation, version, finalName, finalDescription, hash, streams );
 
+            for (const stream of pandoraBox.streams)
+                stream.setPandoraBox(pandoraBox);
+
             cbProgress(null, {done: true });
 
             cb(null, pandoraBox );

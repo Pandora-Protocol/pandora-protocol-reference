@@ -3,6 +3,8 @@ const PandoraBoxStream = require('./stream/pandora-box-stream')
 const PandoraBoxStreamliner = require('./streamliner/pandora-box-streamliner')
 const EventEmitter = require('events')
 const PandoraBoxStreamType = require('./stream/pandora-box-stream-type')
+const bencode = require('pandora-protocol-kad-reference').library.bencode;
+const async = require('pandora-protocol-kad-reference').library.async;
 
 module.exports = class PandoraBox extends EventEmitter {
 
@@ -12,10 +14,13 @@ module.exports = class PandoraBox extends EventEmitter {
 
         this._pandoraProtocolNode = pandoraProtocolNode;
 
-        for (const stream of streams)
-            stream._pandoraBox = this;
+        for (let i=0; i < streams.length; i++)
+            if ( !(streams[i] instanceof PandoraBoxStream) )
+                streams[i] = PandoraBoxStream.fromArray(this, streams[i] );
 
         PandoraBoxHelper.validatePandoraBox(version, name, description, hash, streams);
+
+        this.absolutePath = absolutePath;
 
         this._version = version;
         this._name = name;
@@ -26,8 +31,6 @@ module.exports = class PandoraBox extends EventEmitter {
         this._streams = streams
 
         this.chunksTotal = this._calculateChunksTotal(false);
-
-        this.absolutePath = absolutePath;
 
         this.streamliner = new PandoraBoxStreamliner(pandoraProtocolNode, this);
 
@@ -85,8 +88,7 @@ module.exports = class PandoraBox extends EventEmitter {
     }
 
     static fromArray(pandoraProtocolNode, arr){
-        const streams = arr[4].map ( it => PandoraBoxStream.fromArray(this, it )  );
-        return new PandoraBox(pandoraProtocolNode, undefined, arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3], streams );
+        return new PandoraBox(pandoraProtocolNode, undefined, arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3], arr[4] );
     }
 
     toJSON(){
@@ -100,6 +102,84 @@ module.exports = class PandoraBox extends EventEmitter {
 
     get percent(){
         return this.chunksTotalAvailable / ( this.chunksTotal || 1) * 100;
+    }
+
+    save(cb){
+
+        this._pandoraProtocolNode.storage.getItem('pandoraBoxes:box:hash-exists:'+this.hashHex, (err, out) =>{
+
+            if (err) return cb(err);
+
+            if ( out && out === "1" ) return cb(null, false );
+
+            const json = {
+                encoded: bencode.encode( this.toArray() ).toString('base64'),
+                absolutePath: this.absolutePath,
+            }
+
+            this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash:'+this.hashHex, JSON.stringify(json), (err, out)=>{
+
+                if (err) return cb(err);
+
+                this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex, "1", (err, out)=>{
+
+                    if (err) return cb(err);
+
+                    async.eachLimit( this.streams, 1, ( stream, next ) => {
+
+                        stream.saveStatus((err, out)=>{
+
+                            if (err) return next(err);
+                            next();
+
+                        })
+
+                    }, (err, out) =>{
+
+                        if (err) return cb(err);
+                        cb(null, true);
+
+                    } );
+
+                } )
+
+            } )
+
+        });
+
+    }
+
+    static load(pandoraProtocolNode, hash, cb){
+
+        pandoraProtocolNode.storage.getItem('pandoraBoxes:box:hash:'+hash, (err, out)=>{
+
+            if (err) return cb(err);
+            if (!out) return cb(new Error('PandoraBox was not found by hash'))
+
+            const json = JSON.parse(out);
+
+            const decoded = bencode.decode( Buffer.from( json.encoded, 'base64') );
+            const box = PandoraBox.fromArray( pandoraProtocolNode, decoded ) ;
+            box.absolutePath = json.absolutePath;
+
+            async.eachLimit( box.streams, 1, ( stream, next ) => {
+
+                stream.loadStatus((err, out)=>{
+
+                    if (err) return next(err);
+                    next();
+
+                })
+
+            }, (err, out) =>{
+
+                if (err) return cb(err);
+                cb(null, box);
+
+            } );
+
+        } )
+
     }
 
 }

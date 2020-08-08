@@ -7,7 +7,7 @@ module.exports = class PandoraBoxStream {
 
     constructor(pandoraBox, path, type, size, chunkSize, hash, chunks, statusChunks = [], streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED) {
 
-        this._pandoraBox = pandoraBox;
+        this.setPandoraBox(pandoraBox);
 
         const valid = isSemiAbsolutePath(path);
         if (!valid) throw new Error('Stream Path is invalid');
@@ -48,22 +48,43 @@ module.exports = class PandoraBoxStream {
         this.chunks = chunks;
 
         this.statusChunks = statusChunks
-        this.streamStatus = streamStatus;
+        this.statusUndoneChunksPending = 0;
+
+        this.calculateStatusUndone();
+
+        this.setStreamStatus( streamStatus );
+
+    }
+
+    setStreamStatus(newValue, save = false, cb = () =>{} ){
+        this._streamStatus = newValue;
+        this.isDone = this.calculateIsDone;
+
+        if (save)
+            this.saveStatus(cb);
+
+    }
+
+    get streamStatus(){
+        return this._streamStatus;
+    }
+
+    calculateStatusUndone(){
 
         this.statusUndoneChunks = [];
 
-        if (type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM)
+        if (this.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM)
             for (let i=0; i < this.chunksCount; i++)
                 if (this.statusChunks[i] !== 1)
                     this.statusUndoneChunks.push({
                         index: i,
                         pending: false,
                     });
+    }
 
-        this.statusUndoneChunksPending = 0;
-
-        this.isDone = this.calculateIsDone;
-
+    setPandoraBox(pandoraBox){
+        this._pandoraBox = pandoraBox;
+        this._pandoraProtocolNode = pandoraBox._pandoraProtocolNode;
     }
 
     toArray(){
@@ -75,8 +96,8 @@ module.exports = class PandoraBoxStream {
     }
 
     get absolutePath(){
-        const abs = (this._pandoraBox.absolutePath === undefined) ? this._pandoraBox._pandoraProtocolNode.locations._prefix + this._pandoraBox.name : this._pandoraBox.absolutePath;
-        return this._pandoraBox._pandoraProtocolNode.locations.trailingSlash( abs  ).slice(0, -1) + this.path;
+        const abs = (this._pandoraBox.absolutePath === undefined) ? this._pandoraProtocolNode.locations._prefix + this._pandoraBox.name : this._pandoraBox.absolutePath;
+        return this._pandoraProtocolNode.locations.trailingSlash( abs  ).slice(0, -1) + this.path;
     }
 
     get calculateIsDone(){
@@ -118,6 +139,33 @@ module.exports = class PandoraBoxStream {
             return (this.chunksCount - this.statusUndoneChunks.length) / (this.chunksCount || 1) * 100 ;
         else
             return this.isDone ? 100 : 0;
+    }
+
+    saveStatus(cb){
+        const obj = {
+            statusChunks: this.statusChunks,
+            streamStatus: this.streamStatus,
+        }
+        this._pandoraProtocolNode.storage.setItem('pandoraBoxes:streams:path:'+this.absolutePath+':status', JSON.stringify(obj), cb );
+    }
+
+    loadStatus(cb){
+        this._pandoraProtocolNode.storage.getItem('pandoraBoxes:streams:path:'+this.absolutePath+':status', (err, out) => {
+
+            if (err) return cb(err);
+
+            out = JSON.parse(out);
+
+            if (out.streamStatus === PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING) out.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED;
+
+            this.setStreamStatus(out.streamStatus, false);
+
+            this.statusChunks = out.statusChunks;
+            this.calculateStatusUndone();
+
+            cb(null, true);
+
+        } );
     }
 
 }
