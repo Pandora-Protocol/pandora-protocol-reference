@@ -34,6 +34,9 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
     _work(next){
 
+        //no peers
+        if ( !this._pandoraBoxStreamliner.peers.length ) return next();
+
         if ( !this._pandoraBoxStreamliner.queue.length ){
 
             if (!this._pandoraBox.isDone){

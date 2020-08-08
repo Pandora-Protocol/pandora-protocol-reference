@@ -57,8 +57,6 @@ module.exports = class InterfacePandoraLocations {
         return (str[0] !== '/' ? '/' : '') + str;
     }
 
-
-
     _explodeStreamPath(streams, path){
 
         //deconstruct relative path

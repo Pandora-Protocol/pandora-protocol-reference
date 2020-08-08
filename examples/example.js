@@ -14,7 +14,7 @@ const sybilKeys = {
 KAD.init({
     PLUGINS:{
         CONTACT_SYBIL_PROTECT: {
-            SYBIL_PUBLIC_KEYS: [ sybilKeys.publicKey ],
+            SYBIL_PUBLIC_KEYS: [ sybilKeys ],
         }
     }
 });
@@ -36,28 +36,7 @@ const nodes = array.map(
         path.resolve( __dirname + '/_temp/' + index ),
     ) )
 
-async.eachLimit( array, 1, (index, next )=>{
-
-    nodes[index].contactStorage.loadContact( (err, out) =>{
-
-        if (!err) return next();
-
-        const keyPair = KAD.helpers.ECCUtils.createPair();
-
-        const sybilSignature = KAD.helpers.ECCUtils.sign( sybilKeys.privateKey, KAD.helpers.CryptoUtils.sha256( keyPair.publicKey ) );
-        const nonce = Buffer.concat([
-            Buffer.from("00", "hex"),
-            sybilSignature,
-        ]);
-
-        const contact = nodes[index].contactStorage.createContactArgs( keyPair.privateKey, keyPair.publicKey, nonce, protocol, undefined, 8000+index )
-
-        nodes[index].contactStorage.setContact( keyPair.privateKey, contact, true, true, next)
-
-    } );
-
-
-}, ()=>{
+async.eachLimit( array, 1, (index, next )=> nodes[index].initializeNode( {protocol, port: 8000+index }, next), ()=>{
 
     for (const node of nodes) {
         node.start();
@@ -68,10 +47,9 @@ async.eachLimit( array, 1, (index, next )=>{
         node.bootstrap( nodes[0].contact, false, ()=>{
             console.log("BOOTSTRAPING...");
             //fix for websockets
-            setTimeout( ()=>{
-                next()
-            }, 200 );
+            setTimeout( next, 100 );
         } );
+
     }, (err, out)=>{
 
         console.log('NODES BOOTSTRAPPED');

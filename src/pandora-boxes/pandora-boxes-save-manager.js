@@ -1,5 +1,6 @@
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
 const async = require('pandora-protocol-kad-reference').library.async;
+const PandoraBox = require('./../pandora-box/pandora-box')
 
 module.exports = class PandoraBoxesSaveManager {
 
@@ -24,7 +25,9 @@ module.exports = class PandoraBoxesSaveManager {
 
     }
 
-    save( boxes = this._pandoraBoxes.boxes, cb ) {
+    save( box , cb ) {
+
+        const boxes = this._pandoraBoxes.boxes;
 
         this._pandoraProtocolNode.storage.setItem('pandoraBoxes:count', boxes.length.toString(), (err, out)=>{
 
@@ -32,6 +35,9 @@ module.exports = class PandoraBoxesSaveManager {
 
             const array = new Array(boxes.length).fill(1).map( (it, index) => index)
             async.eachLimit( array, 1, ( index, next )=>{
+
+                if (box && boxes[index] !== box) return next();
+
                 this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:index:'+index, boxes[index].hashHex, (err, out)=>{
 
                     if (err) return cb(err);
@@ -42,7 +48,12 @@ module.exports = class PandoraBoxesSaveManager {
 
                         if ( out && out === "1" ) return next();
 
-                        this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash:'+boxes[index].hashHex, bencode.encode( boxes[index].toArray() ).toString('base64'), (err, out)=>{
+                        const json = {
+                            encoded: bencode.encode( boxes[index].toArray() ).toString('base64'),
+                            absolutePath: boxes[index].absolutePath,
+                        }
+
+                        this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash:'+boxes[index].hashHex, JSON.stringify(json), (err, out)=>{
 
                             if (err) return cb(err);
 
@@ -70,9 +81,13 @@ module.exports = class PandoraBoxesSaveManager {
 
         const boxes = [];
 
-        this._pandoraProtocolNode.storage.setItem('pandoraBoxes:count', (err, out)=>{
+        this._pandoraProtocolNode.storage.getItem('pandoraBoxes:count', (err, out)=>{
 
             if (err) return cb(err);
+            if (!out){
+                this._loaded = true;
+                return cb(null, [] )
+            }
 
             let length = Number.parseInt(out);
             const array = new Array(length).fill(1).map( (it, index) => index)
@@ -81,13 +96,21 @@ module.exports = class PandoraBoxesSaveManager {
                 this._pandoraProtocolNode.storage.getItem('pandoraBoxes:box:index:'+index, (err, hash )=>{
 
                     if (err) return cb(err);
+                    if (!hash) return cb(new Error('PandoraBox hash was not found by index'))
+
                     this._pandoraProtocolNode.storage.getItem('pandoraBoxes:box:hash:'+hash, (err, out)=>{
 
                         if (err) return cb(err);
+                        if (!out) return cb(new Error('PandoraBox was not found by hash'))
 
-                        const buffer = Buffer.from(out, 'base64');
-                        const box = bencode.decode( buffer );
-                        boxes.push(box);
+                        const json = JSON.parse(out);
+
+                        const decoded = bencode.decode( Buffer.from( json.encoded, 'base64') );
+                        const box = PandoraBox.fromArray(this._pandoraProtocolNode, decoded ) ;
+                        box.absolutePath = json.absolutePath;
+
+                        boxes.push( box );
+                        next();
 
                     } )
 
@@ -103,7 +126,7 @@ module.exports = class PandoraBoxesSaveManager {
                 }, (err, out)=>{
 
                     this._loaded = true;
-                    cb(err, out);
+                    cb(err, boxes);
 
                 });
 

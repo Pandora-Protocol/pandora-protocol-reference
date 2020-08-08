@@ -6,7 +6,7 @@ const PandoraBoxes = require('./pandora-boxes/pandora-boxes')
 const KADPluginStreamliner = require('./kad-plugins/kad-plugin-streamliner/kad-plugin-streamliner')
 const KADPluginPandoraBox = require('./kad-plugins/kad-plugin-pandora-box/kad-plugin-pandora-box')
 
-module.exports = class PandoraNode extends KAD.KademliaNode {
+module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
     constructor( index = '', plugins = [], contactArgs = {}, store, options = {} ) {
 
@@ -72,6 +72,9 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
 
     findPandoraBox( hash, cb ){
 
+        if (this.pandoraBoxes.boxesMap[ hash.toString('hex') ])
+            return cb(null, this.pandoraBoxes.boxesMap[ hash.toString('hex') ] )
+
         this.crawler.iterativeFindPandoraBox( hash, cb )
 
     }
@@ -117,6 +120,20 @@ module.exports = class PandoraNode extends KAD.KademliaNode {
 
     searchPandoraBoxByName(name){
 
+    }
+
+    initializeNode(opts, cb){
+        super.initializeNode(opts, (err, out)=>{
+
+            if (err) return cb(err);
+
+            this.pandoraBoxes.saveManager.load((err, out)=>{
+
+                cb(err, out);
+
+            });
+
+        })
     }
 
 }

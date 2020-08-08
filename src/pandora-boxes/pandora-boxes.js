@@ -15,7 +15,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
         this._streamsMap = {};
 
         this._startedStreamlining = false;
-        this._saveManager = new PandoraBoxesSaveManager(pandoraProtocolNode, this);
+        this.saveManager = new PandoraBoxesSaveManager(pandoraProtocolNode, this);
 
     }
 
@@ -68,7 +68,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
         if (!save)
             return this._addedBox(pandoraBox, cb);
 
-        this._saveManager.save([pandoraBox], (err, out)=>{
+        this.saveManager.save(pandoraBox, (err, out)=>{
 
             if (err) return cb(err);
             this._addedBox(pandoraBox, cb);
@@ -92,7 +92,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
             if ( this._streamsMap[stream.hashHex] === stream)
                 delete this._streamsMap[stream.hashHex];
 
-        this._saveManager.remove(pandoraBox, (err, out)=>{
+        this.saveManager.remove(pandoraBox, (err, out)=>{
             if (err) return cb(err);
 
             this._removedBox(pandoraBox, cb);

@@ -215,6 +215,12 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     createPandoraBox( boxLocation, name, description, chunkSize, cbProgress, cb){
 
+        boxLocation = this.trailingSlash(boxLocation);
+
+        for (const box of this._pandoraProtocolNode.pandoraBoxes.boxes)
+            if ( box.absolutePath === box.absolutePath )
+                return cb(null, box);
+
         const streams = [];
 
         this._walkLocation( boxLocation, (err, location, next )=>{
