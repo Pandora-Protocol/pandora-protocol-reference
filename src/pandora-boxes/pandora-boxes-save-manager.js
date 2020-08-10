@@ -12,18 +12,6 @@ module.exports = class PandoraBoxesSaveManager {
 
     }
 
-    remove(box, cb){
-
-        this._pandoraProtocolNode.storage.removeItem('pandoraBoxes:box:hash:'+box.hashHex, (err, out)=>{
-
-            if (err) return cb(err);
-
-            this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash-exists:'+box.hashHex, cb )
-
-        } )
-
-    }
-
     save( box , cb ) {
 
         const boxes = this._pandoraBoxes.boxes;

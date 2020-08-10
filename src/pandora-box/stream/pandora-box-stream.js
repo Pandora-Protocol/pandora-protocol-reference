@@ -57,6 +57,7 @@ module.exports = class PandoraBoxStream {
     }
 
     setStreamStatus(newValue, save = false, cb = () =>{} ){
+
         this._streamStatus = newValue;
         this.isDone = this.calculateIsDone;
 
@@ -173,6 +174,12 @@ module.exports = class PandoraBoxStream {
             cb(null, true);
 
         } );
+    }
+
+    removeStatus(cb){
+
+        this._pandoraProtocolNode.storage.removeItem('pandoraBoxes:streams:status:'+this.absolutePath, cb);
+
     }
 
 }

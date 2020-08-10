@@ -111,8 +111,7 @@ module.exports = class PandoraBoxStreamliner {
 
     initialize(cb){
 
-        if (!this._started) return cb(null, false);
-        if (this._initializing) return cb(null, false);
+        if (!this._started || this._initializing) return cb(null, false);
 
         this._initializing = true;
 

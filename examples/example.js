@@ -25,8 +25,9 @@ console.info("SYBIL PUBLIC KEY", sybilKeys.publicKey.toString('hex') );
 
 const COUNT = 6;
 
-//const protocol = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_HTTP;
-const protocol = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_WEBSOCKET;
+// KAD_OPTIONS.TEST_PROTOCOL = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_MOCK;
+// KAD_OPTIONS.TEST_PROTOCOL = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_HTTP;
+KAD_OPTIONS.TEST_PROTOCOL = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_WEBSOCKET;
 
 //addresses
 const array = new Array( COUNT ).fill(1).map( (it, i) => i )
@@ -36,12 +37,14 @@ const nodes = array.map(
         path.resolve( __dirname + '/_temp/' + index ),
     ) )
 
-async.eachLimit( array, 1, (index, next )=> nodes[index].initializeNode( {protocol, port: 8000+index }, next), ()=>{
+async.eachLimit( array, 1, (index, next ) => {
 
-    for (const node of nodes) {
-        node.start();
-        console.info("BOOTSTRAP INFO:", KAD.library.bencode.encode(node.contact.toArray()).toString('hex'))
-    }
+    nodes[index].start( {hostname: '127.0.0.1', port: 10000+index} ).then((out)=>{
+        console.info("BOOTSTRAP INFO:", KAD.library.bencode.encode( nodes[index].contact.toArray()).toString('hex'))
+        next(null, out)
+    })
+
+}, (err, out)=>{
 
     async.eachLimit(  nodes, 1, (node, next) => {
         node.bootstrap( nodes[0].contact, false, ()=>{

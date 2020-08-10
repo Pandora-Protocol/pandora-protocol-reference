@@ -92,7 +92,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
             if ( this._streamsMap[stream.hashHex] === stream)
                 delete this._streamsMap[stream.hashHex];
 
-        this.saveManager.remove(pandoraBox, (err, out)=>{
+        pandoraBox.remove( (err, out)=>{
             if (err) return cb(err);
 
             this._removedBox(pandoraBox, cb);

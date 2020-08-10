@@ -151,6 +151,38 @@ module.exports = class PandoraBox extends EventEmitter {
 
     }
 
+    remove(cb){
+
+        this._pandoraProtocolNode.storage.removeItem('pandoraBoxes:box:hash:'+this.hashHex, (err, out)=>{
+
+            if (err) return cb(err);
+
+            this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex, (err, out)=>{
+
+                if (err) return cb(err);
+
+                async.eachLimit( this.streams, 1, ( stream, next ) => {
+
+                    stream.removeStatus((err, out)=>{
+
+                        if (err) return next(err);
+                        next();
+
+                    })
+
+                }, (err, out) =>{
+
+                    if (err) return cb(err);
+                    cb(null, true);
+
+                } );
+
+            } )
+
+        } )
+
+    }
+
     static load(pandoraProtocolNode, hash, cb){
 
         pandoraProtocolNode.storage.getItem('pandoraBoxes:box:hash:'+hash, (err, out)=>{

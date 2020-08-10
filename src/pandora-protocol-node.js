@@ -28,9 +28,11 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
     }
 
-    start(){
-        super.start(...arguments);
+    async start(){
+        const out = await super.start(...arguments);
         this.pandoraBoxes.startStreamlining();
+
+        return out;
     }
 
     stop(){
@@ -38,7 +40,7 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
         this.pandoraBoxes.stopStreamlining();
     }
 
-    seedPandoraBox( location, name, description, chunkSize = 1*1024*1024, cbProgress, cb ){
+    seedPandoraBox( location, name, description, chunkSize = 2*1024*1024, cbProgress, cb ){
 
         this.locations.createPandoraBox( location,  name, description, chunkSize, cbProgress, (err, pandoraBox )=>{
 

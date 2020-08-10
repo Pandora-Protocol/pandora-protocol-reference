@@ -53,7 +53,8 @@ module.exports = class PandoraBoxStreamlinerWorker {
         }
 
         //no peers
-        if ( !this._pandoraBoxStreamliner.peers.length ) return next(1000);
+        if ( !this._pandoraBoxStreamliner.peers.length )
+            return next(1000);
 
         if ( !this._pandoraBoxStreamliner.queue.length ){
 
@@ -103,10 +104,8 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                     return this._pandoraProtocolNode.locations.createLocationEmptyStream(it.stream.absolutePath, it.stream.size, (err, out)=>{
 
-                        if (!err && out)
-                            it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED, true);
-                        else
-                            it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED );
+                        if (!err && out) it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED, true);
+                        else it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED );
 
                         next();
 
@@ -186,6 +185,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
 
                                 }catch(err){
+
                                     console.error(err);
 
                                     undoneChunk.pending = false;
