@@ -1,9 +1,20 @@
-module.exports = function (rules){
+module.exports = function (options){
 
-    delete rules._allowedStoreTables[''];
-    rules._allowedStoreTables.box = true;
+    return class MyRules extends options.Rules {
 
-    delete rules._allowedStoreSortedListTables[''];
-    rules._allowedStoreSortedListTables.peers = true;
+        constructor() {
+
+            super(...arguments);
+
+            delete this._allowedStoreTables[''];
+            this._allowedStoreTables.box = true;
+
+            delete this._allowedStoreSortedListTables[''];
+            this._allowedStoreSortedListTables.peers = true;
+
+        }
+
+    }
+
 
 }

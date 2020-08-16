@@ -1,6 +1,8 @@
 examples/_temp
 
-.idea
+.idea/
+build/
+package-lock.json
 
 # Logs
 logs

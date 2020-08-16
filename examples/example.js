@@ -39,7 +39,7 @@ const nodes = array.map(
 
 async.eachLimit( array, 1, (index, next ) => {
 
-    nodes[index].start( {hostname: '127.0.0.1', port: 10000+index} ).then((out)=>{
+    nodes[index].start( { port: 10000+index } ).then((out)=>{
         console.info("BOOTSTRAP INFO:", KAD.library.bencode.encode( nodes[index].contact.toArray()).toString('hex'))
         next(null, out)
     })

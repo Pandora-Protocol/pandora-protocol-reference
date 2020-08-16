@@ -3,25 +3,27 @@ const PandoraLocations = require('./pandora-locations/pandora-locations')
 const PandoraBox = require('./pandora-box/pandora-box')
 const PandoraBoxes = require('./pandora-boxes/pandora-boxes')
 
-const KADPluginStreamliner = require('./kad-plugins/kad-plugin-streamliner/kad-plugin-streamliner')
-const KADPluginPandoraBox = require('./kad-plugins/kad-plugin-pandora-box/kad-plugin-pandora-box')
+const KADPluginStreamliner = require('./kad-plugins/kad-plugin-streamliner')
+const KADPluginPandoraBox = require('./kad-plugins/kad-plugin-pandora-box')
 
 module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
-    constructor( index = '', plugins = [], contactArgs = {}, store, options = {} ) {
+    constructor( index = '', plugins = [], options = {} ) {
 
         super( index, [
-            KAD.plugins.PluginSortedList.plugin,
-            KAD.plugins.PluginKademliaNodeMock.plugin,
-            KAD.plugins.PluginKademliaNodeHTTP.plugin,
-            KAD.plugins.PluginKademliaNodeWebSocket.plugin,
-            KAD.plugins.PluginContactEncrypted.plugin,
-            KAD.plugins.PluginContactSpartacus.plugin,
-            KAD.plugins.PluginContactSybilProtect.plugin,
+            KAD.plugins.PluginSortedList,
+            KAD.plugins.PluginKademliaNodeMock,
+            KAD.plugins.PluginContactType,
+            KAD.plugins.PluginKademliaNodeHTTP,
+            KAD.plugins.PluginKademliaNodeWebSocket,
+            KAD.plugins.PluginContactEncrypted,
+            KAD.plugins.PluginContactSpartacus,
+            KAD.plugins.PluginContactSybilProtect,
+            KAD.plugins.PluginContactSybilProtect,
             KADPluginStreamliner,
             KADPluginPandoraBox,
             ...plugins,
-        ], contactArgs, store, options);
+        ], options);
 
         this.locations = new PandoraLocations(this, index);
         this.pandoraBoxes = new PandoraBoxes(this);
@@ -40,7 +42,7 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
         this.pandoraBoxes.stopStreamlining();
     }
 
-    seedPandoraBox( location, name, description, chunkSize = 2*1024*1024, cbProgress, cb ){
+    seedPandoraBox( location, name, description, chunkSize = 1*512*1024, cbProgress, cb ){
 
         this.locations.createPandoraBox( location,  name, description, chunkSize, cbProgress, (err, pandoraBox )=>{
 
@@ -102,18 +104,20 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
     }
 
-    searchPandoraBoxByName(name){
+    findPandoraBoxByName(name){
 
     }
 
-    initializeNode(opts, cb){
-        super.initializeNode(opts, (err, out)=>{
+    async initializeNode(opts){
 
-            if (err) return cb(err);
+        const result = await super.initializeNode(opts);
 
-            this.pandoraBoxes.saveManager.load((err, out)=>{
+        return new Promise((resolve, reject)=>{
 
-                cb(err, out);
+            this.pandoraBoxes.saveManager.load( (err, out)=>{
+
+                if (err) reject(err);
+                resolve(result);
 
             });
 
