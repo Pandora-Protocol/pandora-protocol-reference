@@ -127,7 +127,8 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                                 try{
 
-                                    if (err || !out || !Array.isArray(out) || out.length !== 2 ) throw "chunk was not received";
+                                    if (err) throw err;
+                                    if (!out || !Array.isArray(out) || out.length !== 2 ) throw "chunk was not received";
                                     if ( out[0] !== 1 ) throw out[1].toString('ascii') || 'Unexpected error';
 
                                     const buffer = out[1];
