@@ -14,6 +14,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
     }
 
     start(){
+
         if (this._started) return false;
         this._started = true;
 
@@ -25,6 +26,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
     }
 
     stop(){
+
         if (!this._started) return false;
         this._started = false;
 
@@ -33,24 +35,6 @@ module.exports = class PandoraBoxStreamlinerWorker {
     }
 
     _work(next){
-
-        if ( !this._pandoraBoxStreamliner._initializing ){
-
-            const time = new Date().getTime();
-
-            if ( (this._pandoraBoxStreamliner._initialized < time - KAD_OPTIONS.T_STORE_GARBAGE_COLLECTOR - 5 * 1000) ||
-                 (!this._pandoraBoxStreamliner.peers.length && this._pandoraBoxStreamliner._initialized < time - 5*1000 ) ){
-
-                return this._pandoraBoxStreamliner.initialize( (err, out)=>{
-
-                    console.log("initialized");
-                    next();
-
-                } )
-
-            }
-
-        }
 
         //no peers
         if ( !this._pandoraBoxStreamliner.peers.length )
@@ -62,10 +46,10 @@ module.exports = class PandoraBoxStreamlinerWorker {
                 this._pandoraBox.isDone = this._pandoraBox.calculateIsDone;
                 this._pandoraBox.emit('streamliner/done', );
                 this._pandoraProtocolNode.pandoraBoxes.emit('pandora-box/done', {pandoraBox: this._pandoraBox} );
+                this._pandoraBoxStreamliner.refreshWorkers();
             }
 
-            this.stop();
-            return next();
+            return next(1000);
         }
 
         for (let i=0; i < this._pandoraBoxStreamliner.queue.length; i++){

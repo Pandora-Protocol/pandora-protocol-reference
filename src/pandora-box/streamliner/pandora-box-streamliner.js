@@ -1,4 +1,5 @@
 const PandoraBoxStreamlinerWorker = require('./pandora-box-streamliner-worker')
+const {setAsyncInterval, clearAsyncInterval} = require('pandora-protocol-kad-reference').helpers.AsyncInterval;
 
 module.exports = class PandoraBoxStreamliner {
 
@@ -15,16 +16,22 @@ module.exports = class PandoraBoxStreamliner {
         this._started = false;
 
         this._initialized = 0;
-        this._initializing = false;
 
     }
 
     start(){
 
         if (this._started) return true;
-        if (this._pandoraBox.isDone) return true;
+
+        this._initialized = 0;
+        this._streamlinerInitializeAsyncInterval = setAsyncInterval(
+            next => this._workStreamlinerInitialize(next),
+            5*1000,
+        );
 
         this._started = true;
+
+        if (this._pandoraBox.isDone) return true;
 
         this.queue = [];
         this.updateQueueStreams(this._pandoraBox.streams);
@@ -39,31 +46,71 @@ module.exports = class PandoraBoxStreamliner {
         this._started = false;
 
         this.queue = [];
+        this.refreshWorkers();
 
-        for (const worker of this._workers)
-            worker.stop();
+        clearAsyncInterval(this._streamlinerInitializeAsyncInterval);
 
     }
 
-    get workersCount(){
+    _workStreamlinerInitialize(next){
+
+        const time = new Date().getTime();
+
+        if ( (this._initialized < time - KAD_OPTIONS.T_STORE_GARBAGE_COLLECTOR - 5 * 1000) ||
+            (!this.peers.length && this._initialized < time - 5*1000 ) ){
+
+            return this._initialize( (err, out)=>{
+
+                console.log("initialized", this._pandoraBox._name, this._pandoraBox.hashHex);
+                next();
+
+            } )
+
+        }
+
+        next();
+
+    }
+
+    get workersWorkingCount(){
         return this._workers.length;
+    }
+
+    get workersCount(){
+        return this._workersCount.length;
     }
 
     set workersCount(newValue){
 
-        if (this._workers.length === newValue) return;
+        this._workersCount = newValue;
+        this.refreshWorkers();
 
-        for (let i=0; i < newValue; i++)
-            if (!this._workers[i]) {
-                this._workers[i] = new PandoraBoxStreamlinerWorker(this._pandoraProtocolNode, this._pandoraBox, this);
-                if (this._started)
-                    this._workers[i].start();
-            }
+    }
 
-        for (let i = newValue; i < this._workers.length; i++)
-            this._workers[i].stop();
+    refreshWorkers(){
 
-        this._workers.splice(newValue);
+        if ( !this._started || this.isDone ){
+
+            for (let i=0; i < this._workers.length; i++)
+                this._workers[i].stop();
+            this._workers = [];
+
+        } else {
+
+            for (let i=0; i < this._workersCount; i++)
+                if (!this._workers[i]) {
+                    this._workers[i] = new PandoraBoxStreamlinerWorker(this._pandoraProtocolNode, this._pandoraBox, this);
+                    if (this._started)
+                        this._workers[i].start();
+                }
+
+            //close if we have more
+            for (let i = this._workersCount; i < this._workers.length; i++)
+                this._workers[i].stop();
+
+            this._workers.splice(this._workersCount);
+
+        }
     }
 
     updateQueueStreams(streams, priority = 1){
@@ -109,16 +156,11 @@ module.exports = class PandoraBoxStreamliner {
 
     }
 
-    initialize(cb){
-
-        if (!this._started || this._initializing) return cb(null, false);
-
-        this._initializing = true;
+    _initialize(cb){
 
         this._pandoraProtocolNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox.hash, (err, peers ) => {
 
             if (err) {
-                this._initializing = false;
                 this._initialized = new Date().getTime();
                 return cb(err, null);
             }
@@ -127,15 +169,10 @@ module.exports = class PandoraBoxStreamliner {
 
             this._pandoraProtocolNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox.hash, this._pandoraProtocolNode.contact, new Date().getTime(), (err, out2)=>{
 
-                if (err) {
-                    this._initializing = false;
-                    this._initialized = new Date().getTime();
-                    return cb(err, null);
-                }
-
                 this._initialized = new Date().getTime();
-                this._initializing = false;
-                cb(null, true);
+
+                if (err) return cb(err, null);
+                else cb(null, true);
 
             });
 

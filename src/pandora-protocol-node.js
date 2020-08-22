@@ -12,7 +12,6 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
         super( index, [
             KAD.plugins.PluginSortedList,
-            KAD.plugins.PluginNodeMock,
             KAD.plugins.PluginContactType,
             KAD.plugins.PluginNodeHTTP,
             KAD.plugins.PluginNodeWebSocket,
