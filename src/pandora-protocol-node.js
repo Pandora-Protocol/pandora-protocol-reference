@@ -49,27 +49,15 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
             if (err) return cb(err, null);
 
-            this.crawler.iterativeStorePandoraBox( pandoraBox, (err, out)=> {
+            this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out)=>{
 
-                if (err) return cb(err, null);
+                cb(null, {
+                    pandoraBox,
+                    stored: out,
+                })
 
-                this.crawler.iterativeStorePandoraBoxPeer( pandoraBox.hash, this.contact, new Date().getTime(), (err, out2)=>{
+            } );
 
-                    if (err) return cb(err, null);
-
-                    this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out)=>{
-
-                        cb(null, {
-                            pandoraBox,
-                            stored: out,
-                            storedContact: out2,
-                        })
-
-                    } );
-
-                } );
-
-            });
 
         });
 

@@ -1,5 +1,6 @@
 const PandoraBoxStreamlinerWorker = require('./pandora-box-streamliner-worker')
 const {setAsyncInterval, clearAsyncInterval} = require('pandora-protocol-kad-reference').helpers.AsyncInterval;
+const {Utils} = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = class PandoraBoxStreamliner {
 
@@ -56,12 +57,12 @@ module.exports = class PandoraBoxStreamliner {
 
         const time = new Date().getTime();
 
-        if ( (this._initialized < time - KAD_OPTIONS.T_STORE_GARBAGE_COLLECTOR - 5 * 1000) ||
+        if ( (this._initialized < time - KAD_OPTIONS.T_STORE_GARBAGE_COLLECTOR - Utils.preventConvoy(5 * 1000) ) ||
             (!this.peers.length && this._initialized < time - 5*1000 ) ){
 
-            return this._initialize( (err, out)=>{
+            return this.initialize( (err, out)=>{
 
-                console.log("initialized", this._pandoraBox._name, this._pandoraBox.hashHex);
+                console.log("initialized", this._pandoraBox._name, this._pandoraBox.hashHex, out);
                 next();
 
             } )
@@ -77,7 +78,7 @@ module.exports = class PandoraBoxStreamliner {
     }
 
     get workersCount(){
-        return this._workersCount.length;
+        return this._workersCount;
     }
 
     set workersCount(newValue){
@@ -138,45 +139,58 @@ module.exports = class PandoraBoxStreamliner {
 
     addPeers(peers){
 
-        for (const peer of peers)
-            if ( !peer.contact.identity.equals(this._pandoraProtocolNode.contact.identity) ){
+        try{
 
-                let found = false;
-                for (let j=0; j < this.peers.length; j++)
-                    if (this.peers[j].contact.identity.equals(peer.contact.identity)){
-                        found = true;
-                        this.peers[j].contact.updateContactNewer( peer.contact );
-                        break;
-                    }
+            for (const peer of peers)
+                if ( !peer.contact.identity.equals(this._pandoraProtocolNode.contact.identity) ){
 
-                if (!found)
-                    this.peers.push(peer);
+                    let found = false;
+                    for (let j=0; j < this.peers.length; j++)
+                        if (this.peers[j].contact.identity.equals(peer.contact.identity)){
+                            found = true;
 
-            }
+                            if (peer.contact.isContactNewer(this.peers[j].contact))
+                                this._pandoraBox._pandoraProtocolNode.updateContact(peer.contact);
+
+                            break;
+                        }
+
+                    if (!found)
+                        this.peers.push(peer);
+
+                }
+
+        }catch(err){
+
+        }
 
     }
 
-    _initialize(cb){
+    initialize(cb){
 
-        this._pandoraProtocolNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox.hash, (err, peers ) => {
+        this._pandoraProtocolNode.crawler.iterativeStorePandoraBox( this._pandoraBox, (err, out)=> {
 
-            if (err) {
-                this._initialized = new Date().getTime();
-                return cb(err, null);
-            }
+            if (err) return cb(err, null);
 
-            this.addPeers(peers);
+            this._pandoraProtocolNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox.hash, (err, peers ) => {
 
-            this._pandoraProtocolNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox.hash, this._pandoraProtocolNode.contact, new Date().getTime(), (err, out2)=>{
+                if (peers && peers.length)
+                    this.addPeers(peers);
 
-                this._initialized = new Date().getTime();
+                this._pandoraProtocolNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox.hash, this._pandoraProtocolNode.contact, new Date().getTime(), (err, out2)=>{
 
-                if (err) return cb(err, null);
-                else cb(null, true);
+                    this._initialized = new Date().getTime();
 
-            });
+                    if (err) return cb(err, null);
+                    else cb(null, true);
 
-        } );
+                });
+
+            } );
+
+        });
+
+
 
     }
 

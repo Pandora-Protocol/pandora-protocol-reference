@@ -47,13 +47,15 @@ module.exports = function(options){
 
                 if ( !out.result) return cb( new Error('Peers not found') );
 
-                try{
+                const peers = [];
+                for (const peer of out.result){
 
-                    const peers = [];
-                    for (const peer of out.result){
+                    try{
+
                         const decoded = bencode.decode( Buffer.from( peer[0], 'hex') );
-                        const contact = this._kademliaNode.createContact( decoded)
+                        const contact = this._kademliaNode.createContact( decoded )
 
+                        //avoid myself
                         if (contact.identity.equals( this._kademliaNode.contact.identity ))
                             continue;
 
@@ -61,14 +63,14 @@ module.exports = function(options){
                             contact: contact,
                             score: peer[1],
                         })
+
+                    }catch(err){
+
                     }
 
-                    cb(null, peers);
-
-                }catch(err){
-                    cb(err);
                 }
 
+                cb(null, peers);
 
             });
         }
