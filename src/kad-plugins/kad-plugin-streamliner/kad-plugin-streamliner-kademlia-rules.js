@@ -26,7 +26,7 @@ module.exports = function (options){
             if (chunkIndex >= pandoraBoxStream.chunksCount) return cb( null, [0, 'Chunk index out of bound'] );
             if (!pandoraBoxStream.statusChunks[chunkIndex]) return cb( null, [0, 'Chunk not ready'] );
 
-            this._kademliaNode.locations.getLocationStreamChunk( pandoraBoxStream.absolutePath,  chunkIndex,  pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex),  (err, out) =>{
+            this._kademliaNode.locations.getLocationStreamChunk( pandoraBoxStream, chunkIndex,  (err, out) =>{
 
                 if (err) return cb(null, [0, 'Unexpected error']);
                 cb(null, [1, out]);

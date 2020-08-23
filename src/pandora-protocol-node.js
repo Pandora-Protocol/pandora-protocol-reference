@@ -47,17 +47,22 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
         this.locations.createPandoraBox( location,  name, description, chunkSize, cbProgress, (err, pandoraBox )=>{
 
-            if (err) return cb(err, null);
+            if (err) return cb(err);
 
-            this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out)=>{
+            pandoraBox.streamliner.initialize((err, out)=>{
 
-                cb(null, {
-                    pandoraBox,
-                    stored: out,
-                })
+                if (err) return cb(err);
 
-            } );
+                this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out)=>{
 
+                    cb(null, {
+                        pandoraBox,
+                        stored: out,
+                    })
+
+                } );
+
+            })
 
         });
 

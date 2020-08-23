@@ -36,12 +36,12 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
         cb(null, true);
     }
 
-    writeLocationStreamChunk(location, buffer, chunkIndex, chunkSize, cb){
+    writeLocationStreamChunk( buffer, pandoraBoxStream, chunkIndex, cb){
 
-        this._storeChunks.setItem( location+ ':@:' + chunkIndex, buffer, (err, out)=>{
+        this._storeChunks.setItem( pandoraBoxStream.hashHex+':#'+pandoraBoxStream.chunkSize+ ':@:' + chunkIndex, buffer, (err, out)=>{
 
             if (err ) return cb(err);
-            if (out.length !== buffer.length) return cb(new Error('Lengths are not matching'));
+            if (buffer.length !== pandoraBoxStream.chunkRealSize(chunkIndex) ) return cb(new Error('Lengths are not matching'));
 
             cb(null, true);
 
@@ -49,12 +49,12 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    getLocationStreamChunk(location, chunkIndex, chunkSize, chunkRealSize, cb){
+    getLocationStreamChunk( pandoraBoxStream, chunkIndex, cb){
 
-        this._storeChunks.getItem( location+ ':@:' + chunkIndex,  (err, buffer )=>{
+        this._storeChunks.getItem( pandoraBoxStream.hashHex+':#'+pandoraBoxStream.chunkSize+ ':@:' + chunkIndex,  (err, buffer )=>{
 
             if (err ) return cb(err);
-            if (buffer.length !== chunkRealSize) return cb(new Error('Lengths are not matching'));
+            if (buffer.length !== pandoraBoxStream.chunkRealSize(chunkIndex) ) return cb(new Error('Lengths are not matching'));
 
             cb(null, buffer);
 
@@ -80,7 +80,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         async.each( chunks, ( chunkIndex, next )=>{
 
-            this.getLocationStreamChunk( pandoraBoxStream.absolutePath, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex), (err, buffer) =>{
+            this.getLocationStreamChunk( pandoraBoxStream, chunkIndex, (err, buffer) =>{
 
                 if (err) return next(err);
                 if (stopped) return next(new Error('stopped'));
@@ -146,7 +146,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
                 } else if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM){
 
-                    const {chunksCount, absolutePath, chunkSize} = pandoraBoxStream
+                    const {chunksCount} = pandoraBoxStream
                     let i = 0
 
                     const mystream = new ReadableStream({
@@ -156,7 +156,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
                         },
                         pull (ctrl) {
                             return new Promise( (resolve, reject) => {
-                                self.getLocationStreamChunk(absolutePath, i, chunkSize, pandoraBoxStream.chunkRealSize(i), (err, buffer) => {
+                                self.getLocationStreamChunk( pandoraBoxStream, i, (err, buffer) => {
                                     if (err) return reject(err)
                                     if (stopped) return reject(new Error('stopped'))
                                     ctrl.enqueue(buffer)
@@ -267,7 +267,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
                         if (err) return cb(err, null);
                         if (done) return next();
 
-                        this.writeLocationStreamChunk( selectedStream.pandoraStream.hash.toString('hex'), chunk, chunkIndex, chunkSize, (err, out) =>{
+                        this.writeLocationStreamChunk( chunk, selectedStream.stream, chunkIndex, (err, out) =>{
 
 
                         } )

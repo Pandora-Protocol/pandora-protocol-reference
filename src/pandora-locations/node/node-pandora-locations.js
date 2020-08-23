@@ -107,7 +107,9 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
-    getLocationStreamChunk(location, chunkIndex, chunkSize, chunkRealSize, cb){
+    getLocationStreamChunk(pandoraBoxStream, chunkIndex, cb){
+
+        const location = pandoraBoxStream.absolutePath;
 
         let found = this._fdOpenMap[location];
 
@@ -132,12 +134,12 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                     this._fdOpen.splice( 1000 );
                 }
 
-                this._getLocationStreamChunk(found.fd, chunkIndex, chunkSize, chunkRealSize, cb);
+                this._getLocationStreamChunk(found.fd, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex), cb);
 
             });
         } else {
             found.timestamp = new Date().getTime();
-            this._getLocationStreamChunk(found.fd, chunkIndex, chunkSize, chunkRealSize, cb);
+            this._getLocationStreamChunk(found.fd, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex), cb);
         }
     }
 
@@ -167,9 +169,9 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
-    writeLocationStreamChunk(location, buffer, chunkIndex, chunkSize, cb){
+    writeLocationStreamChunk( buffer, pandoraBoxStream, chunkIndex, cb ){
 
-        const stream = fs.createWriteStream(location, {flags: 'r+', start: chunkIndex*chunkSize });
+        const stream = fs.createWriteStream( pandoraBoxStream.absolutePath, {flags: 'r+', start: chunkIndex * pandoraBoxStream.chunkSize });
         stream.write(buffer, (err, out)=>{
 
             stream.close();

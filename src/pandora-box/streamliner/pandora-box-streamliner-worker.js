@@ -125,7 +125,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                     if ( !newHash.equals( it.stream.chunks[undoneChunk.index] ))
                                         throw "hash is invalid"
 
-                                    this._pandoraProtocolNode.locations.writeLocationStreamChunk( it.stream.absolutePath, buffer, undoneChunk.index, it.stream.chunkSize, (err, out) =>{
+                                    this._pandoraProtocolNode.locations.writeLocationStreamChunk( buffer, it.stream, undoneChunk.index, (err, out) =>{
 
                                         if (err || out !== true){
                                             undoneChunk.pending = false;
