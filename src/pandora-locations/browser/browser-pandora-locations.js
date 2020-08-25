@@ -267,7 +267,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
                         if (err) return cb(err, null);
                         if (done) return next();
 
-                        this.writeLocationStreamChunk( chunk, selectedStream.stream, chunkIndex, (err, out) =>{
+                        this.writeLocationStreamChunk( chunk, selectedStream.pandoraStream, chunkIndex, (err, out) =>{
 
 
                         } )

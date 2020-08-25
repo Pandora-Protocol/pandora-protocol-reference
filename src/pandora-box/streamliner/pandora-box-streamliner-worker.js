@@ -127,44 +127,53 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                                     this._pandoraProtocolNode.locations.writeLocationStreamChunk( buffer, it.stream, undoneChunk.index, (err, out) =>{
 
-                                        if (err || out !== true){
-                                            undoneChunk.pending = false;
-                                            it.stream.statusUndoneChunksPending -= 1;
-                                            return next();
-                                        }
-
-
-                                        it.stream.statusChunks[undoneChunk.index] = 1;
+                                        undoneChunk.pending = false;
                                         it.stream.statusUndoneChunksPending -= 1;
 
-                                        it.stream._pandoraBox.chunksTotalAvailable += 1;
+                                        if (err || out !== true) return next();
 
-                                        for (let i=0; i < it.stream.statusUndoneChunks.length; i++ )
-                                            if (it.stream.statusUndoneChunks[i] === undoneChunk){
-                                                it.stream.statusUndoneChunks.splice(i, 1);
-                                                break;
+                                        try {
+
+                                            it.stream.statusChunks[undoneChunk.index] = 1;
+
+                                            it.stream._pandoraBox.chunksTotalAvailable += 1;
+
+                                            for (let i=0; i < it.stream.statusUndoneChunks.length; i++ )
+                                                if (it.stream.statusUndoneChunks[i] === undoneChunk){
+                                                    it.stream.statusUndoneChunks.splice(i, 1);
+                                                    break;
+                                                }
+
+                                            //we finished all...
+                                            if ( !it.stream.statusUndoneChunks.length ){
+
+                                                this._pandoraBoxStreamliner.removeQueueStream(it.stream);
+
+                                                it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
+
+                                                this._pandoraBox.emit('stream/done', {stream: it.stream})
+                                            } else {
+
+                                                if (it.stream._pandoraBox.chunksTotalAvailable % 10 === 0) // to avoid
+                                                    it.stream.saveStatus(()=>{});
+
                                             }
 
-                                        //we finished all...
-                                        if ( !it.stream.statusUndoneChunks.length ){
+                                            this._pandoraBox.emit('chunks/total-available', {
+                                                chunksTotalAvailable: it.stream._pandoraBox.chunksTotalAvailable,
+                                                chunksTotal: it.stream._pandoraBox.chunksTotal
+                                            });
+                                            this._pandoraBox.emit('stream-chunk/done', {
+                                                stream: it.stream,
+                                                chunkIndex: undoneChunk.index
+                                            });
 
-                                            this._pandoraBoxStreamliner.removeQueueStream(it.stream);
-
-                                            it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
-
-                                            this._pandoraBox.emit('stream/done', {stream: it.stream})
-                                        } else {
-
-                                            if (it.stream._pandoraBox.chunksTotalAvailable % 10 === 0) // to avoid
-                                                it.stream.saveStatus(()=>{});
-
+                                        }catch(err){
+                                            console.error(err);
+                                        } finally{
+                                            next();
                                         }
 
-
-                                        this._pandoraBox.emit('chunks/total-available', { chunksTotalAvailable: it.stream._pandoraBox.chunksTotalAvailable, chunksTotal: it.stream._pandoraBox.chunksTotal  });
-                                        this._pandoraBox.emit('stream-chunk/done', {stream: it.stream, chunkIndex: undoneChunk.index });
-
-                                        return next();
 
                                     } ) ;
 

@@ -172,12 +172,12 @@ module.exports = class PandoraBoxStreamliner {
 
             if (err) return cb(err, null);
 
-            this._pandoraProtocolNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox.hash, (err, peers ) => {
+            this._pandoraProtocolNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox, (err, peers ) => {
 
                 if (peers && peers.length)
                     this.addPeers(peers);
 
-                this._pandoraProtocolNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox.hash, this._pandoraProtocolNode.contact, new Date().getTime(), (err, out2)=>{
+                this._pandoraProtocolNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox, undefined, undefined, (err, out2)=>{
 
                     this._initialized = new Date().getTime();
 
