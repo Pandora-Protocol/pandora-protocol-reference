@@ -11,7 +11,7 @@ module.exports = {
 
                 offset += (evt.target.result.length || evt.target.result.byteLength);
 
-                const chunk = evt.target.result;
+                const chunk = Buffer.from(evt.target.result);
 
                 cb(null, {done: false, chunk, chunkIndex: chunkIndex++})
 

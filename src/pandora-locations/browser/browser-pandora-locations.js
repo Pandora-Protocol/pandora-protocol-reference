@@ -207,7 +207,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             const sum = createHash('sha256');
             const chunks = [];
 
-            cbProgress(null, {done: false, status: 'location/stream', path: location.path });
+            cbProgress(null, {done: false, status: 'location/stream', path: newPath });
 
             Streams.splitStreamIntoChunks( selectedStream.stream,  chunkSize, (err, { done, chunk, chunkIndex } )=>{
 
@@ -215,7 +215,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
                 if (done) {
 
-                    cbProgress(null, {done: false, status: 'location/stream/done', path: location.path });
+                    cbProgress(null, {done: false, status: 'location/stream/done', path: newPath });
 
                     const pandoraStream = new PandoraBoxStream(this,
                         newPath,
@@ -236,7 +236,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
                 } else {
 
                     if ( chunkIndex % 25 === 0)
-                        cbProgress(null, {done: false, status: 'location/stream/update', path: location.path, chunkIndex });
+                        cbProgress(null, {done: false, status: 'location/stream/update', path: newPath, chunkIndex });
 
                     sum.update(chunk)
                     const hashChunk = createHash('sha256').update(chunk).digest();

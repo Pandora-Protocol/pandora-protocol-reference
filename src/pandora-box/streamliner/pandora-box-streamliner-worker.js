@@ -148,10 +148,9 @@ module.exports = class PandoraBoxStreamlinerWorker {
                                             if ( !it.stream.statusUndoneChunks.length ){
 
                                                 this._pandoraBoxStreamliner.removeQueueStream(it.stream);
-
                                                 it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
-
                                                 this._pandoraBox.emit('stream/done', {stream: it.stream})
+
                                             } else {
 
                                                 if (it.stream._pandoraBox.chunksTotalAvailable % 10 === 0) // to avoid
@@ -180,11 +179,12 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
                                 }catch(err){
 
-                                    console.error(err);
+                                    //console.error(err);
 
                                     undoneChunk.pending = false;
                                     it.stream.statusUndoneChunksPending -= 1;
                                     return next();
+
                                 }
 
                             } );

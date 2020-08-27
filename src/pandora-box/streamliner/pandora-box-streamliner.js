@@ -180,6 +180,7 @@ module.exports = class PandoraBoxStreamliner {
                 this._pandoraProtocolNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox, undefined, undefined, (err, out2)=>{
 
                     this._initialized = new Date().getTime();
+                    this.refreshWorkers();
 
                     if (err) return cb(err, null);
                     else cb(null, true);
