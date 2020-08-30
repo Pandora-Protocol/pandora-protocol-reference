@@ -56,7 +56,7 @@ module.exports = class PandoraBoxStreamliner {
         const time = new Date().getTime();
 
         if ( (this._initialized < time - KAD_OPTIONS.T_STORE_GARBAGE_COLLECTOR - Utils.preventConvoy(5 * 1000) ) ||
-            (!this.peers.length && this._initialized < time - 5*1000 ) ){
+            (!this._pandoraBox.isDone && this._initialized < time - 10*1000 ) ){
 
             return this.initialize( (err, out)=>{
 

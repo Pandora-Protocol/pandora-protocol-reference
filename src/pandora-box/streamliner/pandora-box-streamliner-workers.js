@@ -45,6 +45,14 @@ module.exports = class PandoraBoxStreamlinerWorkers {
             if (this._workers[j] === worker)
                 this._workers.splice(j, 1);
 
+        //placing it at the end
+
+        const index = this._pandoraBoxStreamliner.peers.indexOf(worker.peer);
+        if (index !== undefined) {
+            this._pandoraBoxStreamliner.peers.splice(index, 1);
+            this._pandoraBoxStreamliner.peers.push(worker.peer);
+        }
+
     }
 
     refreshWorkers(){
