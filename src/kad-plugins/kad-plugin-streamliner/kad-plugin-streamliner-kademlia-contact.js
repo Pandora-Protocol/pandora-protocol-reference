@@ -1,16 +1,14 @@
-const ContactType = require('pandora-protocol-kad-reference').plugins.PluginContactType.ContactType;
-
 module.exports = function (options){
 
     return class MyContact extends options.Contact {
 
-        getProtocol(command, data){
+        constructor() {
+            super(...arguments);
 
             //optimization to use websocket for Streamliner in case it wis available
-            if (command === 'GET_STREAM_CHK' && this.contactType === ContactType.CONTACT_TYPE_ENABLED )
-                return this.convertProtocolToWebSocket();
+            this._specialContactProtocolByCommands['GET_STREAM_CHK'] = this.convertProtocolToWebSocket.bind(this);
+            this._specialContactProtocolByCommands['CONN_PING'] = this.convertProtocolToWebSocket.bind(this);
 
-            return super.getProtocol(command, data);
         }
 
     }

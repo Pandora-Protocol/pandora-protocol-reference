@@ -9,6 +9,7 @@ module.exports = function (options){
             super(...arguments);
 
             this._commands['GET_STREAM_CHK'] = this.getStreamChunk.bind(this)
+            this._commands['CONN_PING'] = this._connectionPing.bind(this)
 
         }
 
@@ -37,6 +38,18 @@ module.exports = function (options){
 
         sendGetStreamChunk( srcContact, [ streamHash, chunkIndex ], cb ){
             this.send(srcContact, 'GET_STREAM_CHK', [ streamHash, chunkIndex ], cb);
+        }
+
+
+        _connectionPing(req, srcContact, data, cb) {
+
+            if (srcContact) this._welcomeIfNewNode(req, srcContact);
+            cb(null, [1] );
+
+        }
+
+        sendConnectionPing(contact, cb){
+            this.send(contact,'CONN_PING', [  ],  cb);
         }
 
 
