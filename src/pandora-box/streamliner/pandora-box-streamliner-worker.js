@@ -17,7 +17,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
     connect(cb){
 
         //establish connection
-        this._pandoraProtocolNode.rules.sendConnectionPing( this.peer.contact,  ( err, out )=>{
+        this._pandoraProtocolNode.rules.establishConnection( this.peer.contact,  ( err, out )=>{
 
             cb(err, out);
 

@@ -9,17 +9,14 @@ module.exports = function (options){
             super(...arguments);
 
             this._commands['GET_STREAM_CHK'] = this.getStreamChunk.bind(this)
-            this._commands['CONN_PING'] = this._connectionPing.bind(this)
 
         }
 
-        getStreamChunk( req, srcContact, [ streamHash, chunkIndex], cb ){
+        getStreamChunk( req, srcContact, [ streamHash, chunkIndex ], cb ){
 
             const err1 = Validation.checkIdentity(streamHash);
             if (err1) return cb(err1);
             if (typeof chunkIndex !== "number" || chunkIndex < 0) return cb( null, [0, 'Invalid chunk index'] );
-
-            if (srcContact) this._welcomeIfNewNode(req, srcContact);
 
             const pandoraBoxStream = this._kademliaNode.pandoraBoxes._streamsMap[streamHash.toString('hex')];
             if (!pandoraBoxStream) return cb(null, [0, 'PandoraBoxStream not found'] );
@@ -38,18 +35,6 @@ module.exports = function (options){
 
         sendGetStreamChunk( srcContact, [ streamHash, chunkIndex ], cb ){
             this.send(srcContact, 'GET_STREAM_CHK', [ streamHash, chunkIndex ], cb);
-        }
-
-
-        _connectionPing(req, srcContact, data, cb) {
-
-            if (srcContact) this._welcomeIfNewNode(req, srcContact);
-            cb(null, [1] );
-
-        }
-
-        sendConnectionPing(contact, cb){
-            this.send(contact,'CONN_PING', [  ],  cb);
         }
 
 
