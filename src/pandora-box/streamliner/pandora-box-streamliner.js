@@ -107,10 +107,6 @@ module.exports = class PandoraBoxStreamliner {
                     for (let j=0; j < this.peers.length; j++)
                         if (this.peers[j].contact.identity.equals(peer.contact.identity)){
                             found = true;
-
-                            if (peer.contact.isContactNewer(this.peers[j].contact))
-                                this._pandoraBox._pandoraProtocolNode.updateContact(peer.contact);
-
                             break;
                         }
 

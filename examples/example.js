@@ -95,6 +95,6 @@ async.eachLimit( array, 1, (index, next ) => {
 
 })
 
-
+global.nodes = nodes;
 
 

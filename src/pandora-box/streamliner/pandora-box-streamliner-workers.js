@@ -40,6 +40,7 @@ module.exports = class PandoraBoxStreamlinerWorkers {
     removeWorker(worker){
 
         worker.peer.worker = null;
+        delete worker.peer.worker;
 
         for (let j=0; j < this._workers.length; j++)
             if (this._workers[j] === worker)
