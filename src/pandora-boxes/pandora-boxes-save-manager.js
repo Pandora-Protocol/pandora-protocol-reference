@@ -3,8 +3,8 @@ const PandoraBox = require('./../pandora-box/pandora-box')
 
 module.exports = class PandoraBoxesSaveManager {
 
-    constructor(pandoraProtocolNode, pandoraBoxes) {
-        this._pandoraProtocolNode = pandoraProtocolNode;
+    constructor(kademliaNode, pandoraBoxes) {
+        this._kademliaNode = kademliaNode;
         this._pandoraBoxes = pandoraBoxes;
 
         this._loaded = false;
@@ -16,7 +16,7 @@ module.exports = class PandoraBoxesSaveManager {
 
         const boxes = this._pandoraBoxes.boxes;
 
-        this._pandoraProtocolNode.storage.setItem('pandoraBoxes:count', boxes.length.toString(), (err, out)=>{
+        this._kademliaNode.storage.setItem('pandoraBoxes:count', boxes.length.toString(), (err, out)=>{
 
             if (err) return cb(err);
 
@@ -25,7 +25,7 @@ module.exports = class PandoraBoxesSaveManager {
 
                 if (box && boxes[index] !== box) return next();
 
-                this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:index:'+index, boxes[index].hashHex, (err, out)=>{
+                this._kademliaNode.storage.setItem('pandoraBoxes:box:index:'+index, boxes[index].hashHex, (err, out)=>{
 
                     if (err) return next(err);
 
@@ -54,7 +54,7 @@ module.exports = class PandoraBoxesSaveManager {
 
         const boxes = [];
 
-        this._pandoraProtocolNode.storage.getItem('pandoraBoxes:count', (err, out)=>{
+        this._kademliaNode.storage.getItem('pandoraBoxes:count', (err, out)=>{
 
             if (err) return cb(err);
             if (!out){
@@ -66,12 +66,12 @@ module.exports = class PandoraBoxesSaveManager {
             const array = new Array(length).fill(1).map( (it, index) => index)
 
             async.eachLimit( array, 1, ( index, next )=>{
-                this._pandoraProtocolNode.storage.getItem('pandoraBoxes:box:index:'+index, (err, hash )=>{
+                this._kademliaNode.storage.getItem('pandoraBoxes:box:index:'+index, (err, hash )=>{
 
                     if (err) return next(err);
                     if (!hash) return next(new Error('PandoraBox hash was not found by index'))
 
-                    PandoraBox.load(this._pandoraProtocolNode, hash, (err, box )=>{
+                    PandoraBox.load(this._kademliaNode, hash, (err, box )=>{
 
                         if (err) return next(err);
 

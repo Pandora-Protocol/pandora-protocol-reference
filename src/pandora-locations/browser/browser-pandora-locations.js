@@ -21,8 +21,9 @@ const { Writer } = require("@transcend-io/conflux");
 
 module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations {
 
-    constructor(pandoraProtocolNode, prefix ) {
-        super(pandoraProtocolNode, prefix, 'browser');
+    constructor(kademliaNode, prefix ) {
+
+        super(kademliaNode, prefix, 'browser');
 
         this._storeChunks = new Storage('locChunks');
 
@@ -253,7 +254,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             const finalDescription = description;
 
             const hash = PandoraBoxHelper.computePandoraBoxHash(version, finalName, finalDescription, streams);
-            const pandoraBox = new PandoraBox( this._pandoraProtocolNode, '', version, finalName, finalDescription, hash, streams );
+            const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, finalDescription, hash, streams );
 
             for (const stream of pandoraBox.streams)
                 stream.setPandoraBox(pandoraBox);

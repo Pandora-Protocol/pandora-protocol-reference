@@ -7,11 +7,11 @@ const PandoraBoxStreamlinerWorkers = require('./pandora-box-streamliner-workers'
 
 module.exports = class PandoraBoxStreamliner {
 
-    constructor(pandoraProtocolNode, pandoraBox) {
+    constructor(kademliaNode, pandoraBox) {
 
-        this._pandoraProtocolNode = pandoraProtocolNode;
+        this._kademliaNode = kademliaNode;
         this._pandoraBox = pandoraBox;
-        this.workers = new PandoraBoxStreamlinerWorkers(pandoraProtocolNode, pandoraBox, this);
+        this.workers = new PandoraBoxStreamlinerWorkers(kademliaNode, pandoraBox, this);
 
         this.peers = []; //known peers to have this pandoraBox
         this.queue = [];
@@ -101,11 +101,11 @@ module.exports = class PandoraBoxStreamliner {
         try{
 
             for (const peer of peers)
-                if ( !peer.contact.identity.equals(this._pandoraProtocolNode.contact.identity) ){
+                if ( !peer.contact.identity.equals(this._kademliaNode.contact.identity) ){
 
                     let found = false;
                     for (let j=0; j < this.peers.length; j++)
-                        if (this.peers[j].contact.identity.equals(peer.contact.identity)){
+                        if (this.peers[j].contact.identityHex === peer.contact.identityHex ){
                             found = true;
                             break;
                         }
@@ -126,16 +126,16 @@ module.exports = class PandoraBoxStreamliner {
 
     initialize(cb){
 
-        this._pandoraProtocolNode.crawler.iterativeStorePandoraBox( this._pandoraBox, (err, out)=> {
+        this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox, (err, out)=> {
 
             if (err) return cb(err, null);
 
-            this._pandoraProtocolNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox, (err, peers ) => {
+            this._kademliaNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox, (err, peers ) => {
 
                 if (peers && peers.length)
                     this.addPeers(peers);
 
-                this._pandoraProtocolNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox, undefined, undefined, (err, out2)=>{
+                this._kademliaNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox, undefined, undefined, (err, out2)=>{
 
                     this._initialized = new Date().getTime();
                     this.workers.refreshWorkers();
@@ -158,7 +158,7 @@ module.exports = class PandoraBoxStreamliner {
             if (!this._pandoraBox.isDone){
                 this._pandoraBox.isDone = this._pandoraBox.calculateIsDone;
                 this._pandoraBox.emit('streamliner/done', );
-                this._pandoraProtocolNode.pandoraBoxes.emit('pandora-box/done', {pandoraBox: this._pandoraBox} );
+                this._kademliaNode.pandoraBoxes.emit('pandora-box/done', {pandoraBox: this._pandoraBox} );
                 this.workers.refreshWorkers();
             }
 
@@ -174,7 +174,7 @@ module.exports = class PandoraBoxStreamliner {
 
                 it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING );
 
-                return this._pandoraProtocolNode.locations.createEmptyDirectory( it.stream.absolutePath, (err, out)=>{
+                return this._kademliaNode.locations.createEmptyDirectory( it.stream.absolutePath, (err, out)=>{
 
                     if (err){
                         it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED)
@@ -199,7 +199,7 @@ module.exports = class PandoraBoxStreamliner {
 
                     it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING);
 
-                    return this._pandoraProtocolNode.locations.createLocationEmptyStream(it.stream.absolutePath, it.stream.size, (err, out)=>{
+                    return this._kademliaNode.locations.createLocationEmptyStream(it.stream.absolutePath, it.stream.size, (err, out)=>{
 
                         if (!err && out) it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED, true);
                         else it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED );
@@ -217,7 +217,7 @@ module.exports = class PandoraBoxStreamliner {
                             undoneChunk.pending = true;
                             it.stream.statusUndoneChunksPending += 1;
 
-                            return this._pandoraProtocolNode.rules.sendGetStreamChunk( worker.peer.contact, [ it.stream.hash, undoneChunk.index ], (err, out )=>{
+                            return this._kademliaNode.rules.sendGetStreamChunk( worker.peer.contact, [ it.stream.hash, undoneChunk.index ], (err, out )=>{
 
                                 try{
 
@@ -239,7 +239,7 @@ module.exports = class PandoraBoxStreamliner {
                                     if ( !newHash.equals( it.stream.chunks[undoneChunk.index] ))
                                         throw "hash is invalid"
 
-                                    this._pandoraProtocolNode.locations.writeLocationStreamChunk( buffer, it.stream, undoneChunk.index, (err, out) =>{
+                                    this._kademliaNode.locations.writeLocationStreamChunk( buffer, it.stream, undoneChunk.index, (err, out) =>{
 
                                         undoneChunk.pending = false;
                                         it.stream.statusUndoneChunksPending -= 1;

@@ -15,8 +15,8 @@ const InterfacePandoraLocations = require('../interface-pandora-locations')
 
 module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
-    constructor(pandoraProtocolNode, prefix ) {
-      super(pandoraProtocolNode, prefix, 'node');
+    constructor(kademliaNode, prefix ) {
+      super(kademliaNode, prefix, 'node');
 
       this._fdOpen = [];
       this._fdOpenMap = {};
@@ -219,7 +219,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
         boxLocation = this.trailingSlash(boxLocation);
 
-        for (const box of this._pandoraProtocolNode.pandoraBoxes.boxes)
+        for (const box of this._kademliaNode.pandoraBoxes.boxes)
             if ( box.absolutePath === box.absolutePath )
                 return cb(null, box);
 
@@ -286,7 +286,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
             const finalDescription = description;
 
             const hash = PandoraBoxHelper.computePandoraBoxHash(version, finalName, finalDescription, streams);
-            const pandoraBox = new PandoraBox( this._pandoraProtocolNode, boxLocation, version, finalName, finalDescription, hash, streams );
+            const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, finalDescription, hash, streams );
 
             for (const stream of pandoraBox.streams)
                 stream.setPandoraBox(pandoraBox);

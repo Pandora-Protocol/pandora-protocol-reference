@@ -5,17 +5,17 @@ const PandoraBoxesSaveManager = require('./pandora-boxes-save-manager')
 
 module.exports = class PandoraBoxes extends EventEmitter{
 
-    constructor(pandoraProtocolNode) {
+    constructor(kademliaNode) {
 
         super();
 
-        this._pandoraProtocolNode = pandoraProtocolNode;
+        this._kademliaNode = kademliaNode;
 
         this._boxesMap = {};
         this._streamsMap = {};
 
         this._startedStreamlining = false;
-        this.saveManager = new PandoraBoxesSaveManager(pandoraProtocolNode, this);
+        this.saveManager = new PandoraBoxesSaveManager(kademliaNode, this);
 
     }
 

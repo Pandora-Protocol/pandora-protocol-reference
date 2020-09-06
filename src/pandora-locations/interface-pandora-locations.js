@@ -4,8 +4,8 @@ const PandoraBoxStreamStatus = require('../pandora-box/stream/pandora-box-stream
 
 module.exports = class InterfacePandoraLocations {
 
-    constructor(pandoraProtocolNode, prefix = '', type) {
-        this._pandoraProtocolNode = pandoraProtocolNode;
+    constructor(kademliaNode, prefix = '', type) {
+        this._kademliaNode = kademliaNode;
         this._prefix = this.trailingSlash(prefix);
         this._type = type;
     }

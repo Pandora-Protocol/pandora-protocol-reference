@@ -8,11 +8,11 @@ const async = require('pandora-protocol-kad-reference').library.async;
 
 module.exports = class PandoraBox extends EventEmitter {
 
-    constructor(pandoraProtocolNode, absolutePath, version, name, description, hash, streams) {
+    constructor(kademliaNode, absolutePath, version, name, description, hash, streams) {
 
         super();
 
-        this._pandoraProtocolNode = pandoraProtocolNode;
+        this._kademliaNode = kademliaNode;
 
         for (let i=0; i < streams.length; i++)
             if ( !(streams[i] instanceof PandoraBoxStream) )
@@ -30,7 +30,7 @@ module.exports = class PandoraBox extends EventEmitter {
 
         this._streams = streams;
 
-        this.streamliner = new PandoraBoxStreamliner(pandoraProtocolNode, this);
+        this.streamliner = new PandoraBoxStreamliner(kademliaNode, this);
 
         this.isDone = this.calculateIsDone;
 
@@ -89,8 +89,8 @@ module.exports = class PandoraBox extends EventEmitter {
         return [ this.version, this.name, this.description, this.hash, streams ];
     }
 
-    static fromArray(pandoraProtocolNode, arr){
-        return new PandoraBox(pandoraProtocolNode, '', arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3], arr[4] );
+    static fromArray(kademliaNode, arr){
+        return new PandoraBox(kademliaNode, '', arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3], arr[4] );
     }
 
     toJSON(){
@@ -108,7 +108,7 @@ module.exports = class PandoraBox extends EventEmitter {
 
     save(cb){
 
-        this._pandoraProtocolNode.storage.getItem('pandoraBoxes:box:hash-exists:'+this.hashHex, (err, out) =>{
+        this._kademliaNode.storage.getItem('pandoraBoxes:box:hash-exists:'+this.hashHex, (err, out) =>{
 
             if (err) return cb(err);
 
@@ -119,11 +119,11 @@ module.exports = class PandoraBox extends EventEmitter {
                 absolutePath: this.absolutePath,
             }
 
-            this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash:'+this.hashHex, JSON.stringify(json), (err, out)=>{
+            this._kademliaNode.storage.setItem('pandoraBoxes:box:hash:'+this.hashHex, JSON.stringify(json), (err, out)=>{
 
                 if (err) return cb(err);
 
-                this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex, "1", (err, out)=>{
+                this._kademliaNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex, "1", (err, out)=>{
 
                     if (err) return cb(err);
 
@@ -153,11 +153,11 @@ module.exports = class PandoraBox extends EventEmitter {
 
     remove(cb){
 
-        this._pandoraProtocolNode.storage.removeItem('pandoraBoxes:box:hash:'+this.hashHex, (err, out)=>{
+        this._kademliaNode.storage.removeItem('pandoraBoxes:box:hash:'+this.hashHex, (err, out)=>{
 
             if (err) return cb(err);
 
-            this._pandoraProtocolNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex, (err, out)=>{
+            this._kademliaNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex, (err, out)=>{
 
                 if (err) return cb(err);
 
@@ -183,9 +183,9 @@ module.exports = class PandoraBox extends EventEmitter {
 
     }
 
-    static load(pandoraProtocolNode, hash, cb){
+    static load(kademliaNode, hash, cb){
 
-        pandoraProtocolNode.storage.getItem('pandoraBoxes:box:hash:'+hash, (err, out)=>{
+        kademliaNode.storage.getItem('pandoraBoxes:box:hash:'+hash, (err, out)=>{
 
             if (err) return cb(err);
             if (!out) return cb(new Error('PandoraBox was not found by hash'))
@@ -193,7 +193,7 @@ module.exports = class PandoraBox extends EventEmitter {
             const json = JSON.parse(out);
 
             const decoded = bencode.decode( Buffer.from( json.encoded, 'base64') );
-            const box = PandoraBox.fromArray( pandoraProtocolNode, decoded ) ;
+            const box = PandoraBox.fromArray( kademliaNode, decoded ) ;
             box.absolutePath = json.absolutePath;
 
             async.eachLimit( box.streams, 1, ( stream, next ) => {

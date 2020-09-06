@@ -2,9 +2,9 @@ const PandoraBoxStreamlinerWorker = require('./pandora-box-streamliner-worker')
 
 module.exports = class PandoraBoxStreamlinerWorkers {
 
-    constructor(pandoraProtocolNode, pandoraBox, pandoraBoxStreamliner) {
+    constructor(kademliaNode, pandoraBox, pandoraBoxStreamliner) {
 
-        this._pandoraProtocolNode = pandoraProtocolNode;
+        this._kademliaNode = kademliaNode;
         this._pandoraBox = pandoraBox;
         this._pandoraBoxStreamliner = pandoraBoxStreamliner;
 
@@ -39,6 +39,8 @@ module.exports = class PandoraBoxStreamlinerWorkers {
 
     removeWorker(worker){
 
+        worker.stop();
+
         worker.peer.worker = null;
         delete worker.peer.worker;
 
@@ -69,27 +71,18 @@ module.exports = class PandoraBoxStreamlinerWorkers {
                     const peer = this._pandoraBoxStreamliner.peers[i];
                     if (!peer.worker) {
 
-                        const worker = new PandoraBoxStreamlinerWorker(this._pandoraProtocolNode, this._pandoraBox, this._pandoraBoxStreamliner, peer);
+                        const worker = new PandoraBoxStreamlinerWorker(this._kademliaNode, this._pandoraBox, this._pandoraBoxStreamliner, this, peer);
 
                         this._workers.push(worker);
                         peer.worker = worker;
 
-                        worker.connect((err, out) => {
-
-                            if (err || !out)
-                                this.removeWorker(worker);
-                            else
-                                worker.start();
-
-                        });
+                        worker.connect(()=>{});
                     }
                 }
 
             //close if we have more
-            for (let i = this._workersCount; i < this._workers.length; i++)
-                this._workers[i].stop();
-
-            this._workers.splice(this._workersCount);
+            for (let i = this._workers.length-1; i >= this._workersCount; i--)
+                this.removeWorker(this._workers[i])
 
         }
     }

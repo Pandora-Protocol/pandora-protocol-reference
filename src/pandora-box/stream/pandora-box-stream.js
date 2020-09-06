@@ -85,7 +85,7 @@ module.exports = class PandoraBoxStream {
 
     setPandoraBox(pandoraBox){
         this._pandoraBox = pandoraBox;
-        this._pandoraProtocolNode = pandoraBox._pandoraProtocolNode;
+        this._kademliaNode = pandoraBox._kademliaNode;
     }
 
     toArray(){
@@ -97,8 +97,8 @@ module.exports = class PandoraBoxStream {
     }
 
     get absolutePath(){
-        const abs = ( !this._pandoraBox.absolutePath ) ? this._pandoraProtocolNode.locations._prefix + this._pandoraBox.name : this._pandoraBox.absolutePath;
-        return this._pandoraProtocolNode.locations.trailingSlash( abs  ).slice(0, -1) + this.path;
+        const abs = ( !this._pandoraBox.absolutePath ) ? this._kademliaNode.locations._prefix + this._pandoraBox.name : this._pandoraBox.absolutePath;
+        return this._kademliaNode.locations.trailingSlash( abs  ).slice(0, -1) + this.path;
     }
 
     get calculateIsDone(){
@@ -153,11 +153,11 @@ module.exports = class PandoraBoxStream {
             statusChunks: this.statusChunks,
             streamStatus: this.streamStatus,
         }
-        this._pandoraProtocolNode.storage.setItem('pandoraBoxes:streams:status:'+this.absolutePath, JSON.stringify(obj), cb );
+        this._kademliaNode.storage.setItem('pandoraBoxes:streams:status:'+this.absolutePath, JSON.stringify(obj), cb );
     }
 
     loadStatus(cb){
-        this._pandoraProtocolNode.storage.getItem('pandoraBoxes:streams:status:'+this.absolutePath, (err, out) => {
+        this._kademliaNode.storage.getItem('pandoraBoxes:streams:status:'+this.absolutePath, (err, out) => {
 
             if (err) return cb(err);
             if (!out) return cb(new Error('Status not found'));
@@ -178,7 +178,7 @@ module.exports = class PandoraBoxStream {
 
     removeStatus(cb){
 
-        this._pandoraProtocolNode.storage.removeItem('pandoraBoxes:streams:status:'+this.absolutePath, cb);
+        this._kademliaNode.storage.removeItem('pandoraBoxes:streams:status:'+this.absolutePath, cb);
 
     }
 
