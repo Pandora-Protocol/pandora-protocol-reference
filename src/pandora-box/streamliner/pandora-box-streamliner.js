@@ -24,6 +24,7 @@ module.exports = class PandoraBoxStreamliner {
         if (this._started) return true;
 
         this._initialized = 0;
+
         this._streamlinerInitializeAsyncInterval = setAsyncInterval(
             next => this._workStreamlinerInitialize(next),
             5*1000,
@@ -37,6 +38,7 @@ module.exports = class PandoraBoxStreamliner {
         this.updateQueueStreams(this._pandoraBox.streams);
         this.workers.start();
 
+        this.initialize(true, ()=>{})
     }
 
     stop(){
@@ -55,10 +57,10 @@ module.exports = class PandoraBoxStreamliner {
 
         const time = new Date().getTime();
 
-        if ( (this._initialized < time - KAD_OPTIONS.T_STORE_GARBAGE_COLLECTOR - Utils.preventConvoy(5 * 1000) ) ||
+        if ( (this._initialized < time - 10*1000 + Utils.preventConvoy(5 * 1000) ) ||
             (!this._pandoraBox.isDone && this._initialized < time - 10*1000 ) ){
 
-            return this.initialize( (err, out)=>{
+            return this.initialize( false,(err, out)=>{
 
                 console.log("initialized", this._pandoraBox._name, this._pandoraBox.hashHex, out);
                 next();
@@ -71,8 +73,6 @@ module.exports = class PandoraBoxStreamliner {
 
     }
 
-
-
     updateQueueStreams(streams, priority = 1){
 
         for (const stream of streams)
@@ -82,7 +82,7 @@ module.exports = class PandoraBoxStreamliner {
                     priority,
                 })
 
-        this.queue.sort((a,b)=>a.priority - b.priority);
+        this.queue.sort((a,b) => a.priority - b.priority);
 
     }
 
@@ -124,7 +124,7 @@ module.exports = class PandoraBoxStreamliner {
 
     }
 
-    initialize(cb){
+    initialize(force, cb){
 
         this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox, (err, out)=> {
 
@@ -135,10 +135,12 @@ module.exports = class PandoraBoxStreamliner {
                 if (peers && peers.length)
                     this.addPeers(peers);
 
+                if (force)
+                    this.workers.refreshWorkers();
+
                 this._kademliaNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox, undefined, undefined, (err, out2)=>{
 
                     this._initialized = new Date().getTime();
-                    this.workers.refreshWorkers();
 
                     if (err) return cb(err, null);
                     else cb(null, true);
@@ -281,9 +283,9 @@ module.exports = class PandoraBoxStreamliner {
                                                 chunkIndex: undoneChunk.index
                                             });
 
-                                        }catch(err){
+                                        }catch (err) {
                                             console.error(err);
-                                        } finally{
+                                        } finally {
                                             next();
                                         }
 

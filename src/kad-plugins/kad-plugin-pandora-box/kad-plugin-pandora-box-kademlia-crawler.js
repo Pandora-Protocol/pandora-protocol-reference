@@ -39,7 +39,7 @@ module.exports = function(options){
             if (pandoraBox instanceof PandoraBox) pandoraBox = pandoraBox.hash;
             if (!Buffer.isBuffer(pandoraBox)) return cb(new Error('PandoraBox needs to be hash'));
 
-            if ( new Date().getTime()/1000 - contact.timestamp >= KAD_OPTIONS.PLUGINS.CONTACT_SPARTACUS.T_CONTACT_TIMESTAMP_DIFF_UPDATE )
+            if ( (new Date().getTime()/1000 - contact.timestamp) >= KAD_OPTIONS.PLUGINS.CONTACT_SPARTACUS.T_CONTACT_TIMESTAMP_DIFF_UPDATE )
                 contact.contactUpdated();
 
             const signature = contact.sign( pandoraBox );

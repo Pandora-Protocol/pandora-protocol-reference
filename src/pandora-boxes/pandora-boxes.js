@@ -32,6 +32,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
     }
 
     startStreamlining(){
+
         if (this._startedStreamlining) return false;
         this._startedStreamlining = true;
 
@@ -43,6 +44,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
     }
 
     stopStreamlining(){
+
         if (!this._startedStreamlining) return false;
         this._startedStreamlining = false;
 

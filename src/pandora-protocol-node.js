@@ -49,7 +49,7 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
             if (err) return cb(err);
 
-            pandoraBox.streamliner.initialize((err, out)=>{
+            pandoraBox.streamliner.initialize(true, (err, out)=>{
 
                 if (err) return cb(err);
 

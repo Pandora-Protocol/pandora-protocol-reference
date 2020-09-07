@@ -39,8 +39,10 @@ module.exports = function (options){
                     return false;
 
                 const decoded = bencode.decode( value );
-                const contact = this._kademliaNode.createContact( decoded[0] )
-                if (!contact.verify( treeKey, decoded[1] )) return false;
+                const contact = this._kademliaNode.createContact( decoded[0] );
+
+                if ( score > contact.timestamp ) return false;
+                if ( !contact.verify( treeKey, decoded[1] ) ) return false;
 
                 return true;
 
