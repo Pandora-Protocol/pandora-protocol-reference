@@ -253,11 +253,9 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             const finalName = name;
             const finalDescription = description;
 
-            const hash = PandoraBoxHelper.computePandoraBoxHash(version, finalName, finalDescription, streams);
-            const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, finalDescription, hash, streams );
-
-            for (const stream of pandoraBox.streams)
-                stream.setPandoraBox(pandoraBox);
+            const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams )
+            const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, finalDescription, streamsHash, streams );
+            pandoraBox.streamsSetPandoraBox();
 
             async.eachLimit( selectedStreams, 1, (selectedStream, next) =>{
 

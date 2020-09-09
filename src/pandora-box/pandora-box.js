@@ -3,30 +3,24 @@ const PandoraBoxStream = require('./stream/pandora-box-stream')
 const PandoraBoxStreamliner = require('./streamliner/pandora-box-streamliner')
 const EventEmitter = require('events')
 const PandoraBoxStreamType = require('./stream/pandora-box-stream-type')
+
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
 const async = require('pandora-protocol-kad-reference').library.async;
+const PandoraBoxBasic = require('./pandora-box-basic')
 
-module.exports = class PandoraBox extends EventEmitter {
+module.exports = class PandoraBox extends PandoraBoxBasic {
 
-    constructor(kademliaNode, absolutePath, version, name, description, hash, streams) {
+    constructor ( kademliaNode, absolutePath, version, name, description, streamsHash, streams ) {
 
-        super();
-
-        this._kademliaNode = kademliaNode;
-
-        for (let i=0; i < streams.length; i++)
-            if ( !(streams[i] instanceof PandoraBoxStream) )
-                streams[i] = PandoraBoxStream.fromArray(this, streams[i] );
-
-        PandoraBoxHelper.validatePandoraBox(version, name, description, hash, streams);
+        super(kademliaNode, version, name, description, streamsHash )
 
         this.absolutePath = absolutePath;
+        this._kademliaNode = kademliaNode;
+        this.events = new EventEmitter();
 
-        this._version = version;
-        this._name = name;
-        this._description = description;
-        this._hash = hash;
-        this._hashHex = hash.toString('hex')
+        PandoraBoxHelper.validatePandoraBox(streamsHash, streams);
+
+        this.absolutePath = absolutePath;
 
         this._streams = streams;
 
@@ -36,26 +30,12 @@ module.exports = class PandoraBox extends EventEmitter {
 
         this.chunksTotal = this._calculateChunksTotal(false);
         this.chunksTotalAvailable = this._calculateChunksTotal(true);
+
     }
 
-    get version(){
-        return this._version;
-    }
-
-    get name(){
-        return this._name;
-    }
-
-    get description(){
-        return this._description;
-    }
-
-    get hash(){
-        return this._hash;
-    }
-
-    get hashHex(){
-        return this._hashHex;
+    streamsSetPandoraBox(){
+        for (const stream of this.streams)
+            stream.setPandoraBox(this);
     }
 
     get streams(){
@@ -74,11 +54,13 @@ module.exports = class PandoraBox extends EventEmitter {
 
         let chunksTotal = 0;
         for (const stream of this.streams) {
+
             if (stream.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM  )
                 if ( !done )
                     chunksTotal += stream.chunksCount;
                 else
                     chunksTotal += stream.chunksDone;
+
         }
 
         return chunksTotal;
@@ -86,18 +68,24 @@ module.exports = class PandoraBox extends EventEmitter {
 
     toArray(){
         const streams = this.streams.map( it => it.toArray() );
-        return [ this.version, this.name, this.description, this.hash, streams ];
+        return [ this.version, this.name, this.description, streams ];
     }
 
     static fromArray(kademliaNode, arr){
-        return new PandoraBox(kademliaNode, '', arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3], arr[4] );
+
+        const streams = PandoraBoxHelper.createPandoraBoxStreams( null, arr[3] );
+        const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams  );
+
+        const pandoraBox = new PandoraBox(kademliaNode, '', arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), streamsHash, arr[3] );
+        pandoraBox.streamsSetPandoraBox();
+
+        return pandoraBox;
     }
 
     toJSON(){
         return {
             name: this.name,
             description: this.description,
-            hash: this.hash.toString('hex'),
             streams: this.streams.map( it => it.toJSON() ),
         }
     }

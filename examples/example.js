@@ -73,14 +73,14 @@ async.eachLimit( array, 1, (index, next ) => {
 
                     if (err) return console.error(err);
 
-                    out.pandoraBox.on("stream-chunk/done", (data)=>{
+                    out.pandoraBox.events.on("stream-chunk/done", (data)=>{
 
                         if (data.chunkIndex % 100 === 0)
                             console.log(data.stream.path, data.chunkIndex);
 
                     });
 
-                    out.pandoraBox.on("streamliner/done", (data)=>{
+                    out.pandoraBox.events.on("streamliner/done", (data)=>{
                         console.log("streamliner done!");
                     })
 
