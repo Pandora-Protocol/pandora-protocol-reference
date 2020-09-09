@@ -1,12 +1,12 @@
 const PandoraBoxHelper = require('./pandora-box-helper')
 
-module.exports = class PandoraBoxBasic {
+module.exports = class PandoraBoxMeta {
 
     constructor(kademliaNode, version, name, description, streamsHash) {
 
         this._kademliaNode = kademliaNode;
 
-        PandoraBoxHelper.validatePandoraBoxBasic(version, name, description, streamsHash);
+        PandoraBoxHelper.validatePandoraBoxMeta(version, name, description, streamsHash);
 
         this._version = version;
         this._name = name;
@@ -48,7 +48,7 @@ module.exports = class PandoraBoxBasic {
     }
 
     static fromArray(kademliaNode, arr){
-        return new PandoraBoxBasic(kademliaNode, '', arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3] );
+        return new PandoraBoxMeta(kademliaNode, '', arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3] );
     }
 
     toJSON(){

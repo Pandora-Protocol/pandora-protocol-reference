@@ -6,9 +6,9 @@ const PandoraBoxStreamType = require('./stream/pandora-box-stream-type')
 
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
 const async = require('pandora-protocol-kad-reference').library.async;
-const PandoraBoxBasic = require('./pandora-box-basic')
+const PandoraBoxMeta = require('./pandora-box-meta')
 
-module.exports = class PandoraBox extends PandoraBoxBasic {
+module.exports = class PandoraBox extends PandoraBoxMeta {
 
     constructor ( kademliaNode, absolutePath, version, name, description, streamsHash, streams ) {
 
@@ -88,6 +88,11 @@ module.exports = class PandoraBox extends PandoraBoxBasic {
             description: this.description,
             streams: this.streams.map( it => it.toJSON() ),
         }
+    }
+
+    convertToPandoraBoxMeta(){
+        const pandoraBoxMeta = new PandoraBoxMeta(this._kademliaNode, this.version, this.name, this.description, this.streamsHash);
+        return pandoraBoxMeta;
     }
 
     get percent(){

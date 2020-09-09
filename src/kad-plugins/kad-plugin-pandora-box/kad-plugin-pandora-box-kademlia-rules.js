@@ -1,5 +1,6 @@
 const PandoraBox = require('../../pandora-box/pandora-box')
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
+const PandoraBoxMeta = require('../../pandora-box/pandora-box-meta')
 
 module.exports = function (options){
 
@@ -19,6 +20,11 @@ module.exports = function (options){
             this._allowedStoreSortedListTables.peers = {
                 validation: this.validatePeer.bind(this),
                 expiry: PANDORA_PROTOCOL_OPTIONS.T_STORE_PEER_KEY_EXPIRY,
+            };
+
+            this._allowedStoreSortedListTables.name = {
+                validation: this.validateName.bind(this),
+                expiry: PANDORA_PROTOCOL_OPTIONS.T_STORE_KEY_EXPIRY,
             };
 
         }
@@ -55,6 +61,19 @@ module.exports = function (options){
             }catch(err){
             }
 
+        }
+
+        validateName(srcContact, [table, key, value]){
+            try{
+
+                const decoded = bencode.decode( value );
+
+                const pandoraBoxMeta = PandoraBoxMeta.fromArray(this._kademliaNode, bencode.decode( decoded[0] )  );
+                if (!pandoraBoxMeta.hash.equals(key)) return false;
+
+            }catch(err){
+
+            }
         }
 
     }

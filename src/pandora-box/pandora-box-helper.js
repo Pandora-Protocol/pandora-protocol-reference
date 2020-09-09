@@ -31,7 +31,7 @@ module.exports.computePandoraBoxStreamsHash = function ( streams ){
 
 }
 
-module.exports.validatePandoraBoxBasic = function (version, name, description, streamsHash){
+module.exports.validatePandoraBoxMeta = function (version, name, description, streamsHash){
 
     if (typeof version !== "string" || !version.length ) throw Error('Invalid PandoraBox version type');
     if (version !== PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_VERSION) throw "Invalid PandoraBox version";
