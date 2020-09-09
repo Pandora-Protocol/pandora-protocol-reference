@@ -38,7 +38,7 @@ module.exports = class PandoraBoxStreamliner {
         this.updateQueueStreams(this._pandoraBox.streams);
         this.workers.start();
 
-        this.initialize(true, ()=>{})
+        this.initialize( ()=>{})
     }
 
     stop(){
@@ -60,7 +60,7 @@ module.exports = class PandoraBoxStreamliner {
         if ( (this._initialized < time - 10*1000 + Utils.preventConvoy(5 * 1000) ) ||
             (!this._pandoraBox.isDone && this._initialized < time - 10*1000 ) ){
 
-            return this.initialize( false,(err, out)=>{
+            return this.initialize( (err, out)=>{
 
                 console.log("initialized", this._pandoraBox._name, this._pandoraBox.hashHex, out);
                 next();
@@ -124,7 +124,7 @@ module.exports = class PandoraBoxStreamliner {
 
     }
 
-    initialize(force, cb){
+    initialize( cb ){
 
         this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox, (err, out)=> {
 
@@ -135,8 +135,7 @@ module.exports = class PandoraBoxStreamliner {
                 if (peers && peers.length)
                     this.addPeers(peers);
 
-                if (force)
-                    this.workers.refreshWorkers();
+                this.workers.refreshWorkers();
 
                 this._kademliaNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox, undefined, undefined, (err, out2)=>{
 

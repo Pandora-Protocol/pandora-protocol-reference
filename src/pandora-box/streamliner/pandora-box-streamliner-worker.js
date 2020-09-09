@@ -1,6 +1,5 @@
 const {setAsyncInterval, clearAsyncInterval} = require('pandora-protocol-kad-reference').helpers.AsyncInterval;
 
-
 module.exports = class PandoraBoxStreamlinerWorker {
 
     constructor( kademliaNode, pandoraBox, pandoraBoxStreamliner, pandoraBoxStreamlinerWorkers, peer ) {
@@ -17,8 +16,12 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
     connect(cb){
 
+        console.log("establishing connection", this.peer.contact, this.peer.contact.rendezvousContact ? this.peer.contact.rendezvousContact.identityHex : '');
+
         //establish connection
         this._kademliaNode.rules.establishConnection( this.peer.contact,  ( err, connection )=>{
+
+            console.log("establishing connection answer", err, connection );
 
             if (err || !connection)
                 this._pandoraBoxStreamlinerWorkers.removeWorker(this);

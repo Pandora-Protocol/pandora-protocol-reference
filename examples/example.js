@@ -66,8 +66,8 @@ async.eachLimit( array, 1, (index, next ) => {
             },
             (err, out )=>{
 
-                console.info('pandora box hash', out.pandoraBox.hash.toString('hex'))
                 if (err) return console.error(err);
+                console.info('pandora box hash', out.pandoraBox.hash.toString('hex'))
 
                 nodes[4].getPandoraBox( out.pandoraBox.hash, (err, out )=>{
 
