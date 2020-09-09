@@ -1,4 +1,5 @@
 const {setAsyncInterval, clearAsyncInterval} = require('pandora-protocol-kad-reference').helpers.AsyncInterval;
+
 const {Utils} = require('pandora-protocol-kad-reference').helpers;
 const PandoraBoxStreamType = require('./../stream/pandora-box-stream-type')
 const CryptoHelpers = require('../../helpers/crypto-helpers')
@@ -32,13 +33,14 @@ module.exports = class PandoraBoxStreamliner {
 
         this._started = true;
 
-        if (this._pandoraBox.isDone) return true;
-
         this.queue = [];
-        this.updateQueueStreams(this._pandoraBox.streams);
+
+        if (!this._pandoraBox.isDone)
+            this.updateQueueStreams(this._pandoraBox.streams);
+
         this.workers.start();
 
-        this.initialize( ()=>{})
+        this.initialize( ()=>{ })
     }
 
     stop(){
@@ -57,8 +59,7 @@ module.exports = class PandoraBoxStreamliner {
 
         const time = new Date().getTime();
 
-        if ( (this._initialized < time - 10*1000 + Utils.preventConvoy(5 * 1000) ) ||
-            (!this._pandoraBox.isDone && this._initialized < time - 10*1000 ) ){
+        if ( this._initialized < time - KAD_OPTIONS.T_REPLICATE_TO_NEW_NODE_EXPIRY + Utils.preventConvoy( KAD_OPTIONS.T_REPLICATE_TO_NEW_NODE_EXPIRY_CONVOY )  ){
 
             return this.initialize( (err, out)=>{
 
@@ -72,6 +73,7 @@ module.exports = class PandoraBoxStreamliner {
         next();
 
     }
+
 
     updateQueueStreams(streams, priority = 1){
 
@@ -130,27 +132,16 @@ module.exports = class PandoraBoxStreamliner {
 
             if (err) return cb(err, null);
 
-            this._kademliaNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox, (err, peers ) => {
-
-                if (peers && peers.length)
-                    this.addPeers(peers);
-
-                this.workers.refreshWorkers();
-
-                this._kademliaNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox, undefined, undefined, (err, out2)=>{
-
-                    this._initialized = new Date().getTime();
-
-                    if (err) return cb(err, null);
-                    else cb(null, true);
-
-                });
-
-            } );
+            this._initialized = new Date().getTime();
+            this.workers.initializeWorkers(()=>{
+                cb(null, true)
+            })
 
         });
 
     }
+
+
 
     work(worker, next){
 

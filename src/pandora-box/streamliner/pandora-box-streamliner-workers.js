@@ -1,4 +1,6 @@
 const PandoraBoxStreamlinerWorker = require('./pandora-box-streamliner-worker')
+const {setAsyncInterval, clearAsyncInterval} = require('pandora-protocol-kad-reference').helpers.AsyncInterval;
+const Utils = require('pandora-protocol-kad-reference').helpers.Utils;
 
 module.exports = class PandoraBoxStreamlinerWorkers {
 
@@ -15,11 +17,22 @@ module.exports = class PandoraBoxStreamlinerWorkers {
     }
 
     start(){
-        this.workersCount = 20;
+
+        if (!this._pandoraBox.isDone)
+            this.workersCount = 20;
+        else
+            this.workersCount = 0;
+
+        this._streamlinerInitializeWorkersAsyncInterval = setAsyncInterval(
+            next => this._workStreamlinerInitializeWorkers(next),
+            5*1000,
+        );
+
     }
 
     stop(){
         this.workersCount = 0;
+        clearAsyncInterval(this._streamlinerInitializeWorkersAsyncInterval);
     }
 
     get workersWorkingCount(){
@@ -58,6 +71,7 @@ module.exports = class PandoraBoxStreamlinerWorkers {
 
     }
 
+
     refreshWorkers(){
 
         if ( !this._pandoraBoxStreamliner._started || this._pandoraBoxStreamliner.isDone ){
@@ -86,6 +100,45 @@ module.exports = class PandoraBoxStreamlinerWorkers {
                 this.removeWorker(this._workers[i])
 
         }
+    }
+
+
+    _workStreamlinerInitializeWorkers(next){
+
+        const time = new Date().getTime();
+
+        if ( this._initialized < time - PANDORA_PROTOCOL_OPTIONS.T_STORE_PEER_KEY_EXPIRY - Utils.preventConvoy( PANDORA_PROTOCOL_OPTIONS.T_STORE_PEER_KEY_EXPIRY_CONVOY ) )
+            return this.initializeWorkers( (err, out)=>{
+
+                console.log("initialized workers", this._pandoraBox._name, this._pandoraBox.hashHex, out);
+                next();
+
+            } )
+
+        next();
+
+    }
+
+    initializeWorkers(cb){
+
+        this._kademliaNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox, (err, peers ) => {
+
+            if (peers && peers.length)
+                this._pandoraBoxStreamliner.addPeers(peers);
+
+            this.refreshWorkers();
+
+            this._kademliaNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox, undefined, undefined, (err, out2)=>{
+
+                if (err) return cb(err, null);
+
+                this._initialized = new Date().getTime();
+                cb(null, true);
+
+            });
+
+        } );
+
     }
 
 }

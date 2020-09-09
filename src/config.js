@@ -2,4 +2,7 @@ module.exports = {
 
     PANDORA_BOX_VERSION: '0.1',
 
+    T_STORE_PEER_KEY_EXPIRY: 30*1000,
+    T_STORE_PEER_KEY_EXPIRY_CONVOY: 10*1000,
+
 }

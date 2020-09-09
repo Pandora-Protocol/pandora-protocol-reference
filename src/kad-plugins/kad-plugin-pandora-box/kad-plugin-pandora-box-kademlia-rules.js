@@ -10,10 +10,16 @@ module.exports = function (options){
             super(...arguments);
 
             delete this._allowedStoreTables[''];
-            this._allowedStoreTables.box = this.validatePandoraBox.bind(this);
+            this._allowedStoreTables.box = {
+                validation: this.validatePandoraBox.bind(this),
+                expiry: KAD_OPTIONS.T_STORE_KEY_EXPIRY,
+            };
 
             delete this._allowedStoreSortedListTables[''];
-            this._allowedStoreSortedListTables.peers = this.validatePeer.bind(this);
+            this._allowedStoreSortedListTables.peers = {
+                validation: this.validatePeer.bind(this),
+                expiry: PANDORA_PROTOCOL_OPTIONS.T_STORE_PEER_KEY_EXPIRY,
+            };
 
         }
 
