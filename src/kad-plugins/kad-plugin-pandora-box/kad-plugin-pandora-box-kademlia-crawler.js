@@ -1,8 +1,11 @@
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
 const PandoraBox = require('./../../pandora-box/pandora-box')
-
+const PandoraBoxMetaHelper = require('../../pandora-box/meta/pandora-box-meta-helper')
+const SubsetsHelper = require('./../../helpers/subsets-helper')
 const tableBox =  Buffer.from('box', 'ascii');
 const tablePeers =  Buffer.from('peers', 'ascii');
+const async = require('pandora-protocol-kad-reference').library.async;
+const { CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = function(options){
 
@@ -45,7 +48,6 @@ module.exports = function(options){
             const signature = contact.sign( pandoraBox );
 
             this.iterativeStoreSortedListValue( tablePeers, pandoraBox, contact.identity, bencode.encode( [ contact.toArray(), signature] ), contact.timestamp, cb);
-
         }
 
         iterativeFindPandoraBoxPeersList( pandoraBox, cb){
@@ -89,6 +91,48 @@ module.exports = function(options){
             });
         }
 
+        iterativeStorePandoraBoxName( pandoraBoxMeta, cb ){
+
+            if (pandoraBoxMeta instanceof PandoraBox) pandoraBoxMeta = pandoraBoxMeta.convertToPandoraBoxMeta();
+
+            const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);
+            const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name).slice(0, PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_FIND_BY_NAME_MAX_WORDS );
+
+            const subsets = SubsetsHelper.generatePowerSet(words);
+
+            const pandoraBoxMetaArray = pandoraBoxMeta.toArray();
+
+            const array = new Array(subsets.length).fill(1).map( (it, index) => index)
+            const out = [];
+
+            async.eachLimit(  array, 1, ( index, next) => {
+
+                const subset = subsets[index];
+
+                const v = [];
+
+                for (const index of subset)
+                    v.push( words[ index ] );
+
+                const s = v.join(' ');
+                const hash = CryptoUtils.sha26(Buffer.from(s));
+
+                this.iterativeStoreSortedListValue( tablePeers, hash, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMetaArray, subset] ), 0, (err, out) => {
+                    if (err) return next(err);
+                    out[index] = out;
+                    next();
+                });
+
+
+            }, (err, out)=>{
+
+                if (err) return cb(err);
+                cb(null, out);
+
+            });
+
+
+        }
 
 
     }
