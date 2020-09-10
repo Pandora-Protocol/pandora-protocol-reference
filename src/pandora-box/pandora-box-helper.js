@@ -1,19 +1,7 @@
 const {createHash} = require('crypto')
 const PandoraBoxStream = require('../pandora-box/stream/pandora-box-stream')
 
-module.exports.computePandoraBoxHash = function (version, name, description, streamsHash){
 
-    const sum = createHash('sha256');
-
-    sum.update(Buffer.from(version, 'ascii'));
-    sum.update(Buffer.from(name, 'ascii'));
-    sum.update(Buffer.from(description, 'ascii'));
-
-    sum.update(Buffer.from(streamsHash, 'ascii'))
-
-    return sum.digest();
-
-}
 
 module.exports.computePandoraBoxStreamsHash = function ( streams ){
 
@@ -28,18 +16,6 @@ module.exports.computePandoraBoxStreamsHash = function ( streams ){
     }
 
     return sum.digest();
-
-}
-
-module.exports.validatePandoraBoxMeta = function (version, name, description, streamsHash){
-
-    if (typeof version !== "string" || !version.length ) throw Error('Invalid PandoraBox version type');
-    if (version !== PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_VERSION) throw "Invalid PandoraBox version";
-
-    if (typeof name !== "string" || name.length < 5 || name.length > 255) throw Error('Invalid PandoraBox name');
-    if (typeof description !== "string" || description.length > 4*1024) throw Error('Invalid PandoraBox description');
-
-    if ( !Buffer.isBuffer(streamsHash) || streamsHash.length !== KAD_OPTIONS.NODE_ID_LENGTH ) throw Error('Invalid PandoraBox hash');
 
 }
 

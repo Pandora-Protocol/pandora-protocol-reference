@@ -1,8 +1,7 @@
 const {setAsyncInterval, clearAsyncInterval} = require('pandora-protocol-kad-reference').helpers.AsyncInterval;
 
-const {Utils} = require('pandora-protocol-kad-reference').helpers;
+const {Utils, CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
 const PandoraBoxStreamType = require('./../stream/pandora-box-stream-type')
-const CryptoHelpers = require('../../helpers/crypto-helpers')
 const PandoraBoxStreamStatus = require('./../stream/pandora-box-stream-status')
 const PandoraBoxStreamlinerWorkers = require('./pandora-box-streamliner-workers')
 
@@ -227,7 +226,7 @@ module.exports = class PandoraBoxStreamliner {
                                         throw "invalid chunk"
 
                                     //verify hash
-                                    const newHash = CryptoHelpers.sha256(buffer);
+                                    const newHash = CryptoUtils.sha256(buffer);
                                     if ( !newHash.equals( it.stream.chunks[undoneChunk.index] ))
                                         throw "hash is invalid"
 

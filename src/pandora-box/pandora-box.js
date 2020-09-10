@@ -6,7 +6,7 @@ const PandoraBoxStreamType = require('./stream/pandora-box-stream-type')
 
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
 const async = require('pandora-protocol-kad-reference').library.async;
-const PandoraBoxMeta = require('./pandora-box-meta')
+const PandoraBoxMeta = require('./meta/pandora-box-meta')
 
 module.exports = class PandoraBox extends PandoraBoxMeta {
 

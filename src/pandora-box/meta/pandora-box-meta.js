@@ -1,4 +1,4 @@
-const PandoraBoxHelper = require('./pandora-box-helper')
+const PandoraBoxMetaHelper = require('./pandora-box-meta-helper')
 
 module.exports = class PandoraBoxMeta {
 
@@ -6,14 +6,14 @@ module.exports = class PandoraBoxMeta {
 
         this._kademliaNode = kademliaNode;
 
-        PandoraBoxHelper.validatePandoraBoxMeta(version, name, description, streamsHash);
+        PandoraBoxMetaHelper.validatePandoraBoxMeta(version, name, description, streamsHash);
 
         this._version = version;
         this._name = name;
         this._description = description;
         this._streamsHash = streamsHash;
 
-        this._hash = PandoraBoxHelper.computePandoraBoxHash(version, name, description, streamsHash);
+        this._hash = PandoraBoxMetaHelper.computePandoraBoxMetaHash(version, name, description, streamsHash);
         this._hashHex = this._hash.toString('hex');
 
     }
