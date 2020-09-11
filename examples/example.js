@@ -57,7 +57,7 @@ async.eachLimit( array, 1, (index, next ) => {
 
         console.log('NODES BOOTSTRAPPED');
 
-        nodes[3].seedPandoraBox( './examples/public/data1',  'Example1', 'Example1 Description',  undefined,
+        nodes[3].seedPandoraBox( './examples/public/data1',  'Example 1 box simple', 'Example1 Description',  undefined,
             (err, out) => {
 
                 if (out.chunkIndex % 100 === 0)

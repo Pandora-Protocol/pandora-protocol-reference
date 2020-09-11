@@ -40,6 +40,7 @@ module.exports = class PandoraBoxStreamliner {
         this.workers.start();
 
         this.initialize( ()=>{ })
+
     }
 
     stop(){
@@ -131,10 +132,14 @@ module.exports = class PandoraBoxStreamliner {
 
             if (err) return cb(err, null);
 
-            this._initialized = new Date().getTime();
-            this.workers.initializeWorkers(()=>{
+            this._kademliaNode.crawler.iterativeStorePandoraBoxName( this._pandoraBox, (err, out )=> {
+
+                if (err) return cb(err, null);
+
+                this._initialized = new Date().getTime();
                 cb(null, true)
-            })
+
+            } )
 
         });
 

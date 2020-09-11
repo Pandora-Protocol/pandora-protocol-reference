@@ -75,7 +75,7 @@ module.exports = function (options){
 
                 const decoded = bencode.decode( value );
 
-                const pandoraBoxMeta = PandoraBoxMeta.fromArray(this._kademliaNode, bencode.decode( decoded[0] )  );
+                const pandoraBoxMeta = PandoraBoxMeta.fromArray(this._kademliaNode, decoded[0] );
                 if (!pandoraBoxMeta.hash.equals(key)) return false;
 
                 const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);
@@ -94,7 +94,7 @@ module.exports = function (options){
                 if (!v.length) return false;
 
                 const s = v.join(' ');
-                const hash = CryptoUtils.sha26(Buffer.from(s));
+                const hash = CryptoUtils.sha256(Buffer.from(s));
                 if (!masterKey.equals(hash)) return false;
 
                 return true;

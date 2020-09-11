@@ -8,7 +8,7 @@ module.exports.generatePowerSet = function (array) {
         var subset = [];
         for (var j = 0; j < array.length; j++)
             if (i & (1 << j))
-                subset.push(array[j]);
+                subset.push(j);
 
         result.push(subset);
     }

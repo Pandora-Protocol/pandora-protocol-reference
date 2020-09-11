@@ -48,7 +48,7 @@ module.exports = class PandoraBoxMeta {
     }
 
     static fromArray(kademliaNode, arr){
-        return new PandoraBoxMeta(kademliaNode, '', arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3] );
+        return new PandoraBoxMeta(kademliaNode, arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), arr[3] );
     }
 
     toJSON(){

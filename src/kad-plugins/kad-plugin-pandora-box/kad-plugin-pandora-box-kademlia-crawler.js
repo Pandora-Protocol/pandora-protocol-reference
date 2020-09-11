@@ -4,6 +4,8 @@ const PandoraBoxMetaHelper = require('../../pandora-box/meta/pandora-box-meta-he
 const SubsetsHelper = require('./../../helpers/subsets-helper')
 const tableBox =  Buffer.from('box', 'ascii');
 const tablePeers =  Buffer.from('peers', 'ascii');
+const tableName =  Buffer.from('name', 'ascii');
+
 const async = require('pandora-protocol-kad-reference').library.async;
 const { CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
 
@@ -101,7 +103,7 @@ module.exports = function(options){
             const pandoraBoxMetaArray = pandoraBoxMeta.toArray();
 
             const array = new Array(subsets.length).fill(1).map( (it, index) => index)
-            const out = [];
+            const output = [];
 
             async.eachLimit(  array, 1, ( index, next) => {
 
@@ -113,11 +115,11 @@ module.exports = function(options){
                     v.push( words[ index ] );
 
                 const s = v.join(' ');
-                const hash = CryptoUtils.sha26(Buffer.from(s));
+                const hash = CryptoUtils.sha256(Buffer.from(s));
 
-                this.iterativeStoreSortedListValue( tablePeers, hash, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMetaArray, subset] ), 0, (err, out) => {
+                this.iterativeStoreSortedListValue( tableName, hash, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMetaArray, subset] ), 0, (err, out) => {
                     if (err) return next(err);
-                    out[index] = out;
+                    output[index] = out;
                     next();
                 });
 
@@ -125,7 +127,7 @@ module.exports = function(options){
             }, (err, out)=>{
 
                 if (err) return cb(err);
-                cb(null, out);
+                cb(null, output);
 
             });
 
