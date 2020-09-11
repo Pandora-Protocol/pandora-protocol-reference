@@ -19,6 +19,8 @@ module.exports = function (options){
             this._allowedStoreTables.box = {
                 validation: this.validatePandoraBox.bind(this),
                 expiry: KAD_OPTIONS.T_STORE_KEY_EXPIRY,
+                onlyOne: true,
+                immutable: true,
             };
 
             this._allowedStoreSortedListTables.peers = {
@@ -33,12 +35,14 @@ module.exports = function (options){
 
         }
 
-        validatePandoraBox(srcContact, [table, key, value]){
+        validatePandoraBox(srcContact, self, [table, masterKey, key, value], old){
 
             try {
 
+                if (key.length) return false; //already have it
+
                 const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( value )  );
-                if (!pandoraBox.hash.equals(key)) return false;
+                if (!pandoraBox.hash.equals(masterKey)) return false;
 
                 return true;
 
@@ -47,18 +51,17 @@ module.exports = function (options){
 
         }
 
-        validatePeer(srcContact, [table, treeKey, key, value, score] ){
+        validatePeer(srcContact, self, [table, masterKey, key, value, score], old ){
 
             try{
 
-                if ( score >= new Date().getTime()/1000 + KAD_OPTIONS.PLUGINS.CONTACT_SPARTACUS.T_CONTACT_TIMESTAMP_MAX_DRIFT )
-                    return false;
+                if ( old && old.score > score ) return false;
 
                 const decoded = bencode.decode( value );
                 const contact = this._kademliaNode.createContact( decoded[0] );
 
                 if ( score > contact.timestamp ) return false;
-                if ( !contact.verify( treeKey, decoded[1] ) ) return false;
+                if ( !contact.verify( masterKey, decoded[1] ) ) return false;
 
                 return true;
 
@@ -67,7 +70,7 @@ module.exports = function (options){
 
         }
 
-        validateName(srcContact, [table, treeKey, key, value, score]){
+        validateName(srcContact, self, [table, masterKey, key, value, score]){
             try{
 
                 const decoded = bencode.decode( value );
@@ -92,7 +95,7 @@ module.exports = function (options){
 
                 const s = v.join(' ');
                 const hash = CryptoUtils.sha26(Buffer.from(s));
-                if (!treeKey.equals(hash)) return false;
+                if (!masterKey.equals(hash)) return false;
 
                 return true;
 

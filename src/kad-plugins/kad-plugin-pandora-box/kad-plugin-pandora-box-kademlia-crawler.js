@@ -12,19 +12,19 @@ module.exports = function(options){
     return class MyCrawler extends options.Crawler {
 
         iterativeStorePandoraBox( pandoraBox, cb ){
-            this.iterativeStoreValue( tableBox, pandoraBox.hash, bencode.encode( pandoraBox.toArray() ), cb);
+            this.iterativeStoreValue( tableBox, pandoraBox.hash, '', bencode.encode( pandoraBox.toArray() ), cb);
         }
 
         iterativeFindPandoraBox( hash, cb ){
 
-            this.iterativeFindValue( tableBox, hash, true, (err, out)=>{
+            this.iterativeFindValue( tableBox, hash, (err, out)=>{
 
                 if (err) return cb(err, null);
 
                 try{
 
                     if (!out.result) throw Error(`PandoraBox couldn't be found`);
-                    const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( out.result.value ) );
+                    const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( out.result.value[''] ) );
 
                     cb(null, pandoraBox);
 
@@ -34,8 +34,6 @@ module.exports = function(options){
 
             });
         }
-
-
 
         iterativeStorePandoraBoxPeer( pandoraBox, contact = this._kademliaNode.contact, date, cb ){
 
@@ -55,7 +53,7 @@ module.exports = function(options){
             if (pandoraBox instanceof PandoraBox) pandoraBox = pandoraBox.hash;
             if (!Buffer.isBuffer(pandoraBox)) return cb(new Error('PandoraBox needs to be hash'));
 
-            this.iterativeFindSortedList( tablePeers, pandoraBox, false, (err, out ) =>{
+            this.iterativeFindSortedList( tablePeers, pandoraBox, (err, out ) =>{
 
                 if (err) return cb(err, null);
 

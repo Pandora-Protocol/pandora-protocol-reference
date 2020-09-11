@@ -1,3 +1,5 @@
+const {createHash} = require('crypto')
+
 module.exports.validatePandoraBoxMeta = function (version, name, description, streamsHash){
 
     if (typeof version !== "string" || !version.length ) throw 'Invalid PandoraBox version type';
