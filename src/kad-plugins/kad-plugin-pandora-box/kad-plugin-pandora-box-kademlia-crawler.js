@@ -1,5 +1,6 @@
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
 const PandoraBox = require('./../../pandora-box/pandora-box')
+const PandoraBoxMeta = require('./../../pandora-box/meta/pandora-box-meta')
 const PandoraBoxMetaHelper = require('../../pandora-box/meta/pandora-box-meta-helper')
 const SubsetsHelper = require('./../../helpers/subsets-helper')
 const tableBox =  Buffer.from('box', 'ascii');
@@ -26,7 +27,7 @@ module.exports = function(options){
                 try{
 
                     if (!out.result) throw Error(`PandoraBox couldn't be found`);
-                    const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( out.result.value[''] ) );
+                    const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( out.result[''].value ) );
 
                     cb(null, pandoraBox);
 
@@ -141,7 +142,29 @@ module.exports = function(options){
 
             const s = words.join(' ');
             const hash = CryptoUtils.sha256(Buffer.from(s));
-            this.iterativeFindSortedList( tableName, hash, cb );
+
+            this.iterativeFindSortedList( tableName, hash, (err, out) =>{
+
+                if (err) return cb(err, null);
+
+                try{
+
+                    if (!out.result) throw Error(`PandoraBox couldn't be found`);
+
+
+                    for (const key in out.result){
+                        const decoded = bencode.decode( out.result[key].value );
+                        const pandoraBoxMeta = PandoraBoxMeta.fromArray(this._kademliaNode, decoded[0]  );
+
+                        out.result[key] = pandoraBoxMeta;
+                    }
+                    cb(null, out );
+
+                }catch(err){
+                    cb(err);
+                }
+
+            } );
 
         }
 

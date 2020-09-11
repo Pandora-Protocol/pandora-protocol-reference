@@ -39,12 +39,12 @@ module.exports = function (options){
 
             try {
 
-                if (key.length) return false; //already have it
+                if (key.length) return null; //already have it
 
                 const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( value )  );
-                if (!pandoraBox.hash.equals(masterKey)) return false;
+                if (!pandoraBox.hash.equals(masterKey)) return null;
 
-                return true;
+                return value;
 
             }catch(err){
             }
@@ -55,15 +55,15 @@ module.exports = function (options){
 
             try{
 
-                if ( old && old.score > score ) return false;
+                if ( old && old.score > score ) return null;
 
                 const decoded = bencode.decode( value );
                 const contact = this._kademliaNode.createContact( decoded[0] );
 
                 if ( score > contact.timestamp ) return false;
-                if ( !contact.verify( masterKey, decoded[1] ) ) return false;
+                if ( !contact.verify( masterKey, decoded[1] ) ) return null;
 
-                return true;
+                return value;
 
             }catch(err){
             }
@@ -76,13 +76,13 @@ module.exports = function (options){
                 const decoded = bencode.decode( value );
 
                 const pandoraBoxMeta = PandoraBoxMeta.fromArray(this._kademliaNode, decoded[0] );
-                if (!pandoraBoxMeta.hash.equals(key)) return false;
+                if (!pandoraBoxMeta.hash.equals(key)) return null;
 
                 const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);
                 const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name).slice(0, PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_FIND_BY_NAME_MAX_WORDS );
 
                 const subset = decoded[1];
-                if (!subset || !Array.isArray(subset)) return false;
+                if (!subset || !Array.isArray(subset)) return null;
 
                 const v = [];
                 for (const index of subset)
@@ -91,17 +91,18 @@ module.exports = function (options){
                     else
                         v.push( words[ index ] );
 
-                if (!v.length) return false;
+                if (!v.length) return null;
 
                 const s = v.join(' ');
                 const hash = CryptoUtils.sha256(Buffer.from(s));
-                if (!masterKey.equals(hash)) return false;
+                if (!masterKey.equals(hash)) return null;
 
-                return true;
+                return value;
 
             }catch(err){
 
             }
+
         }
 
     }
