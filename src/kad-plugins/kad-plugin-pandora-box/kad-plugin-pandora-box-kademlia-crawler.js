@@ -134,7 +134,19 @@ module.exports = function(options){
 
         }
 
+        iterativeFindPandoraBoxesByName(name, cb){
+
+            name = PandoraBoxMetaHelper.processPandoraBoxMetaName(name);
+            const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name).slice(0, PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_FIND_BY_NAME_MAX_WORDS );
+
+            const s = words.join(' ');
+            const hash = CryptoUtils.sha256(Buffer.from(s));
+            this.iterativeFindSortedList( tableName, hash, cb );
+
+        }
 
     }
+
+
 
 }

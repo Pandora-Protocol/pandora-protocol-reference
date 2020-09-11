@@ -1,8 +1,9 @@
 const KAD = require('pandora-protocol-kad-reference')
+
 const PandoraLocations = require('./pandora-locations/pandora-locations')
 const PandoraBox = require('./pandora-box/pandora-box')
 const PandoraBoxes = require('./pandora-boxes/pandora-boxes')
-
+const PandoraBoxMetaHelper = require('./pandora-box/meta/pandora-box-meta-helper')
 const KADPluginStreamliner = require('./kad-plugins/kad-plugin-streamliner')
 const KADPluginPandoraBox = require('./kad-plugins/kad-plugin-pandora-box')
 
@@ -98,8 +99,8 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
 
     }
 
-    findPandoraBoxByName(name){
-
+    findPandoraBoxesByName(name, cb){
+        return this.crawler.iterativeFindPandoraBoxesByName(name, cb);
     }
 
     async initializeNode(opts){
