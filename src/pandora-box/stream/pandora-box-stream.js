@@ -75,7 +75,7 @@ module.exports = class PandoraBoxStream {
     }
 
     static fromArray( pandoraBox, arr ){
-        return new PandoraBoxStream(pandoraBox, arr[0].toString('ascii'), arr[1], arr[2], arr[3], arr[4], arr[5], [], PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED );
+        return new PandoraBoxStream(pandoraBox, arr[0].toString(), arr[1], arr[2], arr[3], arr[4], arr[5], [], PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED );
     }
 
     get absolutePath(){

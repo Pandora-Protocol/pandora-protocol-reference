@@ -8,10 +8,10 @@ module.exports.computePandoraBoxStreamsHash = function ( streams ){
     const sum = createHash('sha256');
 
     for (let i=0; i < streams.length; i++){
-        sum.update( Buffer.from( streams[i].path, 'ascii' ));
-        sum.update( Buffer.from( streams[i].type.toString(), 'ascii' ));
-        sum.update( Buffer.from( streams[i].size.toString(), 'ascii' ));
-        sum.update( Buffer.from( streams[i].chunkSize.toString(), 'ascii' ));
+        sum.update( Buffer.from( streams[i].path,  ));
+        sum.update( Buffer.from( streams[i].type.toString(),  ));
+        sum.update( Buffer.from( streams[i].size.toString(),  ));
+        sum.update( Buffer.from( streams[i].chunkSize.toString(),  ));
         sum.update( streams[i].hash );
     }
 

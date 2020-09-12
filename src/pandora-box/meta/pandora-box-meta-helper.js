@@ -14,8 +14,7 @@ module.exports.validatePandoraBoxMeta = function (version, name, description, st
 }
 
 module.exports.processPandoraBoxMetaName = function (name){
-    name = name.toLowerCase().replace(/ *\[[^\]]*] */g, '').replace(/ *{[^\]]*} */g, '');
-    return name;
+    return name.toLowerCase().replace(/ *\[[^\]]*] */g, '').replace(/ *{[^\]]*} */g, '');
 }
 
 module.exports.splitPandoraBoxMetaName = function (name){
@@ -26,11 +25,11 @@ module.exports.computePandoraBoxMetaHash = function (version, name, description,
 
     const sum = createHash('sha256');
 
-    sum.update(Buffer.from(version, 'ascii'));
-    sum.update(Buffer.from(name, 'ascii'));
-    sum.update(Buffer.from(description, 'ascii'));
+    sum.update(Buffer.from(version));
+    sum.update(Buffer.from(name));
+    sum.update(Buffer.from(description));
 
-    sum.update(Buffer.from(streamsHash, 'ascii'))
+    sum.update(Buffer.from(streamsHash))
 
     return sum.digest();
 

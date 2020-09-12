@@ -76,7 +76,7 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
         const streams = PandoraBoxHelper.createPandoraBoxStreams( null, arr[3] );
         const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams  );
 
-        const pandoraBox = new PandoraBox(kademliaNode, '', arr[0].toString('ascii'), arr[1].toString('ascii'), arr[2].toString('ascii'), streamsHash, arr[3] );
+        const pandoraBox = new PandoraBox(kademliaNode, '', arr[0].toString(), arr[1].toString(), arr[2].toString(), streamsHash, arr[3] );
         pandoraBox.streamsSetPandoraBox();
 
         return pandoraBox;
