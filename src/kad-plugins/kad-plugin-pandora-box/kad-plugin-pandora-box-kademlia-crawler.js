@@ -97,7 +97,7 @@ module.exports = function(options){
             if (pandoraBoxMeta instanceof PandoraBox) pandoraBoxMeta = pandoraBoxMeta.convertToPandoraBoxMeta();
 
             const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);
-            const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name).slice(0, PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_FIND_BY_NAME_MAX_WORDS );
+            const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name);
 
             const subsets = SubsetsHelper.generatePowerSet(words);
 
@@ -138,7 +138,7 @@ module.exports = function(options){
         iterativeFindPandoraBoxesByName(name, cb){
 
             name = PandoraBoxMetaHelper.processPandoraBoxMetaName(name);
-            const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name).slice(0, PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_FIND_BY_NAME_MAX_WORDS );
+            const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name);
 
             const s = words.join(' ');
             const hash = CryptoUtils.sha256(Buffer.from(s));

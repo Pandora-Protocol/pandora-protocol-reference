@@ -28,7 +28,6 @@ module.exports = class PandoraBoxStreamlinerWorkers {
             5*1000,
         );
 
-
         this.initializeWorkers((err, out)=>{});
 
     }
@@ -124,22 +123,28 @@ module.exports = class PandoraBoxStreamlinerWorkers {
 
     initializeWorkers(cb){
 
+        if (this._pandoraBox.isDone)
+            this._initializeWorkersPushPeer(cb);
+        else
+            return this._kademliaNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox, (err, peers ) => {
+
+                if (peers && peers.length)
+                    this._pandoraBoxStreamliner.addPeers(peers);
+
+                this.refreshWorkers();
+
+                this._initializeWorkersPushPeer(cb);
+
+            } );
+
+
+    }
+
+    _initializeWorkersPushPeer(cb){
+
         this._kademliaNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox, undefined, undefined, (err, out2)=>{
 
             if (err) return cb(err, null);
-
-            if (!this._pandoraBox.isDone)
-                return this._kademliaNode.crawler.iterativeFindPandoraBoxPeersList( this._pandoraBox, (err, peers ) => {
-
-                    if (peers && peers.length)
-                        this._pandoraBoxStreamliner.addPeers(peers);
-
-                    this.refreshWorkers();
-
-                    this._initialized = new Date().getTime();
-                    cb(null, true);
-
-                } );
 
             this._initialized = new Date().getTime();
             cb(null, true);

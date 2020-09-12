@@ -27,7 +27,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
         return Object.values( this._boxesMap );
     }
 
-    get startedStreamling(){
+    get startedStreamlinnig(){
         return this._startedStreamlining;
     }
 
@@ -104,11 +104,11 @@ module.exports = class PandoraBoxes extends EventEmitter{
 
     _addedBox(pandoraBox, cb){
 
-        if (this.startedStreamling)
-            if (!pandoraBox.calculateIsDone)
-                pandoraBox.streamliner.start();
+        if (this._startedStreamlining)
+            pandoraBox.streamliner.start();
 
         this.emit('pandora-box/added', pandoraBox);
+
         cb(null, pandoraBox )
     }
 

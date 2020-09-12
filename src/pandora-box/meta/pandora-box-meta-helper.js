@@ -19,7 +19,7 @@ module.exports.processPandoraBoxMetaName = function (name){
 }
 
 module.exports.splitPandoraBoxMetaName = function (name){
-    return name.split(/[\s`~'";,.\-+=_ :{}\[\]|\\\/!@#$%^&*()]+/).sort( (a, b) => a.localeCompare( b ) );
+    return name.split(/[\s`~'";,.\-+=_ :{}\[\]|\\\/!@#$%^&*()]+/).slice(0, PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_FIND_BY_NAME_MAX_WORDS ).sort( (a, b) => a.localeCompare( b ) );
 }
 
 module.exports.computePandoraBoxMetaHash = function (version, name, description, streamsHash){

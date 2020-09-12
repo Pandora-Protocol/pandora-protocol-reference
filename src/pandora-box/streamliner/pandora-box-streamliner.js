@@ -25,11 +25,6 @@ module.exports = class PandoraBoxStreamliner {
 
         this._initialized = 0;
 
-        this._streamlinerInitializeAsyncInterval = setAsyncInterval(
-            next => this._workStreamlinerInitialize(next),
-            5*1000,
-        );
-
         this._started = true;
 
         this.queue = [];
@@ -40,6 +35,11 @@ module.exports = class PandoraBoxStreamliner {
         this.workers.start();
 
         this.initialize( ()=>{ })
+
+        this._streamlinerInitializeAsyncInterval = setAsyncInterval(
+            next => this._workStreamlinerInitialize(next),
+            5*1000,
+        );
 
     }
 
