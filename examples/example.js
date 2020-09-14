@@ -7,8 +7,8 @@ console.log("SIMPLE Encrypted PANDORA PROTOCOL REFERENCE");
 
 //const sybilKeys = KAD.helpers.ECCUtils.createPair();
 const sybilKeys = {
-    privateKey: Buffer.from("b485c3728923b3cc3ad88d8b10c69b3c68818594ca0d213542caad212fa7c063", 'hex'),
-    publicKey: Buffer.from("04e67b866b907ad108d1bb1fbddf2672dfe96c8f1e24a9f922f57e330eca7ab1af821a40e4a29594df1e014083ab2112c5a3d1f1333c7717b7e73d63cea7feeef8", 'hex'),
+    publicKey: Buffer.from("049cf62611922a64575439fd14e0a1190c40184c4d20a1c7179828693d574e84b94b70c3f3995b7a2cd826e1e8ef9eb8ccf90e578891ecfe10de6a4dc9371cd19a", 'hex'),
+    uri: 'http://pandoraprotocol.ddns.net:9090'
 }
 
 KAD.init({
@@ -18,9 +18,11 @@ KAD.init({
         }
     }
 });
+
 PANDORA_PROTOCOL.init({});
 
-console.info("SYBIL PRIVATE KEY", sybilKeys.privateKey.toString('hex') );
+if (sybilKeys.privateKey)
+    console.info("SYBIL PRIVATE KEY", sybilKeys.privateKey.toString('hex') );
 console.info("SYBIL PUBLIC KEY", sybilKeys.publicKey.toString('hex') );
 
 const COUNT = 6;

@@ -37,7 +37,6 @@ module.exports = function (options){
             this.send(srcContact, 'GET_STREAM_CHK', [ streamHash, chunkIndex ], cb);
         }
 
-
     }
 
 }

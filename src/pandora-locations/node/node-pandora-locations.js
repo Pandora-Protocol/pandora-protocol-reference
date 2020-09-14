@@ -9,6 +9,7 @@ const PandoraBox = require('../../pandora-box/pandora-box')
 const PandoraBoxStreamStatus = require('../../pandora-box/stream/pandora-box-stream-status')
 const Streams = require('../../helpers/streams/streams')
 const PandoraBoxHelper = require('./../../pandora-box/pandora-box-helper')
+const PandoraBoxMetaHelper = require('./../../pandora-box/meta/pandora-box-meta-helper')
 const async = require('pandora-protocol-kad-reference').library.async;
 
 const InterfacePandoraLocations = require('../interface-pandora-locations')
@@ -286,12 +287,22 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
             const finalDescription = description;
 
             const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams )
-            const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, finalDescription, streamsHash, streams );
+            const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, finalDescription, streamsHash, streams, Buffer.alloc(65) );
             pandoraBox.streamsSetPandoraBox();
 
-            cbProgress(null, {done: true });
+            console.log("pandoraBox.hash", pandoraBox.hashHex)
 
-            cb(null, pandoraBox );
+            const buffer = pandoraBox.bufferForHash();
+
+            this._kademliaNode.contactStorage.sybilSign( buffer, undefined).then((out)=> {
+
+                    pandoraBox._sybilSignature = out.signature;
+
+                    cbProgress(null, {done: true });
+                    cb(null, pandoraBox );
+
+                })
+                .catch(err => cb(err));
 
         })
 

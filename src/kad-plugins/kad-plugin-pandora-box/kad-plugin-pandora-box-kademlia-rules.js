@@ -3,7 +3,7 @@ const PandoraBox = require('../../pandora-box/pandora-box')
 const PandoraBoxMeta = require('../../pandora-box/meta/pandora-box-meta')
 const PandoraBoxHelper = require('../../pandora-box/pandora-box-helper')
 const PandoraBoxMetaHelper = require('../../pandora-box/meta/pandora-box-meta-helper')
-const {CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
+const {CryptoUtils, ECCUtils} = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = function (options){
 
@@ -43,6 +43,8 @@ module.exports = function (options){
 
                 const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( value )  );
                 if (!pandoraBox.hash.equals(masterKey)) return null;
+
+                if (!pandoraBox.sybilSignature[0]) return null;
 
                 return value;
 
