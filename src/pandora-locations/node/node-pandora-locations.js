@@ -280,29 +280,27 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
             } else
                 next();
 
-        }, (err, out)=>{
+        },  (err, out)=>{
 
-            const version = '0.1';
-            const finalName = name || this.extractLocationName(boxLocation);
-            const finalDescription = description;
 
-            const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams )
-            const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, finalDescription, streamsHash, streams, Buffer.alloc(65) );
-            pandoraBox.streamsSetPandoraBox();
+                const version = '0.1';
+                const finalName = name || this.extractLocationName(boxLocation);
+                const finalDescription = description;
 
-            console.log("pandoraBox.hash", pandoraBox.hashHex)
+                const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams )
+                const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, finalDescription, streamsHash, streams, 0, 0, Buffer.alloc(64) );
+                pandoraBox.streamsSetPandoraBox();
 
-            const buffer = pandoraBox.bufferForHash();
+                this._kademliaNode.contactStorage.sybilSign( pandoraBox.hash, undefined, true).then((out)=>{
 
-            this._kademliaNode.contactStorage.sybilSign( buffer, undefined).then((out)=> {
-
-                    pandoraBox._sybilSignature = out.signature;
+                    pandoraBox._sybilIndex = out.index+1;
+                    pandoraBox._sybilTime = out.time;
+                    pandoraBox._sybilSignature = out.sybilSignature;
 
                     cbProgress(null, {done: true });
                     cb(null, pandoraBox );
+                }).catch( err => cb(err) );
 
-                })
-                .catch(err => cb(err));
 
         })
 

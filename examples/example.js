@@ -59,6 +59,9 @@ async.eachLimit( array, 1, (index, next ) => {
 
         console.log('NODES BOOTSTRAPPED');
 
+        for (let i=0; i < nodes.length; i++)
+            console.log(i, nodes[i].routingTable.count, nodes[i].routingTable.array.map( it => it.contact.contactType ));
+
         nodes[3].seedPandoraBox( './examples/public/data1',  'Example 1 box simple', 'Example1 Description',  undefined,
             (err, out) => {
 

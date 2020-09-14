@@ -44,7 +44,8 @@ module.exports = function (options){
                 const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( value )  );
                 if (!pandoraBox.hash.equals(masterKey)) return null;
 
-                if (!pandoraBox.sybilSignature[0]) return null;
+                if (!pandoraBox.sybilIndex) return null;
+                if (!pandoraBox.sybilTime) return null;
 
                 return value;
 

@@ -254,34 +254,43 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             const finalDescription = description;
 
             const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams )
-            const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, finalDescription, streamsHash, streams );
+            const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, finalDescription, streamsHash, streams, 0, 0, Buffer.alloc(64) );
             pandoraBox.streamsSetPandoraBox();
 
-            async.eachLimit( selectedStreams, 1, (selectedStream, next) =>{
+            this._kademliaNode.contactStorage.sybilSign( pandoraBox.hash, undefined, true).then((out)=> {
 
-                if (selectedStream.pandoraStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM){
+                pandoraBox._sybilIndex = out.index+1;
+                pandoraBox._sybilTime = out.time;
+                pandoraBox._sybilSignature = out.sybilSignature;
 
-                    Streams.splitStreamIntoChunks( selectedStream.stream, chunkSize, (err, { done, chunk, chunkIndex } )=> {
+                async.eachLimit( selectedStreams, 1, (selectedStream, next) =>{
 
-                        if (err) return cb(err, null);
-                        if (done) return next();
+                    if (selectedStream.pandoraStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM){
 
-                        this.writeLocationStreamChunk( chunk, selectedStream.pandoraStream, chunkIndex, (err, out) =>{
+                        Streams.splitStreamIntoChunks( selectedStream.stream, chunkSize, (err, { done, chunk, chunkIndex } )=> {
+
+                            if (err) return cb(err, null);
+                            if (done) return next();
+
+                            this.writeLocationStreamChunk( chunk, selectedStream.pandoraStream, chunkIndex, (err, out) =>{
 
 
-                        } )
+                            } )
 
-                    });
+                        });
 
-                }
+                    }
 
-            }, (err, out) =>{
+                }, (err, out) =>{
 
-                cbProgress(null, {done: true });
+                    cbProgress(null, {done: true });
 
-                cb(null, pandoraBox );
+                    cb(null, pandoraBox );
 
-            } )
+                } )
+
+
+            }).catch( err => cb(err) );
 
 
         } );

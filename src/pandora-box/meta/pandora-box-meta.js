@@ -4,27 +4,26 @@ const {CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = class PandoraBoxMeta {
 
-    constructor(kademliaNode, version, name, description, streamsHash, sybilSignature) {
+    constructor(kademliaNode, version, name, description, streamsHash, sybilIndex, sybilTime, sybilSignature) {
 
         this._kademliaNode = kademliaNode;
 
-        PandoraBoxMetaHelper.validatePandoraBoxMeta(version, name, description, streamsHash, sybilSignature);
+        PandoraBoxMetaHelper.validatePandoraBoxMeta(version, name, description, streamsHash, sybilIndex, sybilTime, sybilSignature);
 
         this._version = version;
         this._name = name;
         this._description = description;
         this._streamsHash = streamsHash;
 
-        this._hash = CryptoUtils.sha256( this.bufferForHash() ) ;
+        this._hash = CryptoUtils.sha256( PandoraBoxMetaHelper.computePandoraBoxMetaBuffer(this._version, this._name, this._description, this._streamsHash) ) ;
         this._hashHex = this._hash.toString('hex');
 
-        Validation.validateSybilSignature(sybilSignature, this._hash);
+        Validation.validateSybilSignature(sybilIndex, sybilTime, sybilSignature, this._hash);
+
+        this._sybilIndex = sybilIndex;
+        this._sybilTime = sybilTime;
         this._sybilSignature = sybilSignature;
 
-    }
-
-    bufferForHash(){
-        return PandoraBoxMetaHelper.computePandoraBoxMetaBuffer(this._version, this._name, this._description, this._streamsHash)
     }
 
     get hash(){
@@ -55,12 +54,20 @@ module.exports = class PandoraBoxMeta {
         return this._sybilSignature;
     }
 
+    get sybilIndex(){
+        return this._sybilIndex;
+    }
+
+    get sybilTime(){
+        return this._sybilTime;
+    }
+
     toArray(){
-        return [ this._version, this._name, this._description, this._streamsHash, this._sybilSignature ];
+        return [ this._version, this._name, this._description, this._streamsHash, this._sybilIndex, this._sybilTime, this._sybilSignature ];
     }
 
     static fromArray(kademliaNode, arr){
-        return new PandoraBoxMeta(kademliaNode, arr[0].toString(), arr[1].toString(), arr[2].toString(), arr[3], arr[4] );
+        return new PandoraBoxMeta(kademliaNode, arr[0].toString(), arr[1].toString(), arr[2].toString(), arr[3], arr[4], arr[5], arr[6] );
     }
 
     toJSON(){

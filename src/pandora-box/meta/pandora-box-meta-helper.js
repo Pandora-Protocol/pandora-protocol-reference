@@ -1,6 +1,6 @@
 const {CryptoUtils, ECCUtils} = require('pandora-protocol-kad-reference').helpers;
 
-module.exports.validatePandoraBoxMeta = function (version, name, description, streamsHash, sybilSignature){
+module.exports.validatePandoraBoxMeta = function (version, name, description, streamsHash ){
 
     if (typeof version !== "string" || !version.length ) throw 'Invalid PandoraBox version type';
     if (version !== PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_VERSION) throw "Invalid PandoraBox version";
