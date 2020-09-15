@@ -4,18 +4,19 @@ const {CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = class PandoraBoxMeta {
 
-    constructor(kademliaNode, version, name, description, streamsHash, sybilIndex, sybilTime, sybilSignature) {
+    constructor(kademliaNode, version, name, description, categories, streamsHash, sybilIndex, sybilTime, sybilSignature) {
 
         this._kademliaNode = kademliaNode;
 
-        PandoraBoxMetaHelper.validatePandoraBoxMeta(version, name, description, streamsHash, sybilIndex, sybilTime, sybilSignature);
+        PandoraBoxMetaHelper.validatePandoraBoxMeta(version, name, description, categories, streamsHash, sybilIndex, sybilTime, sybilSignature);
 
         this._version = version;
         this._name = name;
         this._description = description;
+        this._categories = categories;
         this._streamsHash = streamsHash;
 
-        this._hash = CryptoUtils.sha256( PandoraBoxMetaHelper.computePandoraBoxMetaBuffer(this._version, this._name, this._description, this._streamsHash) ) ;
+        this._hash = CryptoUtils.sha256( PandoraBoxMetaHelper.computePandoraBoxMetaBuffer(this._version, this._name, this._description, this._categories, this._streamsHash) ) ;
         this._hashHex = this._hash.toString('hex');
 
         Validation.validateSybilSignature(sybilIndex, sybilTime, sybilSignature, this._hash);
@@ -36,6 +37,10 @@ module.exports = class PandoraBoxMeta {
 
     get version(){
         return this._version;
+    }
+
+    get categories(){
+        return this._categories;
     }
 
     get name(){
@@ -63,11 +68,12 @@ module.exports = class PandoraBoxMeta {
     }
 
     toArray(){
-        return [ this._version, this._name, this._description, this._streamsHash, this._sybilIndex, this._sybilTime, this._sybilSignature ];
+        return [ this._version, this._name, this._description, this._categories, this._streamsHash, this._sybilIndex, this._sybilTime, this._sybilSignature ];
     }
 
     static fromArray(kademliaNode, arr){
-        return new PandoraBoxMeta(kademliaNode, arr[0].toString(), arr[1].toString(), arr[2].toString(), arr[3], arr[4], arr[5], arr[6] );
+        const categories = arr[3].map( it => it.toString() );
+        return new PandoraBoxMeta(kademliaNode, arr[0].toString(), arr[1].toString(), arr[2].toString(), categories, arr[4], arr[5], arr[6], arr[7] );
     }
 
     toJSON(){

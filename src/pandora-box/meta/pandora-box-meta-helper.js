@@ -1,6 +1,6 @@
-const {CryptoUtils, ECCUtils} = require('pandora-protocol-kad-reference').helpers;
+const {CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
 
-module.exports.validatePandoraBoxMeta = function (version, name, description, streamsHash ){
+module.exports.validatePandoraBoxMeta = function (version, name, description, categories, streamsHash ){
 
     if (typeof version !== "string" || !version.length ) throw 'Invalid PandoraBox version type';
     if (version !== PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_VERSION) throw "Invalid PandoraBox version";
@@ -11,6 +11,9 @@ module.exports.validatePandoraBoxMeta = function (version, name, description, st
 
     if ( !Buffer.isBuffer(streamsHash) || streamsHash.length !== KAD_OPTIONS.NODE_ID_LENGTH ) throw 'Invalid PandoraBox hash';
 
+    if (!Array.isArray(categories) || categories.length > 3 ) throw 'Too many categories'
+    for (const category of categories)
+        if (category.length > 16) throw "Category maximum length is 16";
 
 }
 

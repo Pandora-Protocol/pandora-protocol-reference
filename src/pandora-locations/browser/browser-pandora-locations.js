@@ -194,7 +194,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    createPandoraBox( selectedStreams, name, description, chunkSize, cbProgress, cb){
+    createPandoraBox( selectedStreams, name, description, categories, chunkSize, cbProgress, cb){
 
         if (!selectedStreams || !Array.isArray(selectedStreams) || selectedStreams.length === 0) return cb(new Error('Selected streams needs to a non empty array'));
 
@@ -252,9 +252,10 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             const version = '0.1';
             const finalName = name;
             const finalDescription = description;
+            const finalCategories =  categories;
 
             const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams )
-            const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, finalDescription, streamsHash, streams, 0, 0, Buffer.alloc(64) );
+            const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, finalDescription, finalCategories, streamsHash, streams, 0, 0, Buffer.alloc(64) );
             pandoraBox.streamsSetPandoraBox();
 
             this._kademliaNode.contactStorage.sybilSign( pandoraBox.hash, undefined, true).then((out)=> {

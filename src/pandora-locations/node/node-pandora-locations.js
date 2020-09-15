@@ -216,7 +216,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
-    createPandoraBox( boxLocation, name, description, chunkSize, cbProgress, cb){
+    createPandoraBox( boxLocation, name, description, categories, chunkSize, cbProgress, cb){
 
         boxLocation = this.trailingSlash(boxLocation);
 
@@ -286,9 +286,10 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                 const version = '0.1';
                 const finalName = name || this.extractLocationName(boxLocation);
                 const finalDescription = description;
+                const finalCategories =  categories;
 
                 const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams )
-                const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, finalDescription, streamsHash, streams, 0, 0, Buffer.alloc(64) );
+                const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, finalDescription, finalCategories, streamsHash, streams, 0, 0, Buffer.alloc(64) );
                 pandoraBox.streamsSetPandoraBox();
 
                 this._kademliaNode.contactStorage.sybilSign( pandoraBox.hash, undefined, true).then((out)=>{

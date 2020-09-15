@@ -66,7 +66,7 @@ module.exports = function (options){
                 if ( score > contact.timestamp ) return false;
                 if ( !contact.verify( masterKey, decoded[1] ) ) return null;
 
-                return value;
+                return {value, score};
 
             }catch(err){
             }
@@ -100,7 +100,7 @@ module.exports = function (options){
                 const hash = CryptoUtils.sha256(Buffer.from(s));
                 if (!masterKey.equals(hash)) return null;
 
-                return value;
+                return {value, score};
 
             }catch(err){
 
