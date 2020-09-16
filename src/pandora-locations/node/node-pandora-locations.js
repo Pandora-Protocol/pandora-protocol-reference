@@ -292,11 +292,11 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                 const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, finalDescription, finalCategories, streamsHash, streams, 0, 0, Buffer.alloc(64) );
                 pandoraBox.streamsSetPandoraBox();
 
-                this._kademliaNode.contactStorage.sybilSign( pandoraBox.hash, undefined, true).then((out)=>{
+                this._kademliaNode.contactStorage.sybilProtectSign( {message: pandoraBox.hash}, {includeTime: true} ).then((out)=>{
 
-                    pandoraBox._sybilIndex = out.index+1;
-                    pandoraBox._sybilTime = out.time;
-                    pandoraBox._sybilSignature = out.sybilSignature;
+                    pandoraBox._sybilProtectIndex = out.index+1;
+                    pandoraBox._sybilProtectTime = out.time;
+                    pandoraBox._sybilProtectSignature = out.signature;
 
                     cbProgress(null, {done: true });
                     cb(null, pandoraBox );

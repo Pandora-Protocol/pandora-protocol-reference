@@ -10,9 +10,9 @@ const PandoraBoxMeta = require('./meta/pandora-box-meta')
 
 module.exports = class PandoraBox extends PandoraBoxMeta {
 
-    constructor ( kademliaNode, absolutePath, version, name, description, categories, streamsHash, streams, sybilIndex, sybilTime, sybilSignature ) {
+    constructor ( kademliaNode, absolutePath, version, name, description, categories, streamsHash, streams, sybilProtectIndex, sybilProtectTime, sybilProtectSignature ) {
 
-        super(kademliaNode, version, name, description, categories, streamsHash, sybilIndex, sybilTime, sybilSignature )
+        super(kademliaNode, version, name, description, categories, streamsHash, sybilProtectIndex, sybilProtectTime, sybilProtectSignature )
 
         this.absolutePath = absolutePath;
         this._kademliaNode = kademliaNode;
@@ -68,7 +68,7 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
 
     toArray(){
         const streams = this._streams.map( it => it.toArray() );
-        return [ this._version, this._name, this._description, this._categories, streams, this._sybilIndex, this._sybilTime, this._sybilSignature, ];
+        return [ this._version, this._name, this._description, this._categories, streams, this._sybilProtectIndex, this._sybilProtectTime, this._sybilProtectSignature, ];
     }
 
     static fromArray(kademliaNode, arr){
@@ -91,12 +91,12 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
             description: this._description,
             categories: this._categories,
             streams: this._streams.map( it => it.toJSON() ),
-            sybilSignature: this._sybilSignature,
+            sybilProtectSignature: this._sybilProtectSignature,
         }
     }
 
     convertToPandoraBoxMeta(){
-        return new PandoraBoxMeta(this._kademliaNode, this._version, this._name, this._description, this._categories, this._streamsHash, this._sybilIndex, this._sybilTime, this._sybilSignature);
+        return new PandoraBoxMeta(this._kademliaNode, this._version, this._name, this._description, this._categories, this._streamsHash, this._sybilProtectIndex, this._sybilProtectTime, this._sybilProtectSignature);
     }
 
     get percent(){
