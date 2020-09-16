@@ -56,7 +56,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
 
     addPandoraBox( pandoraBox, save = true, cb ){
 
-        if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw Error('PandoraBox arg is invalid');
+        if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw 'PandoraBox arg is invalid';
 
         if (this._boxesMap[pandoraBox.hashHex])
             return cb(null, false); //already
@@ -81,7 +81,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
 
     removeBox(pandoraBox, cb){
 
-        if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw Error('PandoraBox arg is invalid');
+        if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw 'PandoraBox arg is invalid';
 
         if (!this._boxesMap[pandoraBox.hashHex])
             return cb(null, false); //already

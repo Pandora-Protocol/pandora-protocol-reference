@@ -26,7 +26,7 @@ module.exports = function(options){
 
                 try{
 
-                    if (!out.result) throw Error(`PandoraBox couldn't be found`);
+                    if (!out.result) throw `PandoraBox couldn't be found`;
                     const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( out.result[''].value ) );
 
                     cb(null, pandoraBox);
@@ -149,7 +149,7 @@ module.exports = function(options){
 
                 try{
 
-                    if (!out.result) throw Error(`PandoraBox couldn't be found`);
+                    if (!out.result) throw `PandoraBox couldn't be found`;
 
 
                     for (const key in out.result){

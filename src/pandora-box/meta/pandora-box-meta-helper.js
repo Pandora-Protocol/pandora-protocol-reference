@@ -1,11 +1,12 @@
 const {CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
 const PandoraBoxMetaVersion = require('./pandora-box-meta-version')
 
-module.exports.validatePandoraBoxMeta = function (version, name, categories, metaDataHash ){
+module.exports.validatePandoraBoxMeta = function (version, name, size, categories, metaDataHash ){
 
     if (typeof version !== "number" || !PandoraBoxMetaVersion._map[version]  ) throw 'Invalid PandoraBox version type';
 
     if (typeof name !== "string" || name.length < 5 || name.length > 200) throw 'Invalid PandoraBox name';
+    if (typeof size !== "number" || size <= 0 || size >= Number.MAX_SAFE_INTEGER) throw 'Invalid PandoraBox size'
 
     if ( !Buffer.isBuffer(metaDataHash) || metaDataHash.length !== KAD_OPTIONS.NODE_ID_LENGTH ) throw 'Invalid PandoraBox hash';
 
@@ -23,13 +24,14 @@ module.exports.splitPandoraBoxMetaName = function (name){
     return name.split(/[\s`~'";,.\-+=_ :{}\[\]|\\\/!@#$%^&*()]+/).slice(0, PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_FIND_BY_NAME_MAX_WORDS ).sort( (a, b) => a.localeCompare( b ) );
 }
 
-module.exports.computePandoraBoxMetaBuffer = function (version, name, categories, metaDataHash){
+module.exports.computePandoraBoxMetaBuffer = function (version,  name, size, categories, metaDataHash){
 
     categories = Buffer.concat( categories.map( it => Buffer.from(it) ) );
 
     return Buffer.concat([
         Buffer.from(version.toString()),
         Buffer.from(name),
+        Buffer.from(size.toString()),
         categories,
         Buffer.from(metaDataHash),
     ]);

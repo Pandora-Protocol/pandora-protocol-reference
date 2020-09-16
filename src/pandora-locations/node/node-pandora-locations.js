@@ -289,8 +289,12 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                 const finalDescription = description;
                 const finalCategories =  categories;
 
+                let size = 0;
+                for (const stream of streams)
+                    size += stream.size;
+
                 const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( finalDescription, streams )
-                const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName,  finalCategories, metaDataHash, finalDescription, streams, 0, 0, Buffer.alloc(64) );
+                const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, size,  finalCategories, metaDataHash, finalDescription, streams, 0, 0, Buffer.alloc(64) );
                 pandoraBox.streamsSetPandoraBox();
 
                 this._kademliaNode.contactStorage.sybilProtectSign( {message: pandoraBox.hash}, {includeTime: true} ).then((out)=>{
