@@ -10,19 +10,20 @@ const PandoraBoxMeta = require('./meta/pandora-box-meta')
 
 module.exports = class PandoraBox extends PandoraBoxMeta {
 
-    constructor ( kademliaNode, absolutePath, version, name, description, categories, streamsHash, streams, sybilProtectIndex, sybilProtectTime, sybilProtectSignature ) {
+    constructor ( kademliaNode, absolutePath, version, name, categories, metaDataHash, description, streams, sybilProtectIndex, sybilProtectTime, sybilProtectSignature ) {
 
-        super(kademliaNode, version, name, description, categories, streamsHash, sybilProtectIndex, sybilProtectTime, sybilProtectSignature )
+        super(kademliaNode, version, name, categories, metaDataHash, sybilProtectIndex, sybilProtectTime, sybilProtectSignature )
 
         this.absolutePath = absolutePath;
         this._kademliaNode = kademliaNode;
         this.events = new EventEmitter();
 
-        PandoraBoxHelper.validatePandoraBox(streamsHash, streams);
+        PandoraBoxHelper.validatePandoraBox(version, description, metaDataHash, streams);
 
         this.absolutePath = absolutePath;
 
         this._streams = streams;
+        this._description = description;
 
         this.streamliner = new PandoraBoxStreamliner(kademliaNode, this);
 
@@ -36,6 +37,10 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
     streamsSetPandoraBox(){
         for (const stream of this.streams)
             stream.setPandoraBox(this);
+    }
+
+    get description(){
+        return this._description;
     }
 
     get streams(){
@@ -68,17 +73,19 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
 
     toArray(){
         const streams = this._streams.map( it => it.toArray() );
-        return [ this._version, this._name, this._description, this._categories, streams, this._sybilProtectIndex, this._sybilProtectTime, this._sybilProtectSignature, ];
+        return [ this._version, this._name, this._categories, this._description, streams, this._sybilProtectIndex, this._sybilProtectTime, this._sybilProtectSignature, ];
     }
 
     static fromArray(kademliaNode, arr){
 
-        const categories = arr[3].map( it => it.toString() );
+        const categories = arr[2].map( it => it.toString() );
+
+        const description = arr[3].toString();
 
         const streams = PandoraBoxHelper.createPandoraBoxStreams( null, arr[4] );
-        const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams  );
+        const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( description, streams  );
 
-        const pandoraBox = new PandoraBox(kademliaNode, '', arr[0].toString(), arr[1].toString(), arr[2].toString(), categories, streamsHash, arr[4], arr[5], arr[6], arr[7] );
+        const pandoraBox = new PandoraBox(kademliaNode, '', arr[0], arr[1].toString(), categories,  metaDataHash, description, arr[4], arr[5], arr[6], arr[7] );
         pandoraBox.streamsSetPandoraBox();
 
         return pandoraBox;
@@ -96,7 +103,7 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
     }
 
     convertToPandoraBoxMeta(){
-        return new PandoraBoxMeta(this._kademliaNode, this._version, this._name, this._description, this._categories, this._streamsHash, this._sybilProtectIndex, this._sybilProtectTime, this._sybilProtectSignature);
+        return new PandoraBoxMeta(this._kademliaNode, this._version, this._name, this._categories, this._metaDataHash, this._sybilProtectIndex, this._sybilProtectTime, this._sybilProtectSignature);
     }
 
     get percent(){

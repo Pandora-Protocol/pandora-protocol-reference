@@ -1,11 +1,11 @@
 const {createHash} = require('crypto')
 const PandoraBoxStream = require('../pandora-box/stream/pandora-box-stream')
 
-
-
-module.exports.computePandoraBoxStreamsHash = function ( streams ){
+module.exports.computePandoraBoxMetaDataHash = function ( description, streams ){
 
     const sum = createHash('sha256');
+
+    sum.update(Buffer.from(description));
 
     for (let i=0; i < streams.length; i++){
         sum.update( Buffer.from( streams[i].path,  ));
@@ -19,10 +19,12 @@ module.exports.computePandoraBoxStreamsHash = function ( streams ){
 
 }
 
-module.exports.validatePandoraBox = function (streamsHash, streams){
+module.exports.validatePandoraBox = function (version, description, metaDataHash, streams){
 
-    const streamsHash2 = this.computePandoraBoxStreamsHash( streams );
-    if (!streamsHash.equals(streamsHash2)) throw Error('Invalid PandoraBox streams hash');
+    if (typeof description !== "string" || description.length > 4*1024) throw 'Invalid PandoraBoxMetaData description';
+
+    const metaDataHash2 = this.computePandoraBoxMetaDataHash( description, streams );
+    if (!metaDataHash.equals(metaDataHash2)) throw Error('Invalid PandoraBox streams hash');
 
 }
 

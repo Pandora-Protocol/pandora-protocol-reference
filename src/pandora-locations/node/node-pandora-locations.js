@@ -6,6 +6,7 @@ const {createHash} = require('crypto')
 const PandoraStreamType = require('../../pandora-box/stream/pandora-box-stream-type')
 const PandoraBoxStream = require('../../pandora-box/stream/pandora-box-stream')
 const PandoraBox = require('../../pandora-box/pandora-box')
+const PandoraBoxMetaVersion = require('../../pandora-box/meta/pandora-box-meta-version')
 const PandoraBoxStreamStatus = require('../../pandora-box/stream/pandora-box-stream-status')
 const Streams = require('../../helpers/streams/streams')
 const PandoraBoxHelper = require('./../../pandora-box/pandora-box-helper')
@@ -283,13 +284,13 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
         },  (err, out)=>{
 
 
-                const version = '0.1';
+                const version = PandoraBoxMetaVersion.PANDORA_BOX_META;
                 const finalName = name || this.extractLocationName(boxLocation);
                 const finalDescription = description;
                 const finalCategories =  categories;
 
-                const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams )
-                const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, finalDescription, finalCategories, streamsHash, streams, 0, 0, Buffer.alloc(64) );
+                const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( finalDescription, streams )
+                const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName,  finalCategories, metaDataHash, finalDescription, streams, 0, 0, Buffer.alloc(64) );
                 pandoraBox.streamsSetPandoraBox();
 
                 this._kademliaNode.contactStorage.sybilProtectSign( {message: pandoraBox.hash}, {includeTime: true} ).then((out)=>{

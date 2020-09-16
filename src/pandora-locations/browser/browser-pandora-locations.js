@@ -2,7 +2,6 @@ const {createHash} = require('crypto')
 
 const { WritableStream, ReadableStream, TransformStream } = require('web-streams-polyfill/ponyfill')
 const streamsaver = require('streamsaver')
-const stream = require('stream')
 
 // change streamsaver WritableStream to be a polyfilled version instead
 // see https://github.com/Pandora-Protocol/pandora-protocol-reference/issues/6 @jimmywarting
@@ -17,6 +16,7 @@ const Streams = require('../../helpers/streams/streams')
 const PandoraBoxHelper = require('./../../pandora-box/pandora-box-helper')
 const PandoraBoxStream = require('../../pandora-box/stream/pandora-box-stream')
 const PandoraBox = require('../../pandora-box/pandora-box')
+const PandoraBoxMetaVersion = require('../../pandora-box/meta/pandora-box-meta-version')
 const { Writer } = require("@transcend-io/conflux");
 
 module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations {
@@ -249,13 +249,13 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         }, (err, out)=>{
 
-            const version = '0.1';
+            const version = PandoraBoxMetaVersion.PANDORA_BOX_META;
             const finalName = name;
             const finalDescription = description;
             const finalCategories =  categories;
 
-            const streamsHash = PandoraBoxHelper.computePandoraBoxStreamsHash( streams )
-            const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, finalDescription, finalCategories, streamsHash, streams, 0, 0, Buffer.alloc(64) );
+            const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( finalDescription, streams )
+            const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName,  finalCategories, metaDataHash, finalDescription, streams, 0, 0, Buffer.alloc(64) );
             pandoraBox.streamsSetPandoraBox();
 
             this._kademliaNode.contactStorage.sybilSign( {message: pandoraBox.hash}, {includeTime: true} ).then((out)=> {

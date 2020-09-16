@@ -1,15 +1,13 @@
 const {CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
+const PandoraBoxMetaVersion = require('./pandora-box-meta-version')
 
-module.exports.validatePandoraBoxMeta = function (version, name, description, categories, streamsHash ){
+module.exports.validatePandoraBoxMeta = function (version, name, categories, metaDataHash ){
 
-    if (typeof version !== "string" || !version.length ) throw 'Invalid PandoraBox version type';
-    if (version !== PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_VERSION) throw "Invalid PandoraBox version";
+    if (typeof version !== "number" || !PandoraBoxMetaVersion._map[version]  ) throw 'Invalid PandoraBox version type';
 
     if (typeof name !== "string" || name.length < 5 || name.length > 200) throw 'Invalid PandoraBox name';
 
-    if (typeof description !== "string" || description.length > 4*1024) throw 'Invalid PandoraBox description';
-
-    if ( !Buffer.isBuffer(streamsHash) || streamsHash.length !== KAD_OPTIONS.NODE_ID_LENGTH ) throw 'Invalid PandoraBox hash';
+    if ( !Buffer.isBuffer(metaDataHash) || metaDataHash.length !== KAD_OPTIONS.NODE_ID_LENGTH ) throw 'Invalid PandoraBox hash';
 
     if (!Array.isArray(categories) || categories.length > 3 ) throw 'Too many categories'
     for (const category of categories)
@@ -25,12 +23,15 @@ module.exports.splitPandoraBoxMetaName = function (name){
     return name.split(/[\s`~'";,.\-+=_ :{}\[\]|\\\/!@#$%^&*()]+/).slice(0, PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_FIND_BY_NAME_MAX_WORDS ).sort( (a, b) => a.localeCompare( b ) );
 }
 
-module.exports.computePandoraBoxMetaBuffer = function (version, name, description, streamsHash){
+module.exports.computePandoraBoxMetaBuffer = function (version, name, categories, metaDataHash){
+
+    categories = Buffer.concat( categories.map( it => Buffer.from(it) ) );
+
     return Buffer.concat([
-        Buffer.from(version),
+        Buffer.from(version.toString()),
         Buffer.from(name),
-        Buffer.from(description),
-        Buffer.from(streamsHash),
+        categories,
+        Buffer.from(metaDataHash),
     ]);
 }
 
