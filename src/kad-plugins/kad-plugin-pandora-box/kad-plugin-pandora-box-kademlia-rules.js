@@ -58,12 +58,12 @@ module.exports = function (options){
 
             try{
 
-                if ( old && old.score > score ) return null;
+                if ( old && old.score >= score ) return null;
 
                 const decoded = bencode.decode( value );
                 const contact = this._kademliaNode.createContact( decoded[0] );
 
-                if ( score > contact.timestamp ) return false;
+                if ( score !== contact.timestamp ) return false;
                 if ( !contact.verify( masterKey, decoded[1] ) ) return null;
 
                 return {value, score};
@@ -80,6 +80,9 @@ module.exports = function (options){
 
                 const pandoraBoxMeta = PandoraBoxMeta.fromArray(this._kademliaNode, decoded[0] );
                 if (!pandoraBoxMeta.hash.equals(key)) return null;
+
+                const boxScore = pandoraBoxMeta.sybilProtectTime;
+                if ( score !== boxScore ) return null;
 
                 const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);
                 const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name);

@@ -118,7 +118,7 @@ module.exports = function(options){
                 const s = v.join(' ');
                 const hash = CryptoUtils.sha256(Buffer.from(s));
 
-                this.iterativeStoreSortedListValue( tableName, hash, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMetaArray, subset] ), 0, (err, out) => {
+                this.iterativeStoreSortedListValue( tableName, hash, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMetaArray, subset ] ), pandoraBoxMeta.sybilProtectTime, (err, out) => {
                     if (err) return next(err);
                     output[index] = out;
                     next();
