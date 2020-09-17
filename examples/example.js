@@ -7,6 +7,7 @@ console.log("SIMPLE Encrypted PANDORA PROTOCOL REFERENCE");
 
 //const sybilKeys = KAD.helpers.ECCUtils.createPair();
 const sybilKeys = {
+    privateKey: Buffer.from("68a595199d55260b90d97e6714f27c2a22548f9ee4b2c61956eb628189a8e2ed", "hex"),
     publicKey: Buffer.from("049cf62611922a64575439fd14e0a1190c40184c4d20a1c7179828693d574e84b94b70c3f3995b7a2cd826e1e8ef9eb8ccf90e578891ecfe10de6a4dc9371cd19a", 'hex'),
     uri: 'http://pandoraprotocol.ddns.net:9090/challenge/',
 }
@@ -25,7 +26,7 @@ if (sybilKeys.privateKey)
     console.info("SYBIL PRIVATE KEY", sybilKeys.privateKey.toString('hex') );
 console.info("SYBIL PUBLIC KEY", sybilKeys.publicKey.toString('hex') );
 
-const COUNT = 6;
+const COUNT = 50;
 
 // KAD_OPTIONS.TEST_PROTOCOL = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_MOCK;
 // KAD_OPTIONS.TEST_PROTOCOL = KAD.ContactAddressProtocolType.CONTACT_ADDRESS_PROTOCOL_TYPE_HTTP;
@@ -39,71 +40,53 @@ const nodes = array.map(
         path.resolve( __dirname + '/_temp/' + index ),
     ) )
 
-async.eachLimit( array, 1, (index, next ) => {
+async function execute() {
 
-    nodes[index].start( { port: 10000+index } ).then((out)=>{
-        console.info("BOOTSTRAP INFO:", KAD.library.bencode.encode( nodes[index].contact.toArray()).toString('hex'))
-        next(null, out)
-    })
+    for (let i = 0; i < nodes.length; i++) {
+        await nodes[i].start({port: 10000 + i});
+        console.info("BOOTSTRAP INFO:", KAD.library.bencode.encode( nodes[i].contact.toArray()).toString('hex') )
+    }
 
-}, (err, out)=>{
+    for (let i = 1; i < nodes.length; i++) {
+        const out = await nodes[i].bootstrap(nodes[0].contact, true);
+        console.log("BOOTSTRAPING...", out.length);
+    }
 
-    async.eachLimit(  nodes, 1, (node, next) => {
-        node.bootstrap( nodes[0].contact, false, ()=>{
-            console.log("BOOTSTRAPING...");
-            //fix for websockets
-            setTimeout( next, 100 );
-        } );
+    console.log('NODES BOOTSTRAPPED');
+    for (let i = 0; i < nodes.length; i++)
+        console.log(i, nodes[i].routingTable.count, nodes[i].routingTable.array.map(it => it.contact.contactType));
 
-    }, (err, out)=>{
+    const out = await nodes[3].seedPandoraBox( './examples/public/data1',  'Example 1 box simple', 'Example1 Description', ['category1','category2'],  undefined,
+        (out) => {
 
-        console.log('NODES BOOTSTRAPPED');
+            if (out.chunkIndex % 100 === 0)
+                console.log("update", out.chunkIndex, out.path );
 
-        for (let i=0; i < nodes.length; i++)
-            console.log(i, nodes[i].routingTable.count, nodes[i].routingTable.array.map( it => it.contact.contactType ));
+        });
 
-        nodes[3].seedPandoraBox( './examples/public/data1',  'Example 1 box simple', 'Example1 Description', ['category1','category2'],  undefined,
-            (err, out) => {
+    console.info('pandora box hash', out.pandoraBox.hash.toString('hex'))
 
-                if (out.chunkIndex % 100 === 0)
-                    console.log("update", out.chunkIndex, out.path );
+    const out2 = await nodes[4].findPandoraBoxesByName('box simple');
+    console.info('pandora box found', !!out2.result[out.pandoraBox.hash.toString('hex')] )
 
-            },
-            (err, out )=>{
+    const out3 = await nodes[4].getPandoraBox( out.pandoraBox.hash );
+    console.info('pandora box get', out3.pandoraBox.hash.toString('hex'));
 
-                if (err) return console.error(err);
-                console.info('pandora box hash', out.pandoraBox.hash.toString('hex'))
+    out.pandoraBox.events.on("stream-chunk/done", (data)=>{
 
-                nodes[4].findPandoraBoxesByName('box simple',(err, out2)=>{
-                    console.info('pandora box found', !!out2.result[out.pandoraBox.hash.toString('hex')] )
-                })
-
-                nodes[4].getPandoraBox( out.pandoraBox.hash, (err, out )=>{
-
-                    if (err) return console.error(err);
-
-                    out.pandoraBox.events.on("stream-chunk/done", (data)=>{
-
-                        if (data.chunkIndex % 100 === 0)
-                            console.log(data.stream.path, data.chunkIndex);
-
-                    });
-
-                    out.pandoraBox.events.on("streamliner/done", (data)=>{
-                        console.log("streamliner done!");
-                    })
-
-                    console.log( JSON.stringify( out.pandoraBox.toJSON(), null, 4 ) );
-                    console.log('isDone', out.pandoraBox.isDone)
-
-                })
-
-            });
+        if (data.chunkIndex % 100 === 0)
+            console.log(data.stream.path, data.chunkIndex);
 
     });
 
-})
+    out.pandoraBox.events.on("streamliner/done", (data)=>{
+        console.log("streamliner done!");
+    })
 
+    console.log( JSON.stringify( out.pandoraBox.toJSON(), null, 4 ) );
+    console.log('isDone', out.pandoraBox.isDone)
+
+}
+
+execute();
 global.nodes = nodes;
-
-

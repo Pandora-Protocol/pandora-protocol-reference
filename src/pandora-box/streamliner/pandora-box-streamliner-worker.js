@@ -14,29 +14,27 @@ module.exports = class PandoraBoxStreamlinerWorker {
         this._started = false;
     }
 
-    connect(cb){
+    async connect(  ){
 
         console.log("establishing connection", this.peer.contact, this.peer.contact.rendezvousContact ? this.peer.contact.rendezvousContact.identityHex : '');
 
         //establish connection
-        this._kademliaNode.rules.establishConnection( this.peer.contact,  ( err, connection )=>{
+        try{
 
-            console.log("establishing connection answer", err, connection );
+            const connection = await  this._kademliaNode.rules.establishConnection( this.peer.contact );
+            console.log("establishing connection answer", connection );
 
-            if (err || !connection)
+            if (!connection) throw "Connection was not established";
+
+            connection.once("closed",()=>{
                 this._pandoraBoxStreamlinerWorkers.removeWorker(this);
-            else {
+            })
 
-                connection.once("closed",()=>{
-                    this._pandoraBoxStreamlinerWorkers.removeWorker(this);
-                })
+            this.start();
 
-                this.start();
-            }
-
-            cb(err, connection);
-
-        });
+        }catch(err){
+            this._pandoraBoxStreamlinerWorkers.removeWorker(this);
+        }
 
     }
 
@@ -46,7 +44,7 @@ module.exports = class PandoraBoxStreamlinerWorker {
         this._started = true;
 
         this._workerAsyncInterval = setAsyncInterval(
-            next => this._work(next),
+            this._work.bind(this),
             0,
         );
 
@@ -62,8 +60,8 @@ module.exports = class PandoraBoxStreamlinerWorker {
     }
 
 
-    _work(next){
-        this._pandoraBoxStreamliner.work(this, next)
+    _work(){
+        return this._pandoraBoxStreamliner.work(this)
     }
 
 }

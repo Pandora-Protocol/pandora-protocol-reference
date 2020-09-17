@@ -54,12 +54,12 @@ module.exports = class PandoraBoxes extends EventEmitter{
         this.emit('status', false);
     }
 
-    addPandoraBox( pandoraBox, save = true, cb ){
+    async addPandoraBox( pandoraBox, save = true ){
 
         if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw 'PandoraBox arg is invalid';
 
         if (this._boxesMap[pandoraBox.hashHex])
-            return cb(null, false); //already
+            return false; //already
 
         this._boxesMap[pandoraBox.hashHex] = pandoraBox;
 
@@ -68,23 +68,19 @@ module.exports = class PandoraBoxes extends EventEmitter{
                 this._streamsMap[stream.hashHex] = stream;
 
         if (!save)
-            return this._addedBox(pandoraBox, cb);
+            return this._addedBox(pandoraBox);
 
-        this.saveManager.save(pandoraBox, (err, out)=>{
-
-            if (err) return cb(err);
-            this._addedBox(pandoraBox, cb);
-
-        })
+        const out =  await this.saveManager.save(pandoraBox);
+        this._addedBox(pandoraBox);
 
     }
 
-    removeBox(pandoraBox, cb){
+    async removeBox(pandoraBox){
 
         if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw 'PandoraBox arg is invalid';
 
         if (!this._boxesMap[pandoraBox.hashHex])
-            return cb(null, false); //already
+            return false; //already
 
         pandoraBox.streamliner.stop();
 
@@ -94,28 +90,25 @@ module.exports = class PandoraBoxes extends EventEmitter{
             if ( this._streamsMap[stream.hashHex] === stream)
                 delete this._streamsMap[stream.hashHex];
 
-        pandoraBox.remove( (err, out)=>{
-            if (err) return cb(err);
-
-            this._removedBox(pandoraBox, cb);
-        });
+        const out = await pandoraBox.remove();
+        this._removedBox(pandoraBox);
 
     }
 
-    _addedBox(pandoraBox, cb){
+    _addedBox(pandoraBox){
 
         if (this._startedStreamlining)
             pandoraBox.streamliner.start();
 
         this.emit('pandora-box/added', pandoraBox);
 
-        cb(null, pandoraBox )
+        return pandoraBox;
     }
 
-    _removedBox(pandoraBox, cb){
+    _removedBox(pandoraBox){
 
         this.emit('pandora-box/removed', pandoraBox);
-        cb(null, pandoraBox)
+        return true;
 
     }
 

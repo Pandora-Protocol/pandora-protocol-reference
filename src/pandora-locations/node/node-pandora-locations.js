@@ -1,6 +1,8 @@
 const path = require('path');
 const rimraf = require("rimraf");
 const fs = require('fs');
+const fsPromises = fs.promises;
+
 const {createHash} = require('crypto')
 
 const PandoraStreamType = require('../../pandora-box/stream/pandora-box-stream-type')
@@ -11,7 +13,6 @@ const PandoraBoxStreamStatus = require('../../pandora-box/stream/pandora-box-str
 const Streams = require('../../helpers/streams/streams')
 const PandoraBoxHelper = require('./../../pandora-box/pandora-box-helper')
 const PandoraBoxMetaHelper = require('./../../pandora-box/meta/pandora-box-meta-helper')
-const async = require('pandora-protocol-kad-reference').library.async;
 
 const InterfacePandoraLocations = require('../interface-pandora-locations')
 
@@ -25,290 +26,231 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
-    removeDirectory(location  = '', cb){
-        rimraf( location, cb);
+    async removeDirectory(location  = ''){
+        rimraf( location);
     }
 
-    locationExists(location = '', cb){
-        return fs.exists(location, cb);
+    async locationExists(location = ''){
+        return fsPromises.exists(location);
     }
 
-    createEmptyDirectory(location = '', cb){
+    async createEmptyDirectory(location = ''){
 
         const directory = this.extractLocationBase(location);
-        this.locationExists(directory, out =>{
+        const out = await this.locationExists(directory);
+        if (!out) throw "Parent directory doesn't exist";
 
-            if (!out) return cb(new Error("Parent directory doesn't exist"))
+        const out2 = await this.locationExists(location);
+        if (out2) return true;
 
-            this.locationExists(location, ( out)=>{
-
-                if (out) return cb(null, true );
-
-                fs.mkdir( location, cb );
-
-            })
-
-        });
+        return fsPromises.mkdir( location);
 
     }
 
 
 
-    getLocationInfo(location, cb){
+    async getLocationInfo(location){
 
-        this.locationExists(location, out => {
+        const out = await this.locationExists(location);
+        if (!out) throw 'Location not found';
 
-            if (!out) return cb(new Error('Location not found'));
+        const stat = await fsPromises.stat(location);
 
-            const stat = fs.statSync(location);
-            if (stat.isFile()) return cb(null, {type: PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM, size: stat.size} );
-            else if  (stat.isDirectory()) cb(null, {type: PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY, size: stat.size} );
-            else cb(new Error('Invalid location type'));
+        if (stat.isFile()) return {type: PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM, size: stat.size};
+        if  (stat.isDirectory()) return {type: PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY, size: stat.size};
 
-        })
-
-    }
-
-    getLocationDirectoryFiles(location, cb){
-
-        fs.readdir(location, (err,  streams)=>{
-
-            if (err) return cb(err);
-            cb(null, streams);
-
-        });
+        throw 'Invalid location type';
 
     }
 
-    getLocationStream(location, chunkSize, cb){
+    async getLocationDirectoryFiles(location){
 
-        this.getLocationInfo(location, (err, out)=>{
-
-            if (err) return cb(err);
-
-            if (out.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY ) return cb(new Error('Location is a directory'));
-            if (out.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM) {
-                const readStream = fs.createReadStream(location, { highWaterMark: chunkSize });
-                cb(null, readStream);
-            } else
-                cb(new Error('Stream Type error'));
-
-        })
+        return fsPromises.readdir( location );
 
     }
 
-    _getLocationStreamChunk(fd, chunkIndex, chunkSize, chunkRealSize, cb){
+    async getLocationStream(location, chunkSize){
+
+        const out = await this.getLocationInfo(location);
+
+        if (out.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY ) throw 'Location is a directory';
+        if (out.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM) {
+            const readStream = fs.createReadStream(location, { highWaterMark: chunkSize });
+            return readStream;
+        }
+        throw 'Stream Type error';
+
+    }
+
+    async _getLocationStreamChunk(fd, chunkIndex, chunkSize, chunkRealSize){
 
         const buffer = Buffer.alloc(chunkRealSize);
-        fs.read(fd, buffer, 0, chunkRealSize, chunkIndex * chunkSize, (err, out)=>{
-
-            if (err) return cb(err);
-            else cb(null, buffer );
-
-        });
+        await fsPromises.read(fd, buffer, 0, chunkRealSize, chunkIndex * chunkSize);
+        return buffer;
 
     }
 
-    getLocationStreamChunk(pandoraBoxStream, chunkIndex, cb){
+    async getLocationStreamChunk(pandoraBoxStream, chunkIndex){
 
         const location = pandoraBoxStream.absolutePath;
 
         let found = this._fdOpenMap[location];
 
         if (!found){
-            fs.open( location, (err, fd) =>{
+            const fd = await fsPromises.open( location);
 
-                if (err) return cb(err);
+            const found = {
+                fd,
+                timestamp: new Date().getTime(),
+            }
 
-                const found = {
-                    fd,
-                    timestamp: new Date().getTime(),
-                }
+            this._fdOpenMap[location] = found;
+            this._fdOpen.push(found);
 
-                this._fdOpenMap[location] = found;
-                this._fdOpen.push(found);
+            if (this._fdOpen.length > 1000){
+                this._fdOpen.sort((a,b)=>b.timestamp - a.timestamp);
+                fs.close(this._fdOpen[1000].fd, ()=>{});
+                this._fdOpen.splice( 1000 );
+            }
 
-                if (this._fdOpen.length > 1000){
-                    this._fdOpen.sort((a,b)=>b.timestamp - a.timestamp);
-                    fs.close(this._fdOpen[1000].fd, ()=>{
+            return this._getLocationStreamChunk(found.fd, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex) );
 
-                    });
-                    this._fdOpen.splice( 1000 );
-                }
-
-                this._getLocationStreamChunk(found.fd, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex), cb);
-
-            });
         } else {
             found.timestamp = new Date().getTime();
-            this._getLocationStreamChunk(found.fd, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex), cb);
+            return this._getLocationStreamChunk(found.fd, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex) );
         }
     }
 
-    createLocationEmptyStream(location, size, cb){
+    async createLocationEmptyStream(location, size){
 
         const directory = this.extractLocationBase(location);
-        this.locationExists(directory, out =>{
+        const out = await this.locationExists(directory);
 
-            if (!out) return cb(new Error("Parent folder doesn't exist"))
-            if ( size < 0 ) return cb(new Error("Size is invalid"));
+        if (!out) throw "Parent folder doesn't exist";
+        if ( size < 0 ) throw "Size is invalid";
 
-            setTimeout(()=>{
+        const flag = (await fsPromises.exists(location))  ? 'a' : 'w';
+        const stream = fsPromises.createWriteStream(location, {flags: flag});
 
-                const flag = fs.existsSync(location) ? 'a' : 'w';
-                const stream = fs.createWriteStream(location, {flags: flag});
+        await stream.write(Buffer.alloc(1), 0, 1, size-1);
 
-                stream.write(Buffer.alloc(1), 0, 1, size-1);
+        await stream.close();
 
-                stream.close();
-
-                cb(null, true);
-
-            }, 0)
-
-
-        })
+        return true;
 
     }
 
-    writeLocationStreamChunk( buffer, pandoraBoxStream, chunkIndex, cb ){
+    async writeLocationStreamChunk( buffer, pandoraBoxStream, chunkIndex){
 
-        const stream = fs.createWriteStream( pandoraBoxStream.absolutePath, {flags: 'r+', start: chunkIndex * pandoraBoxStream.chunkSize });
-        stream.write(buffer, (err, out)=>{
+        const stream = fsPromises.createWriteStream( pandoraBoxStream.absolutePath, {flags: 'r+', start: chunkIndex * pandoraBoxStream.chunkSize });
 
-            stream.close();
+        const out = await stream.write(buffer);
 
-            if (err) return cb(err);
-            cb(null, true);
+        await stream.close();
 
-        });
+        return true;
 
     }
 
-    _walkLocation(location, cb, done ){
+    async _walkLocation(location, locations = [] ){
 
-        this.getLocationInfo(location, (err, info )=>{
+        const info = await this.getLocationInfo(location);
+        if (!info) throw 'Info not found';
 
-            if (err) return cb(err);
-            if (!info) return cb(new Error('Info not found'));
+        if (info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM) {
+            locations.push( { path: location, info } );
+        }
+        else if (info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) {
 
-            if (info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM) {
-                cb(null, { path: location, info }, done);
-            }
-            else if (info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) {
-                cb(null, { path: location, info }, ()=>{
+            locations.push({path: location, info});
 
-                    this.getLocationDirectoryFiles(location, (err, streams)=>{
+            const streams = await this.getLocationDirectoryFiles(location);
 
-                        if (err) return done(err);
-                        async.eachLimit( streams, 1, (stream, next)=>{
+            for (const stream of streams)
+                await this._walkLocation(this.trailingSlash(location) + stream, locations);
 
-                            this._walkLocation(this.trailingSlash(location) + stream, cb,next );
-
-                        }, done );
-
-                    })
-
-                });
-
-            } else
-                cb( new Error("Stream Type invalid"))
-        })
+        } else
+            throw "Stream Type invalid";
 
     }
 
-    createPandoraBox( boxLocation, name, description, categories, chunkSize, cbProgress, cb){
+    async createPandoraBox( boxLocation, name, description, categories, chunkSize, cbProgress){
 
         boxLocation = this.trailingSlash(boxLocation);
 
         for (const box of this._kademliaNode.pandoraBoxes.boxes)
             if ( box.absolutePath === box.absolutePath )
-                return cb(null, box);
+                return box;
 
-        const streams = [];
+        const streams = [], locations = [];
 
-        this._walkLocation( boxLocation, (err, location, next )=>{
+        await this._walkLocation( boxLocation, locations);
 
-            if (err) return cb(err,)
+        for (const location of locations){
 
             if (location.info.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM ){
 
                 const newPath = this.startWithSlash( path.relative( boxLocation, location.path ) || '' );
                 this._explodeStreamPath(streams, newPath);
 
-                this.getLocationStream(location.path,  chunkSize,(err, stream )=>{
+                const stream = await this.getLocationStream(location.path,  chunkSize);
 
-                    const sum = createHash('sha256');
-                    const chunks = [];
+                const sum = createHash('sha256');
+                const chunks = [];
 
-                    cbProgress(null, {done: false, status: 'location/stream', path: location.path });
+                cbProgress(null, {done: false, status: 'location/stream', path: location.path });
 
-                    Streams.splitStreamIntoChunks( stream, chunkSize, (err, { done, chunk, chunkIndex } )=>{
+                await Streams.splitStreamIntoChunks( stream, chunkSize, ( { done, chunk, chunkIndex } )=>{
 
-                        if (err) return cb(err, null);
+                    if ( chunkIndex % 25 === 0)
+                        cbProgress(null, {done: false, status: 'location/stream/update', path: location.path, chunkIndex });
 
-                        if (done) {
+                    sum.update(chunk)
+                    const hashChunk = createHash('sha256').update(chunk).digest();
+                    chunks.push(hashChunk)
 
-                            cbProgress(null, {done: false, status: 'location/stream/done', path: location.path });
+                });
 
-                            const pandoraStream = new PandoraBoxStream( this,
-                                newPath,
-                                location.info.type,
-                                location.info.size,
-                                chunkSize,
-                                sum.digest(),
-                                chunks,
-                                new Array(chunks.length).fill(1),
-                                PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
-                            );
+                cbProgress( {done: false, status: 'location/stream/done', path: location.path });
 
-                            streams.push( pandoraStream );
-                            return next();
-                        }
-                        else {
+                const pandoraStream = new PandoraBoxStream( this,
+                    newPath,
+                    location.info.type,
+                    location.info.size,
+                    chunkSize,
+                    sum.digest(),
+                    chunks,
+                    new Array(chunks.length).fill(1),
+                    PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
+                );
 
-                            if ( chunkIndex % 25 === 0)
-                                cbProgress(null, {done: false, status: 'location/stream/update', path: location.path, chunkIndex });
+                streams.push( pandoraStream );
 
-                            sum.update(chunk)
-                            const hashChunk = createHash('sha256').update(chunk).digest();
-                            chunks.push(hashChunk)
-                        }
+            }
 
-                    });
+        }
 
-                })
-            } else
-                next();
+        const version = PandoraBoxMetaVersion.PANDORA_BOX_META;
+        const finalName = name || this.extractLocationName(boxLocation);
+        const finalDescription = description;
+        const finalCategories =  categories;
 
-        },  (err, out)=>{
+        let size = 0;
+        for (const stream of streams)
+            size += stream.size;
 
+        const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( finalDescription, streams )
+        const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, size,  finalCategories, metaDataHash, finalDescription, streams, 0, 0, Buffer.alloc(64) );
+        pandoraBox.streamsSetPandoraBox();
 
-                const version = PandoraBoxMetaVersion.PANDORA_BOX_META;
-                const finalName = name || this.extractLocationName(boxLocation);
-                const finalDescription = description;
-                const finalCategories =  categories;
+        const out = await this._kademliaNode.contactStorage.sybilProtectSign( {message: pandoraBox.hash}, {includeTime: true} );
 
-                let size = 0;
-                for (const stream of streams)
-                    size += stream.size;
+        pandoraBox._sybilProtectIndex = out.index+1;
+        pandoraBox._sybilProtectTime = out.time;
+        pandoraBox._sybilProtectSignature = out.signature;
 
-                const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( finalDescription, streams )
-                const pandoraBox = new PandoraBox( this._kademliaNode, boxLocation, version, finalName, size,  finalCategories, metaDataHash, finalDescription, streams, 0, 0, Buffer.alloc(64) );
-                pandoraBox.streamsSetPandoraBox();
-
-                this._kademliaNode.contactStorage.sybilProtectSign( {message: pandoraBox.hash}, {includeTime: true} ).then((out)=>{
-
-                    pandoraBox._sybilProtectIndex = out.index+1;
-                    pandoraBox._sybilProtectTime = out.time;
-                    pandoraBox._sybilProtectSignature = out.signature;
-
-                    cbProgress(null, {done: true });
-                    cb(null, pandoraBox );
-                }).catch( err => cb(err) );
-
-
-        })
+        cbProgress( {done: true });
+        return pandoraBox;
 
     }
 

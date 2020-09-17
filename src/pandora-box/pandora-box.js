@@ -5,7 +5,6 @@ const EventEmitter = require('events')
 const PandoraBoxStreamType = require('./stream/pandora-box-stream-type')
 
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
-const async = require('pandora-protocol-kad-reference').library.async;
 const PandoraBoxMeta = require('./meta/pandora-box-meta')
 
 module.exports = class PandoraBox extends PandoraBoxMeta {
@@ -113,116 +112,56 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
         return this.chunksTotalAvailable / ( this.chunksTotal || 1) * 100;
     }
 
-    save(cb){
+    async save(){
 
-        this._kademliaNode.storage.getItem('pandoraBoxes:box:hash-exists:'+this.hashHex, (err, out) =>{
+        let out = await this._kademliaNode.storage.getItem('pandoraBoxes:box:hash-exists:'+this.hashHex);
 
-            if (err) return cb(err);
+        if ( out && out === "1" ) return false;
 
-            if ( out && out === "1" ) return cb(null, false );
+        const json = {
+            encoded: bencode.encode( this.toArray() ).toString('base64'),
+            absolutePath: this.absolutePath,
+        }
 
-            const json = {
-                encoded: bencode.encode( this.toArray() ).toString('base64'),
-                absolutePath: this.absolutePath,
-            }
+        out = await this._kademliaNode.storage.setItem('pandoraBoxes:box:hash:'+this.hashHex, JSON.stringify(json) );
 
-            this._kademliaNode.storage.setItem('pandoraBoxes:box:hash:'+this.hashHex, JSON.stringify(json), (err, out)=>{
+        out = await this._kademliaNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex, "1" );
 
-                if (err) return cb(err);
-
-                this._kademliaNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex, "1", (err, out)=>{
-
-                    if (err) return cb(err);
-
-                    async.eachLimit( this.streams, 1, ( stream, next ) => {
-
-                        stream.saveStatus((err, out)=>{
-
-                            if (err) return next(err);
-                            next();
-
-                        })
-
-                    }, (err, out) =>{
-
-                        if (err) return cb(err);
-                        cb(null, true);
-
-                    } );
-
-                } )
-
-            } )
-
-        });
+        for (const stream of this.streams)
+            await stream.saveStatus();
 
     }
 
-    remove(cb){
+    async remove(){
 
-        this._kademliaNode.storage.removeItem('pandoraBoxes:box:hash:'+this.hashHex, (err, out)=>{
+        let out = await this._kademliaNode.storage.removeItem('pandoraBoxes:box:hash:'+this.hashHex);
 
-            if (err) return cb(err);
+        out = await this._kademliaNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex);
 
-            this._kademliaNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex, (err, out)=>{
-
-                if (err) return cb(err);
-
-                async.eachLimit( this.streams, 1, ( stream, next ) => {
-
-                    stream.removeStatus((err, out)=>{
-
-                        if (err) return next(err);
-                        next();
-
-                    })
-
-                }, (err, out) =>{
-
-                    if (err) return cb(err);
-                    cb(null, true);
-
-                } );
-
-            } )
-
-        } )
+        for (const stream of this.streams)
+            await stream.removeStatus();
 
     }
 
-    static load(kademliaNode, hash, cb){
+    static async load(kademliaNode, hash){
 
-        kademliaNode.storage.getItem('pandoraBoxes:box:hash:'+hash, (err, out)=>{
+        let out = await kademliaNode.storage.getItem('pandoraBoxes:box:hash:'+hash);
 
-            if (err) return cb(err);
-            if (!out) return cb(new Error('PandoraBox was not found by hash'))
+        if (!out) throw 'PandoraBox was not found by hash';
 
-            const json = JSON.parse(out);
+        const json = JSON.parse(out);
 
-            const decoded = bencode.decode( Buffer.from( json.encoded, 'base64') );
-            const box = PandoraBox.fromArray( kademliaNode, decoded ) ;
-            box.absolutePath = json.absolutePath;
+        const decoded = bencode.decode( Buffer.from( json.encoded, 'base64') );
+        const box = PandoraBox.fromArray( kademliaNode, decoded ) ;
+        box.absolutePath = json.absolutePath;
 
-            async.eachLimit( box.streams, 1, ( stream, next ) => {
+        for (const stream of box.streams)
+            await stream.loadStatus();
 
-                stream.loadStatus((err, out)=>{
+        box.isDone = box.calculateIsDone;
+        box.chunksTotalAvailable = box._calculateChunksTotal(true);
 
-                    if (err) return next(err);
-                    next();
-
-                })
-
-            }, (err, out) =>{
-
-                box.isDone = box.calculateIsDone;
-                box.chunksTotalAvailable = box._calculateChunksTotal(true);
-
-                if (err) return cb(err);
-                cb(null, box);
-
-            } );
-
-        } )
+        return box;
 
     }
 

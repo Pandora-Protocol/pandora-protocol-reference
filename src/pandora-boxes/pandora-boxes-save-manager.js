@@ -1,4 +1,3 @@
-const async = require('pandora-protocol-kad-reference').library.async;
 const PandoraBox = require('./../pandora-box/pandora-box')
 
 module.exports = class PandoraBoxesSaveManager {
@@ -12,93 +11,54 @@ module.exports = class PandoraBoxesSaveManager {
 
     }
 
-    save( box , cb ) {
+    async save( box  ) {
 
         const boxes = this._pandoraBoxes.boxes;
 
-        this._kademliaNode.storage.setItem('pandoraBoxes:count', boxes.length.toString(), (err, out)=>{
+        let out = await this._kademliaNode.storage.setItem('pandoraBoxes:count', boxes.length.toString() );
 
-            if (err) return cb(err);
+        for (let i=0; i < boxes.length; i++){
 
-            const array = new Array(boxes.length).fill(1).map( (it, index) => index)
-            async.eachLimit( array, 1, ( index, next )=>{
+            if (box && boxes[i] !== box) return;
 
-                if (box && boxes[index] !== box) return next();
+            out = await this._kademliaNode.storage.setItem('pandoraBoxes:box:index:'+i, boxes[i].hashHex);
 
-                this._kademliaNode.storage.setItem('pandoraBoxes:box:index:'+index, boxes[index].hashHex, (err, out)=>{
+            out = await boxes[index].save();
 
-                    if (err) return next(err);
+        }
 
-                    boxes[index].save((err, out)=>{
-
-                        if (err) return next(err);
-                        next();
-
-                    });
-
-                } )
-            }, (err, out)=>{
-
-                if (err) return cb(err);
-
-                this._saved = true;
-                cb(null, boxes.length );
-
-            });
-
-        })
-
+        this._saved = true;
+        return boxes.length;
     }
 
-    load(cb){
+    async load(){
 
         const boxes = [];
 
-        this._kademliaNode.storage.getItem('pandoraBoxes:count', (err, out)=>{
+        let out = await this._kademliaNode.storage.getItem('pandoraBoxes:count');
 
-            if (err) return cb(err);
-            if (!out){
-                this._loaded = true;
-                return cb(null, [] )
-            }
+        if (!out){
+            this._loaded = true;
+            return [];
+        }
 
-            let length = Number.parseInt(out);
-            const array = new Array(length).fill(1).map( (it, index) => index)
+        let length = Number.parseInt(out);
+        for (let i=0; i < length; i++){
 
-            async.eachLimit( array, 1, ( index, next )=>{
-                this._kademliaNode.storage.getItem('pandoraBoxes:box:index:'+index, (err, hash )=>{
+            let hash = await this._kademliaNode.storage.getItem('pandoraBoxes:box:index:'+i);
+            if (!hash) throw 'PandoraBox hash was not found by index';
 
-                    if (err) return next(err);
-                    if (!hash) return next(new Error('PandoraBox hash was not found by index'))
+            const box = await PandoraBox.load(this._kademliaNode, hash);
+            boxes.push( box );
 
-                    PandoraBox.load(this._kademliaNode, hash, (err, box )=>{
+        }
 
-                        if (err) return next(err);
+        for (const box of boxes)
+            await this._pandoraBoxes.addPandoraBox(box, false);
 
-                        boxes.push( box );
-                        next();
+        this._loaded = true;
+        return boxes;
 
-                    })
-
-                } )
-            }, (err, out)=>{
-
-                if (err) return cb(err);
-
-                async.eachLimit( boxes, 1, ( box, next )=>{
-
-                    this._pandoraBoxes.addPandoraBox(box, false, next);
-
-                }, (err, out)=>{
-
-                    this._loaded = true;
-                    cb(err, boxes);
-
-                });
-
-            });
-
-        });
 
     }
 

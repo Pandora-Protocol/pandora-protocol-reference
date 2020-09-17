@@ -1,38 +1,41 @@
 module.exports = {
 
-    splitStreamIntoChunks(stream, chunkSize, cb) {
+    async splitStreamIntoChunks(stream, chunkSize, cbProgress) {
 
-        const size = stream.size;
-        let offset = 0, chunkIndex = 0;
+        return new Promise((resolve, reject)=>{
 
-        const onLoadHandler = function(evt) {
+            const size = stream.size;
+            let offset = 0, chunkIndex = 0;
 
-            if ( !evt.target.error ) {
+            const onLoadHandler = function(evt) {
+
+                if ( evt.target.error )
+                    return reject( evt.target.error);
+
 
                 offset += (evt.target.result.length || evt.target.result.byteLength);
 
                 const chunk = Buffer.from(evt.target.result);
 
-                cb(null, {done: false, chunk, chunkIndex: chunkIndex++})
+                cbProgress( {done: false, chunk, chunkIndex: chunkIndex++} );
 
-            } else
-                return cb(evt.target.error)
+                if (offset >= size)
+                    resolve(true);
 
-            if (offset >= size){
-                return cb(null, {done: true })
+                readBlock(offset, chunkSize, stream);
+            }
+
+            const readBlock = function(_offset, length, _stream) {
+                const r = new FileReader();
+                const blob = _stream.slice(_offset, length + _offset);
+                r.onload = onLoadHandler;
+                r.readAsArrayBuffer(blob);
             }
 
             readBlock(offset, chunkSize, stream);
-        }
 
-        const readBlock = function(_offset, length, _stream) {
-            const r = new FileReader();
-            const blob = _stream.slice(_offset, length + _offset);
-            r.onload = onLoadHandler;
-            r.readAsArrayBuffer(blob);
-        }
+        });
 
-        readBlock(offset, chunkSize, stream);
     }
 
 }

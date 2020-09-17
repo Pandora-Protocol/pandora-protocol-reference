@@ -38,13 +38,13 @@ module.exports = class PandoraBoxStream {
 
     }
 
-    setStreamStatus(newValue, save = false, cb = () =>{} ){
+    async setStreamStatus(newValue, save = false ){
 
         this._streamStatus = newValue;
         this.isDone = this.calculateIsDone;
 
         if (save)
-            this.saveStatus(cb);
+            await this.saveStatus();
 
     }
 
@@ -130,38 +130,34 @@ module.exports = class PandoraBoxStream {
             return this.isDone ? 100 : 0;
     }
 
-    saveStatus(cb){
+    async saveStatus(){
         const obj = {
             statusChunks: this.statusChunks,
             streamStatus: this.streamStatus,
         }
-        this._kademliaNode.storage.setItem('pandoraBoxes:streams:status:'+this.absolutePath, JSON.stringify(obj), cb );
+        return this._kademliaNode.storage.setItem('pandoraBoxes:streams:status:'+this.absolutePath, JSON.stringify(obj) );
     }
 
-    loadStatus(cb){
-        this._kademliaNode.storage.getItem('pandoraBoxes:streams:status:'+this.absolutePath, (err, out) => {
+    async loadStatus(){
 
-            if (err) return cb(err);
-            if (!out) return cb(new Error('Status not found'));
+        const json = await this._kademliaNode.storage.getItem('pandoraBoxes:streams:status:'+this.absolutePath);
+        if (!json) throw 'Status not found';
 
-            out = JSON.parse(out);
+        const out = JSON.parse(json);
 
-            if (out.streamStatus === PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING) out.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED;
+        if (out.streamStatus === PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING)
+            out.streamStatus = PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED;
 
-            this.setStreamStatus(out.streamStatus, false);
+        this.setStreamStatus(out.streamStatus, false);
 
-            this.statusChunks = out.statusChunks;
-            this.calculateStatusUndone();
+        this.statusChunks = out.statusChunks;
+        this.calculateStatusUndone();
 
-            cb(null, true);
-
-        } );
+        return true;
     }
 
-    removeStatus(cb){
-
-        this._kademliaNode.storage.removeItem('pandoraBoxes:streams:status:'+this.absolutePath, cb);
-
+    removeStatus(){
+        return this._kademliaNode.storage.removeItem('pandoraBoxes:streams:status:'+this.absolutePath);
     }
 
 }

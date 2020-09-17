@@ -19,7 +19,6 @@ module.exports = function (options){
             this._allowedStoreTables.box = {
                 validation: this.validatePandoraBox.bind(this),
                 expiry: KAD_OPTIONS.T_STORE_KEY_EXPIRY,
-                onlyOne: true,
                 immutable: true,
             };
 
@@ -35,14 +34,12 @@ module.exports = function (options){
 
         }
 
-        validatePandoraBox(srcContact, self, [table, masterKey, key, value], old){
+        validatePandoraBox(srcContact, self, [table, key, value], old){
 
             try {
 
-                if (key.length) return null; //already have it
-
                 const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( value )  );
-                if (!pandoraBox.hash.equals(masterKey)) return null;
+                if (!pandoraBox.hash.equals(key)) return null;
 
                 if (!pandoraBox.sybilProtectIndex) return null;
                 if (!pandoraBox.sybilProtectTime) return null;

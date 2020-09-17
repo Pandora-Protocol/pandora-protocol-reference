@@ -34,10 +34,10 @@ module.exports = class PandoraBoxStreamliner {
 
         this.workers.start();
 
-        this.initialize( ()=>{ })
+        this.initialize( )
 
         this._streamlinerInitializeAsyncInterval = setAsyncInterval(
-            next => this._workStreamlinerInitialize(next),
+            this._workStreamlinerInitialize.bind(this),
             5*1000,
         );
 
@@ -55,22 +55,12 @@ module.exports = class PandoraBoxStreamliner {
 
     }
 
-    _workStreamlinerInitialize(next){
+    _workStreamlinerInitialize(){
 
         const time = new Date().getTime();
 
-        if ( this._initialized < time - KAD_OPTIONS.T_REPLICATE_TO_NEW_NODE_EXPIRY + Utils.preventConvoy( KAD_OPTIONS.T_REPLICATE_TO_NEW_NODE_EXPIRY_CONVOY )  ){
-
-            return this.initialize( (err, out)=>{
-
-                console.log("initialized", this._pandoraBox._name, this._pandoraBox.hashHex, out);
-                next();
-
-            } )
-
-        }
-
-        next();
+        if ( this._initialized < time - KAD_OPTIONS.T_REPLICATE_TO_NEW_NODE_EXPIRY + Utils.preventConvoy( KAD_OPTIONS.T_REPLICATE_TO_NEW_NODE_EXPIRY_CONVOY ) )
+            return this.initialize();
 
     }
 
@@ -126,28 +116,27 @@ module.exports = class PandoraBoxStreamliner {
 
     }
 
-    initialize( cb ){
+    async initialize( ){
 
-        this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox, (err, out)=> {
+        try{
+            console.log("initialize", this._pandoraBox._name, this._pandoraBox.hashHex);
 
-            if (err) return cb(err, null);
+            const out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
 
-            this._kademliaNode.crawler.iterativeStorePandoraBoxName( this._pandoraBox, (err, out )=> {
+            const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this._pandoraBox );
 
-                if (err) return cb(err, null);
+            this._initialized = new Date().getTime();
 
-                this._initialized = new Date().getTime();
-                cb(null, true)
+            return true;
 
-            } )
+        }catch(err){
 
-        });
-
+        }
     }
 
 
 
-    work(worker, next){
+    async work(worker){
 
         if ( !this.queue.length ){
 
@@ -158,7 +147,7 @@ module.exports = class PandoraBoxStreamliner {
                 this.workers.refreshWorkers();
             }
 
-            return next(1000);
+            return 1000;
         }
 
         for (let i=0; i < this.queue.length; i++){
@@ -170,23 +159,19 @@ module.exports = class PandoraBoxStreamliner {
 
                 it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING );
 
-                return this._kademliaNode.locations.createEmptyDirectory( it.stream.absolutePath, (err, out)=>{
+                try{
 
-                    if (err){
-                        it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED)
-                        return next();
-                    }
+                    const out = await this._kademliaNode.locations.createEmptyDirectory( it.stream.absolutePath );
 
                     this.removeQueueStream(it.stream);
 
                     it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
-
                     this._pandoraBox.events.emit('stream/done', {stream: it.stream})
 
-                    return next();
-
-                } );
-
+                }catch(err){
+                    it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED)
+                    return;
+                }
 
             } else
             if (it.stream.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM) {
@@ -195,14 +180,14 @@ module.exports = class PandoraBoxStreamliner {
 
                     it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZING);
 
-                    return this._kademliaNode.locations.createLocationEmptyStream(it.stream.absolutePath, it.stream.size, (err, out)=>{
+                    try{
+                        const out = await this._kademliaNode.locations.createLocationEmptyStream(it.stream.absolutePath, it.stream.size);
+                        if (!out) throw "Error creating empty stream";
 
-                        if (!err && out) it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED, true);
-                        else it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED );
-
-                        next();
-
-                    })
+                        it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED, true);
+                    }catch(err){
+                        it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED )
+                    }
 
                 } else
                 if (it.stream.streamStatus === PandoraBoxStreamStatus.STREAM_STATUS_INITIALIZED &&
@@ -213,91 +198,78 @@ module.exports = class PandoraBoxStreamliner {
                             undoneChunk.pending = true;
                             it.stream.statusUndoneChunksPending += 1;
 
-                            return this._kademliaNode.rules.sendGetStreamChunk( worker.peer.contact, [ it.stream.hash, undoneChunk.index ], (err, out )=>{
+                            try{
 
-                                try{
+                                const out = await this._kademliaNode.rules.sendGetStreamChunk( worker.peer.contact, [ it.stream.hash, undoneChunk.index ] );
 
-                                    if (err){
-                                        this.workers.removeWorker(worker);
-                                        throw err;
-                                    }
+                                if (!out || !Array.isArray(out) || out.length !== 2 ) throw "chunk was not received";
+                                if ( out[0] !== 1 ) throw out[1].toString() || 'Unexpected error';
 
-                                    if (!out || !Array.isArray(out) || out.length !== 2 ) throw "chunk was not received";
-                                    if ( out[0] !== 1 ) throw out[1].toString() || 'Unexpected error';
+                                const buffer = out[1];
 
-                                    const buffer = out[1];
+                                if (!Buffer.isBuffer( buffer ) || buffer.length !== it.stream.chunkRealSize(undoneChunk.index) )
+                                    throw "invalid chunk"
 
-                                    if (!Buffer.isBuffer( buffer ) || buffer.length !== it.stream.chunkRealSize(undoneChunk.index) )
-                                        throw "invalid chunk"
+                                //verify hash
+                                const newHash = CryptoUtils.sha256(buffer);
+                                if ( !newHash.equals( it.stream.chunks[undoneChunk.index] ))
+                                    throw "hash is invalid"
 
-                                    //verify hash
-                                    const newHash = CryptoUtils.sha256(buffer);
-                                    if ( !newHash.equals( it.stream.chunks[undoneChunk.index] ))
-                                        throw "hash is invalid"
+                                const out2 = await this._kademliaNode.locations.writeLocationStreamChunk( buffer, it.stream, undoneChunk.index);
+                                if (out2 !== true) throw "Error saving data";
 
-                                    this._kademliaNode.locations.writeLocationStreamChunk( buffer, it.stream, undoneChunk.index, (err, out) =>{
-
-                                        undoneChunk.pending = false;
-                                        it.stream.statusUndoneChunksPending -= 1;
-
-                                        if (err || out !== true) return next();
-
-                                        try {
-
-                                            it.stream.statusChunks[undoneChunk.index] = 1;
-
-                                            it.stream._pandoraBox.chunksTotalAvailable += 1;
-
-                                            for (let i=0; i < it.stream.statusUndoneChunks.length; i++ )
-                                                if (it.stream.statusUndoneChunks[i] === undoneChunk){
-                                                    it.stream.statusUndoneChunks.splice(i, 1);
-                                                    break;
-                                                }
-
-                                            //we finished all...
-                                            if ( !it.stream.statusUndoneChunks.length ){
-
-                                                this.removeQueueStream(it.stream);
-                                                it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
-                                                this._pandoraBox.events.emit('stream/done', {stream: it.stream})
-
-                                            } else {
-
-                                                if (it.stream._pandoraBox.chunksTotalAvailable % 10 === 0) // to avoid
-                                                    it.stream.saveStatus(()=>{});
-
-                                            }
-
-                                            this._pandoraBox.events.emit('chunks/total-available', {
-                                                chunksTotalAvailable: it.stream._pandoraBox.chunksTotalAvailable,
-                                                chunksTotal: it.stream._pandoraBox.chunksTotal
-                                            });
-                                            this._pandoraBox.events.emit('stream-chunk/done', {
-                                                stream: it.stream,
-                                                chunkIndex: undoneChunk.index
-                                            });
-
-                                        }catch (err) {
-                                            console.error(err);
-                                        } finally {
-                                            next();
-                                        }
+                            }catch(err){
+                                this.workers.removeWorker(worker);
+                                undoneChunk.pending = false;
+                                it.stream.statusUndoneChunksPending -= 1;
+                                return;
+                            }
 
 
-                                    } ) ;
 
+                            try {
 
-                                }catch(err){
+                                const out2 = await this._kademliaNode.locations.writeLocationStreamChunk(buffer, it.stream, undoneChunk.index);
+                                if (out2 !== true) throw "Error saving data";
 
-                                    //console.error(err);
+                            }catch(err){
+                                undoneChunk.pending = false;
+                                it.stream.statusUndoneChunksPending -= 1;
+                                return;
+                            }
 
-                                    undoneChunk.pending = false;
-                                    it.stream.statusUndoneChunksPending -= 1;
-                                    return next();
+                            it.stream.statusChunks[undoneChunk.index] = 1;
+                            it.stream._pandoraBox.chunksTotalAvailable += 1;
 
+                            for (let i=0; i < it.stream.statusUndoneChunks.length; i++ )
+                                if (it.stream.statusUndoneChunks[i] === undoneChunk){
+                                    it.stream.statusUndoneChunks.splice(i, 1);
+                                    break;
                                 }
 
-                            } );
+                            //we finished all...
+                            if ( !it.stream.statusUndoneChunks.length ){
+
+                                this.removeQueueStream(it.stream);
+                                await it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
+                                this._pandoraBox.events.emit('stream/done', {stream: it.stream})
+
+                            } else {
+
+                                if (it.stream._pandoraBox.chunksTotalAvailable % 10 === 0) // to avoid
+                                    await it.stream.saveStatus();
+
+                            }
+
+                            this._pandoraBox.events.emit('chunks/total-available', {
+                                chunksTotalAvailable: it.stream._pandoraBox.chunksTotalAvailable,
+                                chunksTotal: it.stream._pandoraBox.chunksTotal
+                            });
+
+                            this._pandoraBox.events.emit('stream-chunk/done', {
+                                stream: it.stream,
+                                chunkIndex: undoneChunk.index
+                            });
 
                         }
                     }
@@ -305,8 +277,6 @@ module.exports = class PandoraBoxStreamliner {
             }
 
         }
-
-        next();
 
     }
 

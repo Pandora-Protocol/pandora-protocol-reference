@@ -10,7 +10,6 @@ streamsaver.WritableStream = WritableStream
 const InterfacePandoraLocations = require('../interface-pandora-locations')
 const Storage = require('pandora-protocol-kad-reference').storage.Storage;
 const PandoraStreamType = require('../../pandora-box/stream/pandora-box-stream-type')
-const async = require('pandora-protocol-kad-reference').library.async;
 const PandoraBoxStreamStatus = require('../../pandora-box/stream/pandora-box-stream-status')
 const Streams = require('../../helpers/streams/streams')
 const PandoraBoxHelper = require('./../../pandora-box/pandora-box-helper')
@@ -29,45 +28,38 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    createEmptyDirectory(location = '', cb){
-        cb(null, true);
+    async createEmptyDirectory(location = ''){
+        return true;
     }
 
-    createLocationEmptyStream(location, size, cb){
-        cb(null, true);
+    async createLocationEmptyStream(location, size){
+        return true;
     }
 
-    writeLocationStreamChunk( buffer, pandoraBoxStream, chunkIndex, cb){
+    async writeLocationStreamChunk( buffer, pandoraBoxStream, chunkIndex){
 
-        this._storeChunks.setItem( pandoraBoxStream.hashHex+':#'+pandoraBoxStream.chunkSize+ ':@:' + chunkIndex, buffer, (err, out)=>{
+        const out = await this._storeChunks.setItem( pandoraBoxStream.hashHex+':#'+pandoraBoxStream.chunkSize+ ':@:' + chunkIndex, buffer);
 
-            if (err ) return cb(err);
-            if (buffer.length !== pandoraBoxStream.chunkRealSize(chunkIndex) ) return cb(new Error('Lengths are not matching'));
-
-            cb(null, true);
-
-        } );
+        if (buffer.length !== pandoraBoxStream.chunkRealSize(chunkIndex) ) throw 'Lengths are not matching';
+        return true;
 
     }
 
-    getLocationStreamChunk( pandoraBoxStream, chunkIndex, cb){
+    async getLocationStreamChunk( pandoraBoxStream, chunkIndex){
 
-        this._storeChunks.getItem( pandoraBoxStream.hashHex+':#'+pandoraBoxStream.chunkSize+ ':@:' + chunkIndex,  (err, buffer )=>{
+        const buffer = await this._storeChunks.getItem( pandoraBoxStream.hashHex+':#'+pandoraBoxStream.chunkSize+ ':@:' + chunkIndex);
 
-            if (err ) return cb(err);
-            if (buffer.length !== pandoraBoxStream.chunkRealSize(chunkIndex) ) return cb(new Error('Lengths are not matching'));
+        if (buffer.length !== pandoraBoxStream.chunkRealSize(chunkIndex) ) throw 'Lengths are not matching';
 
-            cb(null, buffer);
-
-        });
+        return buffer;
 
     }
 
-    savePandoraBoxStreamAs(pandoraBoxStream, name, cb ){
+    async savePandoraBoxStreamAs(pandoraBoxStream, name, cbProgress ){
 
-        if (!pandoraBoxStream || !(pandoraBoxStream instanceof PandoraBoxStream) ) return cb(new Error('PandoraBoxStream is invalid'))
-        if (!pandoraBoxStream.isDone ) return cb(new Error('PandoraBoxStream is not done!'));
-        if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) return cb(new Error("In Browser you can't save a directory"))
+        if (!pandoraBoxStream || !(pandoraBoxStream instanceof PandoraBoxStream) ) throw 'PandoraBoxStream is invalid';
+        if (!pandoraBoxStream.isDone ) throw 'PandoraBoxStream is not done!';
+        if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) throw "In Browser you can't save a directory";
 
         if (!name)
             name = this.extractLocationName(pandoraBoxStream.path, true);
@@ -77,31 +69,20 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         let stopped = false;
 
-        const chunks = new Array(pandoraBoxStream.chunksCount).fill(1).map( (it, index) => index );
+        for (let chunkIndex=0; chunkIndex < pandoraBoxStream.chunksCount; chunkIndex++){
 
-        async.each( chunks, ( chunkIndex, next )=>{
+            const buffer = await this.getLocationStreamChunk( pandoraBoxStream, chunkIndex);
 
-            this.getLocationStreamChunk( pandoraBoxStream, chunkIndex, (err, buffer) =>{
+            if (stopped) throw 'Stopped';
 
-                if (err) return next(err);
-                if (stopped) return next(new Error('stopped'));
+            await writer.write(buffer);
 
-                writer.write(buffer);
-                cb({ done: false, chunkIndex: chunkIndex });
+            if (cbProgress) cbProgress({ chunkIndex: chunkIndex });
 
-                if (chunkIndex === chunks.length-1) {
-                    writer.close();
-                    next();
-                }
+        }
 
-            } );
-
-        }, (err, out) =>{
-
-            if (!err)
-                cb({ done: true });
-
-        } )
+        await writer.close();
+        cbProgress({ done: true });
 
         return {
             stop: ()=> stopped = true,
@@ -109,12 +90,12 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    savePandoraBoxAs(pandoraBox, name, cb){
+    savePandoraBoxAs(pandoraBox, name){
 
         const self = this;
 
-        if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) return cb(new Error('PandoraBox is invalid'))
-        if (!pandoraBox.isDone ) return cb(new Error('PandoraBox is not ready!'));
+        if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw 'PandoraBox is invalid'
+        if (!pandoraBox.isDone ) throw 'PandoraBox is not ready!';
 
         if (!name)
             name = pandoraBox.name;
@@ -155,16 +136,13 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
                             // return a promise if you have to wait for something
                             // or remove this altogether
                         },
-                        pull (ctrl) {
-                            return new Promise( (resolve, reject) => {
-                                self.getLocationStreamChunk( pandoraBoxStream, i, (err, buffer) => {
-                                    if (err) return reject(err)
-                                    if (stopped) return reject(new Error('stopped'))
-                                    ctrl.enqueue(buffer)
-                                    if (++i === chunksCount) ctrl.close() // done writing this file now
-                                    resolve();
-                                })
-                            })
+                        async pull (ctrl) {
+
+                            const buffer = await self.getLocationStreamChunk( pandoraBoxStream, i);
+                            if (stopped) throw 'stopped';
+
+                            ctrl.enqueue(buffer)
+                            if (++i === chunksCount) ctrl.close() // done writing this file now
                         },
                         cancel() {
                             // something cancel
@@ -194,111 +172,82 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    createPandoraBox( selectedStreams, name, description, categories, chunkSize, cbProgress, cb){
+    async createPandoraBox( selectedStreams, name, description, categories, chunkSize, cbProgress){
 
-        if (!selectedStreams || !Array.isArray(selectedStreams) || selectedStreams.length === 0) return cb(new Error('Selected streams needs to a non empty array'));
+        if (!selectedStreams || !Array.isArray(selectedStreams) || !selectedStreams.length) throw 'Selected streams needs to a non empty array';
 
         const streams = [];
 
-        async.eachLimit(  selectedStreams, 1, ( selectedStream, next) => {
+        for (const selectedStream of selectedStreams) {
 
-            const newPath = this.startWithSlash( selectedStream.path || '' );
+            const newPath = this.startWithSlash(selectedStream.path || '');
             this._explodeStreamPath(streams, newPath);
 
             const sum = createHash('sha256');
             const chunks = [];
 
-            cbProgress(null, {done: false, status: 'location/stream', path: newPath });
+            cbProgress({ status: 'location/stream', path: newPath});
 
-            Streams.splitStreamIntoChunks( selectedStream.stream,  chunkSize, (err, { done, chunk, chunkIndex } )=>{
+            await Streams.splitStreamIntoChunks(selectedStream.stream, chunkSize, ({ chunk, chunkIndex}) => {
 
-                if (err) return cb(err, null);
+                if (chunkIndex % 25 === 0)
+                    cbProgress({done: false, status: 'location/stream/update', path: newPath, chunkIndex});
 
-                if (done) {
+                sum.update(chunk)
+                const hashChunk = createHash('sha256').update(chunk).digest();
+                chunks.push(hashChunk)
 
-                    cbProgress(null, {done: false, status: 'location/stream/done', path: newPath });
+            });
 
-                    const pandoraStream = new PandoraBoxStream(this,
-                        newPath,
-                        PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM,
-                        selectedStream.size,
-                        chunkSize,
-                        sum.digest(),
-                        chunks,
-                        new Array(chunks.length).fill(1),
-                        PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
-                    );
+            cbProgress({ status: 'location/stream/done', path: newPath});
 
-                    streams.push( pandoraStream );
-                    selectedStream.pandoraStream = pandoraStream;
+            const pandoraStream = new PandoraBoxStream(this,
+                newPath,
+                PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM,
+                selectedStream.size,
+                chunkSize,
+                sum.digest(),
+                chunks,
+                new Array(chunks.length).fill(1),
+                PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
+            );
 
-                    return next();
+            streams.push(pandoraStream);
+            selectedStream.pandoraStream = pandoraStream;
+        }
 
-                } else {
+        const version = PandoraBoxMetaVersion.PANDORA_BOX_META;
+        const finalName = name;
+        const finalDescription = description;
+        const finalCategories =  categories;
 
-                    if ( chunkIndex % 25 === 0)
-                        cbProgress(null, {done: false, status: 'location/stream/update', path: newPath, chunkIndex });
+        let size = 0;
+        for (const stream of streams)
+            size += stream.size;
 
-                    sum.update(chunk)
-                    const hashChunk = createHash('sha256').update(chunk).digest();
-                    chunks.push(hashChunk)
-                }
+        const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( finalDescription, streams )
+        const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, size, finalCategories, metaDataHash, finalDescription, streams, 0, 0, Buffer.alloc(64) );
+        pandoraBox.streamsSetPandoraBox();
 
+        const out = await this._kademliaNode.contactStorage.sybilProtectSign( {message: pandoraBox.hash}, {includeTime: true} );
 
-            })
+        pandoraBox._sybilProtectIndex = out.index+1;
+        pandoraBox._sybilProtectTime = out.time;
+        pandoraBox._sybilProtectSignature = out.signature;
 
-        }, (err, out)=>{
+        for (const selectedStream of selectedStreams){
 
-            const version = PandoraBoxMetaVersion.PANDORA_BOX_META;
-            const finalName = name;
-            const finalDescription = description;
-            const finalCategories =  categories;
+            if (selectedStream.pandoraStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM)
+                await Streams.splitStreamIntoChunks( selectedStream.stream, chunkSize, async ( {  chunk, chunkIndex } ) => {
 
-            let size = 0;
-            for (const stream of streams)
-                size += stream.size;
+                    await this.writeLocationStreamChunk( chunk, selectedStream.pandoraStream, chunkIndex);
 
-            const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( finalDescription, streams )
-            const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, size, finalCategories, metaDataHash, finalDescription, streams, 0, 0, Buffer.alloc(64) );
-            pandoraBox.streamsSetPandoraBox();
+                });
 
-            this._kademliaNode.contactStorage.sybilProtectSign( {message: pandoraBox.hash}, {includeTime: true} ).then((out)=> {
+        }
 
-                pandoraBox._sybilProtectIndex = out.index+1;
-                pandoraBox._sybilProtectTime = out.time;
-                pandoraBox._sybilProtectSignature = out.signature;
-
-                async.eachLimit( selectedStreams, 1, (selectedStream, next) =>{
-
-                    if (selectedStream.pandoraStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_STREAM){
-
-                        Streams.splitStreamIntoChunks( selectedStream.stream, chunkSize, (err, { done, chunk, chunkIndex } )=> {
-
-                            if (err) return cb(err, null);
-                            if (done) return next();
-
-                            this.writeLocationStreamChunk( chunk, selectedStream.pandoraStream, chunkIndex, (err, out) =>{
-
-
-                            } )
-
-                        });
-
-                    }
-
-                }, (err, out) =>{
-
-                    cbProgress(null, {done: true });
-
-                    cb(null, pandoraBox );
-
-                } )
-
-
-            }).catch( err => cb(err) );
-
-
-        } );
+        cbProgress( {done: true });
+        return pandoraBox;
 
     }
 

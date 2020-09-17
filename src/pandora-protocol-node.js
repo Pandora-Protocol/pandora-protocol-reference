@@ -12,7 +12,8 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
     constructor( index = '', plugins = [], options = {} ) {
 
         super( index, [
-            KAD.plugins.PluginSortedList,
+            KAD.plugins.PluginStoreValue,
+            KAD.plugins.PluginStoreSortedList,
             KAD.plugins.PluginContactType,
             KAD.plugins.PluginNodeHTTP,
             KAD.plugins.PluginNodeWebSocket,
@@ -44,79 +45,56 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
         this.pandoraBoxes.stopStreamlining();
     }
 
-    seedPandoraBox( location, name, description, categories, chunkSize = 1*512*1024, cbProgress, cb ){
+    async seedPandoraBox( location, name, description, categories, chunkSize = 1*512*1024, cbProgress ){
 
-        this.locations.createPandoraBox( location,  name, description, categories, chunkSize, cbProgress, (err, pandoraBox )=>{
+        const pandoraBox = await this.locations.createPandoraBox( location,  name, description, categories, chunkSize, cbProgress);
 
-            if (err) return cb(err);
+        const initialized = await pandoraBox.streamliner.initialize();
 
-            pandoraBox.streamliner.initialize( (err, out)=>{
+        const stored = await this.pandoraBoxes.addPandoraBox( pandoraBox, true);
 
-                if (err) return cb(err);
-
-                this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out)=>{
-
-                    cb(null, {
-                        pandoraBox,
-                        stored: out,
-                    })
-
-                } );
-
-            })
-
-        });
+        return {
+            pandoraBox,
+            stored,
+        }
 
     }
 
-    findPandoraBox( hash, cb ){
+    findPandoraBox( hash, ){
 
         if (this.pandoraBoxes.boxesMap[ hash.toString('hex') ])
-            return cb(null, this.pandoraBoxes.boxesMap[ hash.toString('hex') ] )
+            return this.pandoraBoxes.boxesMap[ hash.toString('hex') ];
 
-        this.crawler.iterativeFindPandoraBox( hash, cb )
-
-    }
-
-    getPandoraBox(hash, cb){
-
-        this.findPandoraBox(hash, (err, pandoraBox )=>{
-
-            if (err) return cb(err);
-            if (!pandoraBox) return cb(new Error('PandoraBox was not found'))
-
-            this.pandoraBoxes.addPandoraBox( pandoraBox, true, (err, out) =>{
-
-                cb(null, {
-                    pandoraBox,
-                    added: out,
-                })
-
-            } );
-
-
-        });
+        return this.crawler.iterativeFindPandoraBox( hash )
 
     }
 
-    findPandoraBoxesByName(name, cb){
-        return this.crawler.iterativeFindPandoraBoxesByName(name, cb);
+    async getPandoraBox(hash){
+
+        const pandoraBox = await this.findPandoraBox(hash);
+
+        if (!pandoraBox) throw 'PandoraBox was not found'
+
+        const added = await this.pandoraBoxes.addPandoraBox( pandoraBox, true);
+
+        return {
+            pandoraBox,
+            added,
+        };
+    }
+
+    findPandoraBoxesByName(name){
+        return this.crawler.iterativeFindPandoraBoxesByName(name);
     }
 
     async initializeNode(opts){
 
         const result = await super.initializeNode(opts);
 
-        return new Promise((resolve, reject)=>{
+        await this.pandoraBoxes.saveManager.load( );
 
-            this.pandoraBoxes.saveManager.load( (err, out)=>{
+        return result;
 
-                if (err) reject(err);
-                resolve(result);
-
-            });
-
-        })
     }
 
 }

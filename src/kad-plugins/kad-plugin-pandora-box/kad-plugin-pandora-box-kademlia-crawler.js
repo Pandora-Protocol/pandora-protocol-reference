@@ -6,93 +6,78 @@ const SubsetsHelper = require('./../../helpers/subsets-helper')
 const tableBox =  Buffer.from('box', 'ascii');
 const tablePeers =  Buffer.from('peers', 'ascii');
 const tableName =  Buffer.from('name', 'ascii');
-
-const async = require('pandora-protocol-kad-reference').library.async;
 const { CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = function(options){
 
     return class MyCrawler extends options.Crawler {
 
-        iterativeStorePandoraBox( pandoraBox, cb ){
-            this.iterativeStoreValue( tableBox, pandoraBox.hash, '', bencode.encode( pandoraBox.toArray() ), cb);
+        iterativeStorePandoraBox( pandoraBox ){
+            return this.iterativeStoreValue( tableBox, pandoraBox.hash, bencode.encode( pandoraBox.toArray() ) );
         }
 
-        iterativeFindPandoraBox( hash, cb ){
+        async iterativeFindPandoraBox( hash ){
 
-            this.iterativeFindValue( tableBox, hash, (err, out)=>{
+            const out = await this.iterativeFindValue( tableBox, hash );
 
-                if (err) return cb(err, null);
+            if (!out.result) throw `PandoraBox couldn't be found`;
+            const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( out.result.value ) );
 
-                try{
+            return pandoraBox;
 
-                    if (!out.result) throw `PandoraBox couldn't be found`;
-                    const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( out.result[''].value ) );
-
-                    cb(null, pandoraBox);
-
-                }catch(err){
-                    cb(err);
-                }
-
-            });
         }
 
-        iterativeStorePandoraBoxPeer( pandoraBox, contact = this._kademliaNode.contact, date, cb ){
+        iterativeStorePandoraBoxPeer( pandoraBox, contact = this._kademliaNode.contact, date ){
 
             if (pandoraBox instanceof PandoraBox) pandoraBox = pandoraBox.hash;
-            if (!Buffer.isBuffer(pandoraBox)) return cb(new Error('PandoraBox needs to be hash'));
+            if (!Buffer.isBuffer(pandoraBox)) throw 'PandoraBox needs to be hash';
 
             if ( (new Date().getTime()/1000 - contact.timestamp) >= KAD_OPTIONS.PLUGINS.CONTACT_SPARTACUS.T_CONTACT_TIMESTAMP_DIFF_UPDATE )
                 contact.contactUpdated();
 
             const signature = contact.sign( pandoraBox );
 
-            this.iterativeStoreSortedListValue( tablePeers, pandoraBox, contact.identity, bencode.encode( [ contact.toArray(), signature] ), contact.timestamp, cb);
+            return this.iterativeStoreSortedListValue( tablePeers, pandoraBox, contact.identity, bencode.encode( [ contact.toArray(), signature] ), contact.timestamp );
         }
 
-        iterativeFindPandoraBoxPeersList( pandoraBox, cb){
+        async iterativeFindPandoraBoxPeersList( pandoraBox ){
 
             if (pandoraBox instanceof PandoraBox) pandoraBox = pandoraBox.hash;
-            if (!Buffer.isBuffer(pandoraBox)) return cb(new Error('PandoraBox needs to be hash'));
+            if (!Buffer.isBuffer(pandoraBox)) throw 'PandoraBox needs to be hash';
 
-            this.iterativeFindSortedList( tablePeers, pandoraBox, (err, out ) =>{
+            const out = await this.iterativeFindSortedList( tablePeers, pandoraBox );
 
-                if (err) return cb(err, null);
+            if ( !out.result) throw 'Peers not found';
 
-                if ( !out.result) return cb( new Error('Peers not found') );
+            const peers = [];
+            for (const peerId in out.result){
 
-                const peers = [];
-                for (const peerId in out.result){
+                try{
 
-                    try{
+                    const peer = out.result[peerId];
 
-                        const peer = out.result[peerId];
+                    const decoded = bencode.decode( peer.value );
+                    const contact = this._kademliaNode.createContact( decoded[0] )
 
-                        const decoded = bencode.decode( peer.value );
-                        const contact = this._kademliaNode.createContact( decoded[0] )
+                    //avoid myself
+                    if (contact.identity.equals( this._kademliaNode.contact.identity ))
+                        continue;
 
-                        //avoid myself
-                        if (contact.identity.equals( this._kademliaNode.contact.identity ))
-                            continue;
+                    peers.push({
+                        contact: contact,
+                        score: peer.score,
+                    })
 
-                        peers.push({
-                            contact: contact,
-                            score: peer.score,
-                        })
-
-                    }catch(err){
-
-                    }
+                }catch(err){
 
                 }
 
-                cb(null, peers);
+            }
 
-            });
+            return peers;
         }
 
-        iterativeStorePandoraBoxName( pandoraBoxMeta, cb ){
+        async iterativeStorePandoraBoxName( pandoraBoxMeta ){
 
             if (pandoraBoxMeta instanceof PandoraBox) pandoraBoxMeta = pandoraBoxMeta.convertToPandoraBoxMeta();
 
@@ -103,10 +88,9 @@ module.exports = function(options){
 
             const pandoraBoxMetaArray = pandoraBoxMeta.toArray();
 
-            const array = new Array(subsets.length).fill(1).map( (it, index) => index)
             const output = [];
 
-            async.eachLimit(  array, 1, ( index, next) => {
+            for (let index = 0; index < subsets.length; index++ ){
 
                 const subset = subsets[index];
 
@@ -116,26 +100,16 @@ module.exports = function(options){
                     v.push( words[ index ] );
 
                 const s = v.join(' ');
-                const hash = CryptoUtils.sha256(Buffer.from(s));
+                const hash = CryptoUtils.sha256( Buffer.from(s) );
 
-                this.iterativeStoreSortedListValue( tableName, hash, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMetaArray, subset ] ), pandoraBoxMeta.sybilProtectTime, (err, out) => {
-                    if (err) return next(err);
-                    output[index] = out;
-                    next();
-                });
+                const out = await this.iterativeStoreSortedListValue( tableName, hash, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMetaArray, subset ] ), pandoraBoxMeta.sybilProtectTime);
+                output[index] = out;
 
-
-            }, (err, out)=>{
-
-                if (err) return cb(err);
-                cb(null, output);
-
-            });
-
+            }
 
         }
 
-        iterativeFindPandoraBoxesByName(name, cb){
+        async iterativeFindPandoraBoxesByName(name){
 
             name = PandoraBoxMetaHelper.processPandoraBoxMetaName(name);
             const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name);
@@ -143,28 +117,18 @@ module.exports = function(options){
             const s = words.join(' ');
             const hash = CryptoUtils.sha256(Buffer.from(s));
 
-            this.iterativeFindSortedList( tableName, hash, (err, out) =>{
+            const out = await this.iterativeFindSortedList( tableName, hash );
 
-                if (err) return cb(err, null);
+            if (!out.result) throw `PandoraBox couldn't be found`;
 
-                try{
+            for (const key in out.result){
+                const decoded = bencode.decode( out.result[key].value );
+                const pandoraBoxMeta = PandoraBoxMeta.fromArray(this._kademliaNode, decoded[0]  );
 
-                    if (!out.result) throw `PandoraBox couldn't be found`;
+                out.result[key] = pandoraBoxMeta;
+            }
 
-
-                    for (const key in out.result){
-                        const decoded = bencode.decode( out.result[key].value );
-                        const pandoraBoxMeta = PandoraBoxMeta.fromArray(this._kademliaNode, decoded[0]  );
-
-                        out.result[key] = pandoraBoxMeta;
-                    }
-                    cb(null, out );
-
-                }catch(err){
-                    cb(err);
-                }
-
-            } );
+            return out;
 
         }
 
