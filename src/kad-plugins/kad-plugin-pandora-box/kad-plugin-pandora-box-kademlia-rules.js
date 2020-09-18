@@ -60,7 +60,11 @@ module.exports = function (options){
                 const decoded = bencode.decode( value );
                 const contact = this._kademliaNode.createContact( decoded[0], false );
 
-                if ( score !== contact.timestamp ) return null;
+                if ( score !== contact.timestamp ) {
+                    console.error("Timestamp is not matching with score", score, contact.timestamp );
+                    return null;
+                }
+
                 if ( !contact.verify( masterKey, decoded[1] ) ) return null;
 
                 return {value, score};

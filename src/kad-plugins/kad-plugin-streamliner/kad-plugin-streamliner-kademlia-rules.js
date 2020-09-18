@@ -14,7 +14,7 @@ module.exports = function (options){
 
         async getStreamChunk( req, srcContact, [ streamHash, chunkIndex ] ){
 
-            Validation.checkIdentity(streamHash);
+            Validation.validateIdentity(streamHash);
             if (typeof chunkIndex !== "number" || chunkIndex < 0) return [0, 'Invalid chunk index'];
 
             const pandoraBoxStream = this._kademliaNode.pandoraBoxes._streamsMap[streamHash.toString('hex')];

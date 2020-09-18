@@ -72,14 +72,14 @@ async function execute() {
     const out3 = await nodes[4].getPandoraBox( out.pandoraBox.hash );
     console.info('pandora box get', out3.pandoraBox.hash.toString('hex'));
 
-    out.pandoraBox.events.on("stream-chunk/done", (data)=>{
+    out3.pandoraBox.events.on("stream-chunk/done", (data)=>{
 
         if (data.chunkIndex % 100 === 0)
             console.log(data.stream.path, data.chunkIndex);
 
     });
 
-    out.pandoraBox.events.on("streamliner/done", (data)=>{
+    out3.pandoraBox.events.on("streamliner/done", (data)=>{
         console.log("streamliner done!");
     })
 

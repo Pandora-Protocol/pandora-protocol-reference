@@ -19,10 +19,41 @@ const InterfacePandoraLocations = require('../interface-pandora-locations')
 module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     constructor(kademliaNode, prefix ) {
+
       super(kademliaNode, prefix, 'node');
 
       this._fdOpen = [];
       this._fdOpenMap = {};
+
+    }
+
+    async _getStream(location ){
+
+        let found = this._fdOpenMap[location];
+
+        if (found){
+            found.timestamp = new Date().getTime();
+            return found.fd;
+        }
+
+        const fd = await fsPromises.open( location, 'r+');
+
+        found = {
+            fd,
+            timestamp: new Date().getTime(),
+        }
+
+        this._fdOpenMap[location] = found;
+        this._fdOpen.push(found);
+
+        if (this._fdOpen.length > 1000){
+            this._fdOpen.sort((a,b)=>b.timestamp - a.timestamp);
+            const last = this._fdOpen[1000].fd;
+            this._fdOpen.splice( 1000 );
+            await fs.close(last);
+        }
+
+        return fd;
 
     }
 
@@ -84,43 +115,19 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
-    async _getLocationStreamChunk(fd, chunkIndex, chunkSize, chunkRealSize){
-
-        const buffer = Buffer.alloc(chunkRealSize);
-        await fsPromises.read(fd, buffer, 0, chunkRealSize, chunkIndex * chunkSize);
-        return buffer;
-
-    }
-
     async getLocationStreamChunk(pandoraBoxStream, chunkIndex){
 
         const location = pandoraBoxStream.absolutePath;
+        const fd = await this._getStream(location);
 
-        let found = this._fdOpenMap[location];
+        const chunkRealSize = pandoraBoxStream.chunkRealSize(chunkIndex);
 
-        if (!found){
-            const fd = await fsPromises.open( location);
+        const buffer = Buffer.alloc(chunkRealSize);
 
-            const found = {
-                fd,
-                timestamp: new Date().getTime(),
-            }
+        await fd.read( buffer, 0, chunkRealSize, chunkIndex * pandoraBoxStream.chunkSize);
 
-            this._fdOpenMap[location] = found;
-            this._fdOpen.push(found);
+        return buffer;
 
-            if (this._fdOpen.length > 1000){
-                this._fdOpen.sort((a,b)=>b.timestamp - a.timestamp);
-                fs.close(this._fdOpen[1000].fd, ()=>{});
-                this._fdOpen.splice( 1000 );
-            }
-
-            return this._getLocationStreamChunk(found.fd, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex) );
-
-        } else {
-            found.timestamp = new Date().getTime();
-            return this._getLocationStreamChunk(found.fd, chunkIndex, pandoraBoxStream.chunkSize, pandoraBoxStream.chunkRealSize(chunkIndex) );
-        }
     }
 
     async createLocationEmptyStream(location, size){
@@ -131,27 +138,23 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
         if (!out) throw "Parent folder doesn't exist";
         if ( size < 0 ) throw "Size is invalid";
 
-        const flag = (await fsPromises.exists(location))  ? 'a' : 'w';
-        const stream = fsPromises.createWriteStream(location, {flags: flag});
+        const flag = (await this.locationExists(location) )  ? 'a' : 'w';
+        const stream = await fsPromises.open(location, flag);
 
-        await stream.write(Buffer.alloc(1), 0, 1, size-1);
+        await stream.write( Buffer.alloc(1), 0, 1, size-1 );
 
         await stream.close();
 
         return true;
-
     }
 
     async writeLocationStreamChunk( buffer, pandoraBoxStream, chunkIndex){
 
-        const stream = fsPromises.createWriteStream( pandoraBoxStream.absolutePath, {flags: 'r+', start: chunkIndex * pandoraBoxStream.chunkSize });
+        const stream = await this._getStream(pandoraBoxStream.absolutePath);
 
-        const out = await stream.write(buffer);
-
-        await stream.close();
+        stream.write(buffer, 0, pandoraBoxStream.chunkRealSize(chunkIndex), chunkIndex * pandoraBoxStream.chunkSize,  );
 
         return true;
-
     }
 
     async _walkLocation(location, locations = [] ){
@@ -252,6 +255,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
         pandoraBox._sybilProtectSignature = out.signature;
 
         cbProgress( {done: true });
+
         return pandoraBox;
 
     }

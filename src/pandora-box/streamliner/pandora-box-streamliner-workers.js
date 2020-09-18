@@ -28,7 +28,6 @@ module.exports = class PandoraBoxStreamlinerWorkers {
             5*1000,
         );
 
-        this.initializeWorkers();
 
     }
 
@@ -116,26 +115,33 @@ module.exports = class PandoraBoxStreamlinerWorkers {
 
     async initializeWorkers(){
 
-        if (this._pandoraBox.isDone)
-            return this._initializeWorkersPushPeer();
+        let success;
+        if (this._pandoraBox.isDone) {
+            success =true;
+        } else {
 
-        const peers = await this._kademliaNode.crawler.iterativeFindPandoraBoxPeersList(this._pandoraBox);
+            const peers = await this._kademliaNode.crawler.iterativeFindPandoraBoxPeersList(this._pandoraBox);
+            console.log("iterativeFindPandoraBoxPeersList", peers ? peers.length : null );
 
-        if (peers && peers.length) {
-            this._pandoraBoxStreamliner.addPeers(peers);
-            this.refreshWorkers();
+            if (peers && peers.length) {
+                this._pandoraBoxStreamliner.addPeers(peers);
+                this.refreshWorkers();
+                success = true;
+            }
+
         }
 
-        await this._initializeWorkersPushPeer();
+        await this._initializeWorkersPushPeer(success);
 
     }
 
-    async _initializeWorkersPushPeer(){
+    async _initializeWorkersPushPeer(success){
 
         try{
 
-            const out = await this._kademliaNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox);
-            if (out) {
+            const out = await this._kademliaNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox );
+
+            if (out && success) {
                 this._initialized = new Date().getTime();
                 return true;
             }

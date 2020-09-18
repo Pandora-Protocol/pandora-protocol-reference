@@ -223,21 +223,9 @@ module.exports = class PandoraBoxStreamliner {
                                 return;
                             }
 
-
-
-                            try {
-
-                                const out2 = await this._kademliaNode.locations.writeLocationStreamChunk(buffer, it.stream, undoneChunk.index);
-                                if (out2 !== true) throw "Error saving data";
-
-                            }catch(err){
-                                undoneChunk.pending = false;
-                                it.stream.statusUndoneChunksPending -= 1;
-                                return;
-                            }
-
                             it.stream.statusChunks[undoneChunk.index] = 1;
                             it.stream._pandoraBox.chunksTotalAvailable += 1;
+                            it.stream.statusUndoneChunksPending -= 1;
 
                             for (let i=0; i < it.stream.statusUndoneChunks.length; i++ )
                                 if (it.stream.statusUndoneChunks[i] === undoneChunk){
