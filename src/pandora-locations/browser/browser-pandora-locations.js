@@ -28,11 +28,11 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    async createEmptyDirectory(location = ''){
+    createEmptyDirectory(location = ''){
         return true;
     }
 
-    async createLocationEmptyStream(location, size){
+    createLocationEmptyStream(location, size){
         return true;
     }
 

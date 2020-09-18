@@ -121,10 +121,11 @@ module.exports = class PandoraBoxStreamlinerWorkers {
 
         const peers = await this._kademliaNode.crawler.iterativeFindPandoraBoxPeersList(this._pandoraBox);
 
-        if (peers && peers.length)
+        if (peers && peers.length) {
             this._pandoraBoxStreamliner.addPeers(peers);
+            this.refreshWorkers();
+        }
 
-        this.refreshWorkers();
         await this._initializeWorkersPushPeer();
 
     }
@@ -134,10 +135,10 @@ module.exports = class PandoraBoxStreamlinerWorkers {
         try{
 
             const out = await this._kademliaNode.crawler.iterativeStorePandoraBoxPeer( this._pandoraBox);
-
-            this._initialized = new Date().getTime();
-
-            return true;
+            if (out) {
+                this._initialized = new Date().getTime();
+                return true;
+            }
 
         }catch(err){
 

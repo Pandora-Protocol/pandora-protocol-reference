@@ -16,13 +16,13 @@ module.exports = class PandoraBoxStreamlinerWorker {
 
     async connect(  ){
 
-        console.log("establishing connection", this.peer.contact, this.peer.contact.rendezvousContact ? this.peer.contact.rendezvousContact.identityHex : '');
+        console.log("establishing connection", this.peer.contact.toJSON(), this.peer.contact.rendezvousContact ? this.peer.contact.rendezvousContact.identityHex : '');
 
         //establish connection
         try{
 
             const connection = await  this._kademliaNode.rules.establishConnection( this.peer.contact );
-            console.log("establishing connection answer", connection );
+            console.log("establishing connection answer", connection.id );
 
             if (!connection) throw "Connection was not established";
 

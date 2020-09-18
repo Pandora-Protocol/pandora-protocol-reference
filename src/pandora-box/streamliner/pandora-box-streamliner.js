@@ -118,20 +118,18 @@ module.exports = class PandoraBoxStreamliner {
 
     async initialize( ){
 
-        try{
-            console.log("initialize", this._pandoraBox._name, this._pandoraBox.hashHex);
+        console.log("initialize", this._pandoraBox._name, this._pandoraBox.hashHex, this._kademliaNode.contact.identityHex);
 
-            const out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
+        const out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
+        if (!out) return;
 
-            const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this._pandoraBox );
+        const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this._pandoraBox );
+        if (!out2) return;
 
-            this._initialized = new Date().getTime();
+        this._initialized = new Date().getTime();
 
-            return true;
+        return true;
 
-        }catch(err){
-
-        }
     }
 
 
@@ -162,6 +160,7 @@ module.exports = class PandoraBoxStreamliner {
                 try{
 
                     const out = await this._kademliaNode.locations.createEmptyDirectory( it.stream.absolutePath );
+                    if (!out)
 
                     this.removeQueueStream(it.stream);
 
@@ -169,8 +168,7 @@ module.exports = class PandoraBoxStreamliner {
                     this._pandoraBox.events.emit('stream/done', {stream: it.stream})
 
                 }catch(err){
-                    it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED)
-                    return;
+                    return it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED)
                 }
 
             } else

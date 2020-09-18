@@ -46,6 +46,7 @@ module.exports = class PandoraBoxStream {
         if (save)
             await this.saveStatus();
 
+        return true;
     }
 
     get streamStatus(){

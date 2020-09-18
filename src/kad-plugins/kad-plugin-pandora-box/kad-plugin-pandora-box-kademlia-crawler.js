@@ -37,6 +37,8 @@ module.exports = function(options){
 
             const signature = contact.sign( pandoraBox );
 
+            console.log("iterativeStorePandoraBoxPeer", contact.identityHex);
+
             return this.iterativeStoreSortedListValue( tablePeers, pandoraBox, contact.identity, bencode.encode( [ contact.toArray(), signature] ), contact.timestamp );
         }
 
@@ -47,7 +49,7 @@ module.exports = function(options){
 
             const out = await this.iterativeFindSortedList( tablePeers, pandoraBox );
 
-            if ( !out.result) throw 'Peers not found';
+            if ( !out.result) return null;
 
             const peers = [];
             for (const peerId in out.result){

@@ -34,6 +34,7 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
     }
 
     async start(){
+
         const out = await super.start(...arguments);
         this.pandoraBoxes.startStreamlining();
 

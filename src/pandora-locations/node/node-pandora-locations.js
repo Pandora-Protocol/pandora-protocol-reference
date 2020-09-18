@@ -31,7 +31,9 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
     }
 
     async locationExists(location = ''){
-        return fsPromises.exists(location);
+        return new Promise(function(resolve, reject){
+            fs.exists(location, exists => resolve(exists) );
+        })
     }
 
     async createEmptyDirectory(location = ''){
@@ -198,12 +200,12 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                 const sum = createHash('sha256');
                 const chunks = [];
 
-                cbProgress(null, {done: false, status: 'location/stream', path: location.path });
+                cbProgress( {status: 'location/stream', path: location.path });
 
                 await Streams.splitStreamIntoChunks( stream, chunkSize, ( { done, chunk, chunkIndex } )=>{
 
                     if ( chunkIndex % 25 === 0)
-                        cbProgress(null, {done: false, status: 'location/stream/update', path: location.path, chunkIndex });
+                        cbProgress( {status: 'location/stream/update', path: location.path, chunkIndex });
 
                     sum.update(chunk)
                     const hashChunk = createHash('sha256').update(chunk).digest();
@@ -211,7 +213,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
                 });
 
-                cbProgress( {done: false, status: 'location/stream/done', path: location.path });
+                cbProgress( { status: 'location/stream/done', path: location.path });
 
                 const pandoraStream = new PandoraBoxStream( this,
                     newPath,

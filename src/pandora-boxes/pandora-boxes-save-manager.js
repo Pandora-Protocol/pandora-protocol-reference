@@ -23,7 +23,7 @@ module.exports = class PandoraBoxesSaveManager {
 
             out = await this._kademliaNode.storage.setItem('pandoraBoxes:box:index:'+i, boxes[i].hashHex);
 
-            out = await boxes[index].save();
+            out = await boxes[i].save();
 
         }
 
