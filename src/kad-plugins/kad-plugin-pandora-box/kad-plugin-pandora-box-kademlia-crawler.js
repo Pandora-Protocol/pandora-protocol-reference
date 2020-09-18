@@ -1,5 +1,5 @@
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
-const PandoraBox = require('./../../pandora-box/pandora-box')
+const PandoraBox = require('../../pandora-box/box/pandora-box')
 const PandoraBoxMeta = require('./../../pandora-box/meta/pandora-box-meta')
 const PandoraBoxMetaHelper = require('../../pandora-box/meta/pandora-box-meta-helper')
 const SubsetsHelper = require('./../../helpers/subsets-helper')
@@ -108,6 +108,8 @@ module.exports = function(options){
                 output[index] = out;
 
             }
+
+            return output.length;
 
         }
 

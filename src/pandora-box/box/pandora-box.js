@@ -5,11 +5,12 @@ const EventEmitter = require('events')
 const PandoraBoxStreamType = require('./stream/pandora-box-stream-type')
 
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
-const PandoraBoxMeta = require('./meta/pandora-box-meta')
+const PandoraBoxMeta = require('../meta/pandora-box-meta')
 
 module.exports = class PandoraBox extends PandoraBoxMeta {
 
-    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, streams, sybilProtectIndex, sybilProtectTime, sybilProtectSignature ) {
+    // size and metaDataHash are not required for this constructor, but we kept it
+    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, sybilProtectIndex, sybilProtectTime, sybilProtectSignature, description, streams, ) {
 
         super(kademliaNode, version, name, size, categories, metaDataHash, sybilProtectIndex, sybilProtectTime, sybilProtectSignature )
 
@@ -17,11 +18,16 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
         this._kademliaNode = kademliaNode;
         this.events = new EventEmitter();
 
-        PandoraBoxHelper.validatePandoraBox(version, size, description,  metaDataHash, streams);
+        description = description.toString();
+        streams = PandoraBoxHelper.createPandoraBoxStreams(this, streams);
+
+        PandoraBoxHelper.validatePandoraBox(version, description,  this._metaDataHash, streams);
 
         this.absolutePath = absolutePath;
 
         this._streams = streams;
+        this.streamsSetPandoraBox();
+
         this._description = description;
 
         this.streamliner = new PandoraBoxStreamliner(kademliaNode, this);
@@ -31,6 +37,12 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
         this.chunksTotal = this._calculateChunksTotal(false);
         this.chunksTotalAvailable = this._calculateChunksTotal(true);
 
+        this._keys.push('description', 'streams');
+
+    }
+
+    static fromArray(kademliaNode, arr){
+        return new PandoraBox(  kademliaNode, '', ...arr);
     }
 
     streamsSetPandoraBox(){
@@ -70,42 +82,9 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
         return chunksTotal;
     }
 
-    toArray(){
-        const streams = this._streams.map( it => it.toArray() );
-        return [ this._version, this._name, this._size, this._categories, this._description, streams, this._sybilProtectIndex, this._sybilProtectTime, this._sybilProtectSignature, ];
-    }
-
-    static fromArray(kademliaNode, arr){
-
-        const categories = arr[3].map( it => it.toString() );
-
-        const description = arr[4].toString();
-
-        const streams = PandoraBoxHelper.createPandoraBoxStreams( null, arr[5] );
-        const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( description, streams  );
-
-        const pandoraBox = new PandoraBox(kademliaNode, '', arr[0], arr[1].toString(), arr[2], categories,  metaDataHash, description, arr[5], arr[6], arr[7], arr[8] );
-        pandoraBox.streamsSetPandoraBox();
-
-        return pandoraBox;
-    }
-
-    toJSON(){
-        return {
-            version: this._version,
-            name: this._name,
-            categories: this._categories,
-            description: this._description,
-            metaDataHash: this._metaDataHash,
-            streams: this._streams.map( it => it.toJSON() ),
-            sybilProtectIndex: this._sybilProtectIndex,
-            sybilProtectTime: this._sybilProtectTime,
-            sybilProtectSignature: this._sybilProtectSignature,
-        }
-    }
-
     convertToPandoraBoxMeta(){
-        return new PandoraBoxMeta(this._kademliaNode, this._version, this._name, this._size, this._categories, this._metaDataHash, this._sybilProtectIndex, this._sybilProtectTime, this._sybilProtectSignature);
+        const array = this.toArray({description:true, streams:true});
+        return new PandoraBoxMeta(this._kademliaNode, ...array );
     }
 
     get percent(){

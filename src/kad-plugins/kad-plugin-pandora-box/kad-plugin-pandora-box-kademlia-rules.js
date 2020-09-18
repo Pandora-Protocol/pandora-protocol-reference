@@ -1,7 +1,7 @@
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
-const PandoraBox = require('../../pandora-box/pandora-box')
+const PandoraBox = require('../../pandora-box/box/pandora-box')
 const PandoraBoxMeta = require('../../pandora-box/meta/pandora-box-meta')
-const PandoraBoxHelper = require('../../pandora-box/pandora-box-helper')
+const PandoraBoxHelper = require('../../pandora-box/box/pandora-box-helper')
 const PandoraBoxMetaHelper = require('../../pandora-box/meta/pandora-box-meta-helper')
 const {CryptoUtils, ECCUtils} = require('pandora-protocol-kad-reference').helpers;
 

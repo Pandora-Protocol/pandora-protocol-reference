@@ -7,7 +7,7 @@ module.exports = {
             const size = stream.size;
             let offset = 0, chunkIndex = 0;
 
-            const onLoadHandler = function(evt) {
+            const onLoadHandler = async function(evt) {
 
                 if ( evt.target.error )
                     return reject( evt.target.error);
@@ -17,7 +17,7 @@ module.exports = {
 
                 const chunk = Buffer.from(evt.target.result);
 
-                cbProgress( {done: false, chunk, chunkIndex: chunkIndex++} );
+                await cbProgress( {chunk, chunkIndex: chunkIndex++} );
 
                 if (offset >= size)
                     resolve(true);

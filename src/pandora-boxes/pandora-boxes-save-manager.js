@@ -1,4 +1,4 @@
-const PandoraBox = require('./../pandora-box/pandora-box')
+const PandoraBox = require('../pandora-box/box/pandora-box')
 
 module.exports = class PandoraBoxesSaveManager {
 

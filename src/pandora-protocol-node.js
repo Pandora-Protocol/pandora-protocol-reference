@@ -1,7 +1,7 @@
 const KAD = require('pandora-protocol-kad-reference')
 
 const PandoraLocations = require('./pandora-locations/pandora-locations')
-const PandoraBox = require('./pandora-box/pandora-box')
+const PandoraBox = require('./pandora-box/box/pandora-box')
 const PandoraBoxes = require('./pandora-boxes/pandora-boxes')
 const PandoraBoxMetaHelper = require('./pandora-box/meta/pandora-box-meta-helper')
 const KADPluginStreamliner = require('./kad-plugins/kad-plugin-streamliner')

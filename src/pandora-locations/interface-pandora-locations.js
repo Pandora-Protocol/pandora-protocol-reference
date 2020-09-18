@@ -1,6 +1,6 @@
-const PandoraStreamType = require('../pandora-box/stream/pandora-box-stream-type')
-const PandoraBoxStream = require('../pandora-box/stream/pandora-box-stream')
-const PandoraBoxStreamStatus = require('../pandora-box/stream/pandora-box-stream-status')
+const PandoraStreamType = require('../pandora-box/box/stream/pandora-box-stream-type')
+const PandoraBoxStream = require('../pandora-box/box/stream/pandora-box-stream')
+const PandoraBoxStreamStatus = require('../pandora-box/box/stream/pandora-box-stream-status')
 
 module.exports = class InterfacePandoraLocations {
 

@@ -1,5 +1,5 @@
-const PandoraBox = require('./../pandora-box/pandora-box')
-const PandoraStreamType = require('../pandora-box/stream/pandora-box-stream-type')
+const PandoraBox = require('../pandora-box/box/pandora-box')
+const PandoraStreamType = require('../pandora-box/box/stream/pandora-box-stream-type')
 const EventEmitter = require('events')
 const PandoraBoxesSaveManager = require('./pandora-boxes-save-manager')
 

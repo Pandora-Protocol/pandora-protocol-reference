@@ -9,12 +9,12 @@ streamsaver.WritableStream = WritableStream
 
 const InterfacePandoraLocations = require('../interface-pandora-locations')
 const Storage = require('pandora-protocol-kad-reference').storage.Storage;
-const PandoraStreamType = require('../../pandora-box/stream/pandora-box-stream-type')
-const PandoraBoxStreamStatus = require('../../pandora-box/stream/pandora-box-stream-status')
+const PandoraStreamType = require('../../pandora-box/box/stream/pandora-box-stream-type')
+const PandoraBoxStreamStatus = require('../../pandora-box/box/stream/pandora-box-stream-status')
 const Streams = require('../../helpers/streams/streams')
-const PandoraBoxHelper = require('./../../pandora-box/pandora-box-helper')
-const PandoraBoxStream = require('../../pandora-box/stream/pandora-box-stream')
-const PandoraBox = require('../../pandora-box/pandora-box')
+const PandoraBoxHelper = require('../../pandora-box/box/pandora-box-helper')
+const PandoraBoxStream = require('../../pandora-box/box/stream/pandora-box-stream')
+const PandoraBox = require('../../pandora-box/box/pandora-box')
 const PandoraBoxMetaVersion = require('../../pandora-box/meta/pandora-box-meta-version')
 const { Writer } = require("@transcend-io/conflux");
 
@@ -55,7 +55,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    async savePandoraBoxStreamAs(pandoraBoxStream, name, cbProgress ){
+    async savePandoraBoxStreamAs(pandoraBoxStream, name ){
 
         if (!pandoraBoxStream || !(pandoraBoxStream instanceof PandoraBoxStream) ) throw 'PandoraBoxStream is invalid';
         if (!pandoraBoxStream.isDone ) throw 'PandoraBoxStream is not done!';
@@ -77,12 +77,13 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
             await writer.write(buffer);
 
-            if (cbProgress) cbProgress({ chunkIndex: chunkIndex });
+            pandoraBoxStream._pandoraBox.events.emit('stream/save-stream', {pandoraBoxStream, chunkIndex: chunkIndex })
 
         }
 
         await writer.close();
-        cbProgress({ done: true });
+
+        pandoraBoxStream._pandoraBox.events.emit('stream/save-stream', {pandoraBoxStream, done:true })
 
         return {
             stop: ()=> stopped = true,

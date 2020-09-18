@@ -9,6 +9,8 @@ module.exports = class PandoraBoxStream {
         if (pandoraBox)
             this.setPandoraBox(pandoraBox);
 
+        path = path.toString();
+
         PandoraBoxStreamHelper.validatePandoraBoxStream( path, type, size, chunkSize, hash);
 
         if (!Array.isArray(statusChunks)) throw new Error('Stream.statusChunks is not a n array');
@@ -76,7 +78,7 @@ module.exports = class PandoraBoxStream {
     }
 
     static fromArray( pandoraBox, arr ){
-        return new PandoraBoxStream(pandoraBox, arr[0].toString(), arr[1], arr[2], arr[3], arr[4], arr[5], [], PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED );
+        return new PandoraBoxStream(pandoraBox, arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
     }
 
     get absolutePath(){
@@ -99,15 +101,15 @@ module.exports = class PandoraBoxStream {
 
     }
 
-    toJSON(){
+    toJSON(hex = false){
         return {
             path: this.path,
             type: this.type,
             size: this.size,
             chunkSize: this.chunkSize,
             chunksCount: this.chunksCount,
-            hash: this.hash.toString('hex'),
-            chunks: this.chunks.map( it=> it.toString('hex')),
+            hash: hex ? this.hash.toString('hex') : this.hash,
+            chunks: this.chunks.map( it=> hex ? it.toString('hex') : it),
             statusChunks: this.statusChunks,
             streamStatus: this.streamStatus,
         }

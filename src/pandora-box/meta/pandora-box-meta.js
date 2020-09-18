@@ -1,12 +1,15 @@
 const PandoraBoxMetaHelper = require('./pandora-box-meta-helper')
 const Validation = require('pandora-protocol-kad-reference').helpers.Validation;
-const {CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
+const {CryptoUtils, Utils} = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = class PandoraBoxMeta {
 
     constructor(kademliaNode, version, name, size, categories, metaDataHash, sybilProtectIndex, sybilProtectTime, sybilProtectSignature ) {
 
         this._kademliaNode = kademliaNode;
+
+        name = name.toString();
+        categories = categories.map( it => it.toString() );
 
         PandoraBoxMetaHelper.validatePandoraBoxMeta(version, name, size, categories, metaDataHash);
 
@@ -24,6 +27,9 @@ module.exports = class PandoraBoxMeta {
         this._sybilProtectIndex = sybilProtectIndex;
         this._sybilProtectTime = sybilProtectTime;
         this._sybilProtectSignature = sybilProtectSignature;
+
+        this._keys = ['version', 'name', 'size', 'categories', 'metaDataHash', 'sybilProtectIndex', 'sybilProtectTime', 'sybilProtectSignature'];
+        this._keysFilter = {};
 
     }
 
@@ -67,23 +73,16 @@ module.exports = class PandoraBoxMeta {
         return this._sybilProtectTime;
     }
 
-    toArray(){
-        return [ this._version, this._name, this._size, this._categories, this._metaDataHash, this._sybilProtectIndex, this._sybilProtectTime, this._sybilProtectSignature ];
+    toArray(keysFilter = {}){
+        return Utils.toArray(this, this._keys, {...keysFilter, ...this._keysFilter} );
     }
 
     static fromArray(kademliaNode, arr){
-        const categories = arr[3].map( it => it.toString() );
-        return new PandoraBoxMeta(kademliaNode, arr[0], arr[1].toString(), arr[2], categories, arr[4], arr[5], arr[6], arr[7] );
+        return new PandoraBoxMeta(  kademliaNode, ...arr);
     }
 
-    toJSON(){
-        return {
-            name: this._name,
-            size: this._size,
-            description: this._description,
-            categories: this._categories,
-            metaDataHash: this._metaDataHash,
-        }
+    toJSON(hex = false){
+        return Utils.toJSON(this, this._keys, this._keysFilter, hex );
     }
 
 }

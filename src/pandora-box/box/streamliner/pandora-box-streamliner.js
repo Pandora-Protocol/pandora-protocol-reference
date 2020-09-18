@@ -1,8 +1,8 @@
 const {setAsyncInterval, clearAsyncInterval} = require('pandora-protocol-kad-reference').helpers.AsyncInterval;
 
 const {Utils, CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
-const PandoraBoxStreamType = require('./../stream/pandora-box-stream-type')
-const PandoraBoxStreamStatus = require('./../stream/pandora-box-stream-status')
+const PandoraBoxStreamType = require('../stream/pandora-box-stream-type')
+const PandoraBoxStreamStatus = require('../stream/pandora-box-stream-status')
 const PandoraBoxStreamlinerWorkers = require('./pandora-box-streamliner-workers')
 
 module.exports = class PandoraBoxStreamliner {
