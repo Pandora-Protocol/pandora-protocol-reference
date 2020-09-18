@@ -1,6 +1,6 @@
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
-const PandoraBox = require('../../pandora-box/box/pandora-box')
-const PandoraBoxMeta = require('../../pandora-box/meta/pandora-box-meta')
+const PandoraBoxSybil = require('../../pandora-box/box-sybil/pandora-box-sybil')
+const PandoraBoxMetaSybil = require('../../pandora-box/meta-sybil/pandora-box-meta-sybil')
 const PandoraBoxHelper = require('../../pandora-box/box/pandora-box-helper')
 const PandoraBoxMetaHelper = require('../../pandora-box/meta/pandora-box-meta-helper')
 const {CryptoUtils, ECCUtils} = require('pandora-protocol-kad-reference').helpers;
@@ -38,7 +38,7 @@ module.exports = function (options){
 
             try {
 
-                const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( value )  );
+                const pandoraBox = PandoraBoxSybil.fromArray(this._kademliaNode, bencode.decode( value )  );
                 if (!pandoraBox.hash.equals(key)) return null;
 
                 if (!pandoraBox.sybilProtectIndex) return null;
@@ -79,7 +79,7 @@ module.exports = function (options){
 
                 const decoded = bencode.decode( value );
 
-                const pandoraBoxMeta = PandoraBoxMeta.fromArray(this._kademliaNode, decoded[0] );
+                const pandoraBoxMeta = PandoraBoxMetaSybil.fromArray(this._kademliaNode, decoded[0] );
                 if (!pandoraBoxMeta.hash.equals(key)) return null;
 
                 const boxScore = pandoraBoxMeta.sybilProtectTime;

@@ -10,9 +10,9 @@ const PandoraBoxMeta = require('../meta/pandora-box-meta')
 module.exports = class PandoraBox extends PandoraBoxMeta {
 
     // size and metaDataHash are not required for this constructor, but we kept it
-    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, sybilProtectIndex, sybilProtectTime, sybilProtectSignature, description, streams, ) {
+    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, streams, ) {
 
-        super(kademliaNode, version, name, size, categories, metaDataHash, sybilProtectIndex, sybilProtectTime, sybilProtectSignature )
+        super(kademliaNode, version, name, size, categories, metaDataHash )
 
         this.absolutePath = absolutePath;
         this._kademliaNode = kademliaNode;
@@ -41,8 +41,8 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
 
     }
 
-    static fromArray(kademliaNode, arr){
-        return new PandoraBox(  kademliaNode, '', ...arr);
+    static fromArray(kademliaNode, arr, boxClass = PandoraBoxMeta){
+        return new boxClass(  kademliaNode, '', ...arr);
     }
 
     streamsSetPandoraBox(){
@@ -122,7 +122,7 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
 
     }
 
-    static async load(kademliaNode, hash){
+    static async load(kademliaNode, hash, boxClass = PandoraBox){
 
         let out = await kademliaNode.storage.getItem('pandoraBoxes:box:hash:'+hash);
 
@@ -131,7 +131,7 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
         const json = JSON.parse(out);
 
         const decoded = bencode.decode( Buffer.from( json.encoded, 'base64') );
-        const box = PandoraBox.fromArray( kademliaNode, decoded ) ;
+        const box = boxClass.fromArray( kademliaNode, decoded ) ;
         box.absolutePath = json.absolutePath;
 
         for (const stream of box.streams)

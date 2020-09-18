@@ -1,4 +1,4 @@
-const PandoraBox = require('../pandora-box/box/pandora-box')
+const PandoraBoxSybil = require('../pandora-box/box-sybil/pandora-box-sybil')
 
 module.exports = class PandoraBoxesSaveManager {
 
@@ -48,7 +48,7 @@ module.exports = class PandoraBoxesSaveManager {
             let hash = await this._kademliaNode.storage.getItem('pandoraBoxes:box:index:'+i);
             if (!hash) throw 'PandoraBox hash was not found by index';
 
-            const box = await PandoraBox.load(this._kademliaNode, hash);
+            const box = await PandoraBoxSybil.load(this._kademliaNode, hash);
             boxes.push( box );
 
         }

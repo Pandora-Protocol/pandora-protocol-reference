@@ -1,10 +1,9 @@
 const PandoraBoxMetaHelper = require('./pandora-box-meta-helper')
-const Validation = require('pandora-protocol-kad-reference').helpers.Validation;
 const {CryptoUtils, Utils} = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = class PandoraBoxMeta {
 
-    constructor(kademliaNode, version, name, size, categories, metaDataHash, sybilProtectIndex, sybilProtectTime, sybilProtectSignature ) {
+    constructor(kademliaNode, version, name, size, categories, metaDataHash ) {
 
         this._kademliaNode = kademliaNode;
 
@@ -22,13 +21,7 @@ module.exports = class PandoraBoxMeta {
         this._hash = CryptoUtils.sha256( PandoraBoxMetaHelper.computePandoraBoxMetaBuffer(this._version, this._name, this._size, this._categories, this._metaDataHash) ) ;
         this._hashHex = this._hash.toString('hex');
 
-        Validation.validateSybilProtectSignature(sybilProtectIndex, sybilProtectTime, sybilProtectSignature, this._hash);
-
-        this._sybilProtectIndex = sybilProtectIndex;
-        this._sybilProtectTime = sybilProtectTime;
-        this._sybilProtectSignature = sybilProtectSignature;
-
-        this._keys = ['version', 'name', 'size', 'categories', 'metaDataHash', 'sybilProtectIndex', 'sybilProtectTime', 'sybilProtectSignature'];
+        this._keys = ['version', 'name', 'size', 'categories', 'metaDataHash'];
         this._keysFilter = {};
 
     }
@@ -61,24 +54,12 @@ module.exports = class PandoraBoxMeta {
         return this._metaDataHash;
     }
 
-    get sybilProtectSignature(){
-        return this._sybilProtectSignature;
-    }
-
-    get sybilProtectIndex(){
-        return this._sybilProtectIndex;
-    }
-
-    get sybilProtectTime(){
-        return this._sybilProtectTime;
-    }
-
     toArray(keysFilter = {}){
         return Utils.toArray(this, this._keys, {...keysFilter, ...this._keysFilter} );
     }
 
-    static fromArray(kademliaNode, arr){
-        return new PandoraBoxMeta(  kademliaNode, ...arr);
+    static fromArray(kademliaNode, arr, boxClass = PandoraBoxMeta ){
+        return new boxClass(  kademliaNode, ...arr);
     }
 
     toJSON(hex = false){

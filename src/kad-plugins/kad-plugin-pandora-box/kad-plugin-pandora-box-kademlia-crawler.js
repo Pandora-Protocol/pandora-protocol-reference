@@ -1,12 +1,13 @@
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
-const PandoraBox = require('../../pandora-box/box/pandora-box')
+const PandoraBoxSybil = require('../../pandora-box/box-sybil/pandora-box-sybil')
 const PandoraBoxMeta = require('./../../pandora-box/meta/pandora-box-meta')
+const PandoraBoxMetaSybil = require('./../../pandora-box/meta-sybil/pandora-box-meta-sybil')
 const PandoraBoxMetaHelper = require('../../pandora-box/meta/pandora-box-meta-helper')
 const SubsetsHelper = require('./../../helpers/subsets-helper')
 const tableBox =  Buffer.from('box', 'ascii');
 const tablePeers =  Buffer.from('peers', 'ascii');
 const tableName =  Buffer.from('name', 'ascii');
-const { CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
+const { CryptoUtils } = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = function(options){
 
@@ -20,8 +21,8 @@ module.exports = function(options){
 
             const out = await this.iterativeFindValue( tableBox, hash );
 
-            if (!out.result) throw `PandoraBox couldn't be found`;
-            const pandoraBox = PandoraBox.fromArray(this._kademliaNode, bencode.decode( out.result.value ) );
+            if (!out.result) throw `PandoraBoxSybil couldn't be found`;
+            const pandoraBox = PandoraBoxSybil.fromArray(this._kademliaNode, bencode.decode( out.result.value ) );
 
             return pandoraBox;
 
@@ -29,8 +30,8 @@ module.exports = function(options){
 
         iterativeStorePandoraBoxPeer( pandoraBox, contact = this._kademliaNode.contact, date ){
 
-            if (pandoraBox instanceof PandoraBox) pandoraBox = pandoraBox.hash;
-            if (!Buffer.isBuffer(pandoraBox)) throw 'PandoraBox needs to be hash';
+            if (pandoraBox instanceof PandoraBoxMeta) pandoraBox = pandoraBox.hash;
+            if (!Buffer.isBuffer(pandoraBox)) throw 'PandoraBox needs to be a hash';
 
             if ( (new Date().getTime()/1000 - contact.timestamp) >= KAD_OPTIONS.PLUGINS.CONTACT_SPARTACUS.T_CONTACT_TIMESTAMP_DIFF_UPDATE )
                 contact.contactUpdated();
@@ -44,8 +45,8 @@ module.exports = function(options){
 
         async iterativeFindPandoraBoxPeersList( pandoraBox ){
 
-            if (pandoraBox instanceof PandoraBox) pandoraBox = pandoraBox.hash;
-            if (!Buffer.isBuffer(pandoraBox)) throw 'PandoraBox needs to be hash';
+            if (pandoraBox instanceof PandoraBoxMeta) pandoraBox = pandoraBox.hash;
+            if (!Buffer.isBuffer(pandoraBox)) throw 'PandoraBox needs to be a hash';
 
             const out = await this.iterativeFindSortedList( tablePeers, pandoraBox );
 
@@ -81,7 +82,7 @@ module.exports = function(options){
 
         async iterativeStorePandoraBoxName( pandoraBoxMeta ){
 
-            if (pandoraBoxMeta instanceof PandoraBox) pandoraBoxMeta = pandoraBoxMeta.convertToPandoraBoxMeta();
+            if (pandoraBoxMeta instanceof PandoraBoxSybil) pandoraBoxMeta = pandoraBoxMeta.convertToPandoraBoxMetaSybil();
 
             const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);
             const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name);
@@ -127,7 +128,7 @@ module.exports = function(options){
 
             for (const key in out.result){
                 const decoded = bencode.decode( out.result[key].value );
-                const pandoraBoxMeta = PandoraBoxMeta.fromArray(this._kademliaNode, decoded[0]  );
+                const pandoraBoxMeta = PandoraBoxMetaSybil.fromArray(this._kademliaNode, decoded[0]  );
 
                 out.result[key] = pandoraBoxMeta;
             }
