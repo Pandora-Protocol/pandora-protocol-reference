@@ -19,7 +19,10 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
         this.events = new EventEmitter();
 
         description = description.toString();
-        streams = PandoraBoxHelper.createPandoraBoxStreams(this, streams);
+
+        for (let i=0; i < streams.length; i++)
+            if ( !(streams[i] instanceof PandoraBoxStream) )
+                streams[i] = PandoraBoxStream.fromArray( this, streams[i] );
 
         PandoraBoxHelper.validatePandoraBox(version, description,  this._metaDataHash, streams);
 

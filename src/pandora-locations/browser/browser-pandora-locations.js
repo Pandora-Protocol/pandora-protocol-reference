@@ -230,7 +230,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
         const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, size, finalCategories, metaDataHash, finalDescription, streams, 0, 0, Buffer.alloc(64) );
         pandoraBox.streamsSetPandoraBox();
 
-        const out = await this._kademliaNode.contactStorage.sybilProtectSign( {message: pandoraBox.hash}, {includeTime: true} );
+        const out = await this._kademliaNode.sybilProtectSign.sign( {message: pandoraBox.hash}, {includeTime: true} );
 
         pandoraBox._sybilProtectIndex = out.index+1;
         pandoraBox._sybilProtectTime = out.time;

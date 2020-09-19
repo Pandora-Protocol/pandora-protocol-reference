@@ -42,12 +42,5 @@ module.exports.validatePandoraBox = function (version,  description, metaDataHas
 }
 
 
-module.exports.createPandoraBoxStreams = function ( pandoraBox, streams ) {
 
-    for (let i=0; i < streams.length; i++)
-        if ( !(streams[i] instanceof PandoraBoxStream) )
-            streams[i] = PandoraBoxStream.fromArray( pandoraBox, streams[i] );
-
-    return streams;
-}
 

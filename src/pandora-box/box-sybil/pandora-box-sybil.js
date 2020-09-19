@@ -1,47 +1,41 @@
-const Validation = require('pandora-protocol-kad-reference').helpers.Validation;
 const PandoraBox = require('./../box/pandora-box')
 const PandoraBoxMetaSybil = require('./../meta-sybil/pandora-box-meta-sybil')
+const SybilProtect = require('../../sybil-protect/sybil-protect')
 
 module.exports = class PandoraBoxSybil extends PandoraBox{
 
-    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, streams, sybilProtectIndex, sybilProtectTime, sybilProtectSignature ) {
+    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, streams, sybilProtect ) {
 
         super(kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, streams)
 
-        Validation.validateSybilProtectSignature(sybilProtectIndex, sybilProtectTime, sybilProtectSignature, this._hash);
+        if ( !(sybilProtect instanceof SybilProtect ))
+            sybilProtect = SybilProtect.fromArray(kademliaNode, sybilProtect);
 
-        this._sybilProtectIndex = sybilProtectIndex;
-        this._sybilProtectTime = sybilProtectTime;
-        this._sybilProtectSignature = sybilProtectSignature;
+        sybilProtect.validateSybilProtect(this._hash);
 
-        this._keys.push('sybilProtectIndex', 'sybilProtectTime', 'sybilProtectSignature');
+        this._sybilProtect = sybilProtect;
+
+        this._keys.push('sybilProtect');
 
     }
 
-    get sybilProtectSignature(){
-        return this._sybilProtectSignature;
-    }
-
-    get sybilProtectIndex(){
-        return this._sybilProtectIndex;
-    }
-
-    get sybilProtectTime(){
-        return this._sybilProtectTime;
+    get sybilProtect(){
+        return this._sybilProtect;
     }
 
     async boxSybilProtectSign(){
 
-        const out = await this._kademliaNode.contactStorage.sybilProtectSign( {message: this.hash }, {includeTime: true} );
+        const out = await this._kademliaNode.sybilProtectSign.sign( {message: this.hash }, {includeTime: true} );
 
-        this._sybilProtectIndex = out.index+1;
-        this._sybilProtectTime = out.time;
-        this._sybilProtectSignature = out.signature;
+        this._sybilProtect._sybilProtectIndex = out.index+1;
+        this._sybilProtect._sybilProtectTime = out.time;
+        this._sybilProtect._sybilProtectSignature = out.signature;
 
     }
 
     convertToPandoraBoxMetaSybil(){
-        const array = this.toArray({description:true, streams:true});
+        const array = this.toArray({description:true, streams:true });
+        array.push([ ]);
         return new PandoraBoxMetaSybil(this._kademliaNode, ...array );
     }
 
