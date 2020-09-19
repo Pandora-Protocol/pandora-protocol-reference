@@ -29,7 +29,7 @@ module.exports = function(options){
 
             const out = await this.iterativeFindValue( tableBox, hash );
 
-            if (!out.result) throw `PandoraBoxSybil couldn't be found`;
+            if (!out.result) return null;
             const pandoraBox = PandoraBoxSybil.fromArray(this._kademliaNode, bencode.decode( out.result.value ) );
 
             return pandoraBox;
@@ -50,10 +50,12 @@ module.exports = function(options){
 
             const out = await this.iterativeFindValue( tableBoxMeta, hash );
 
-            if (!out.result) throw `PandoraBoxMetaSybil couldn't be found`;
-            const pandoraBox = PandoraBoxMetaSybil.fromArray(this._kademliaNode, bencode.decode( out.result.value ) );
+            if (!out.result) return null;
 
-            return pandoraBox;
+            const decoded = bencode.decode( out.result.value );
+            const pandoraBoxMeta = PandoraBoxMetaSybil.fromArray(this._kademliaNode, decoded[0] );
+
+            return pandoraBoxMeta;
 
         }
 
@@ -121,7 +123,7 @@ module.exports = function(options){
 
         async iterativeStorePandoraBoxName( pandoraBoxMeta ){
 
-            if (pandoraBoxMeta instanceof PandoraBoxSybil) pandoraBoxMeta = pandoraBoxMeta.convertToPandoraBoxMetaSybil();
+            if (pandoraBoxMeta instanceof PandoraBoxSybil) pandoraBoxMeta = pandoraBoxMeta.convertToPandoraBoxMeta();
 
             const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);
             const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name);
@@ -167,7 +169,7 @@ module.exports = function(options){
 
             const out = await this.iterativeFindSortedList( tableName, hash );
 
-            if (!out.result) throw `PandoraBox couldn't be found`;
+            if (!out.result) return null;
 
             for (const key in out.result){
                 const decoded = bencode.decode( out.result[key].value );

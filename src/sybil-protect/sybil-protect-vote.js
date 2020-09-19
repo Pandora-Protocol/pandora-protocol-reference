@@ -1,9 +1,10 @@
-const Validation = require('pandora-protocol-kad-reference').helpers.Validation;
 const { Utils } = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = class SybilProtectVote {
 
-    constructor(  sybilProtectIndex, sybilProtectTime, sybilProtectVoteProtectVotesCount, sybilProtectVoteProtectVotesDown, sybilProtectSignature) {
+    constructor(  kademliaNode, sybilProtectIndex, sybilProtectTime, sybilProtectVoteProtectVotesCount, sybilProtectVoteProtectVotesDown, sybilProtectSignature) {
+
+        this._kademliaNode = kademliaNode;
 
         if (typeof sybilProtectIndex !== "number") throw "invalid sybilProtectIndex";
         if (typeof sybilProtectTime !== "number") throw "invalid sybilProtectTime";
@@ -49,8 +50,8 @@ module.exports = class SybilProtectVote {
         return Utils.toArray(this, this._keys, {...keysFilter, ...this._keysFilter} );
     }
 
-    static fromArray(  arr ){
-        return new SybilProtectVote( arr[0], arr[1], arr[2], arr[3]);
+    static fromArray(  kademliaNode, arr ){
+        return new SybilProtectVote( kademliaNode, arr[0], arr[1], arr[2], arr[3]);
     }
 
     toJSON(hex = false){

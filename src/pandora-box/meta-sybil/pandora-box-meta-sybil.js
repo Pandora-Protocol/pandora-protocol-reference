@@ -23,12 +23,12 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
             const vote = sybilProtectVotes[i];
 
-            if (indexAlready[vote.sybilProtectIndex])
+            if (indexAlready[vote._sybilProtectIndex])
                 throw "Sybil Protect Index already used";
 
-            indexAlready[vote.sybilProtectIndex] = true;
+            indexAlready[vote._sybilProtectIndex] = true;
 
-            vote.validateSybilProtectVote(vote.sybilProtectIndex, [vote.sybilProtectTime, vote.sybilProtectVotes ], vote.sybilProtectSignature, this._hash);
+            vote.validateSybilProtectVote(vote._sybilProtectIndex, [vote._sybilProtectTime, vote._sybilProtectVotes ], vote._sybilProtectSignature, this._hash);
         }
 
         this._sybilProtectVotes = sybilProtectVotes;
@@ -89,7 +89,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
         const out = await this._kademliaNode.sybilProtectSign.sign( {message: this.hash }, {includeTime: true, includeVotes: true, votes: oldVotes, signature: oldSignature }, index );
 
-        const vote = new SybilProtectVote(out.index+1, out.time, out.votes, out.signature);
+        const vote = new SybilProtectVote( this._kademliaNode,out.index+1, out.time, out.votes, out.signature);
 
 
     }

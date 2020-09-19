@@ -1,6 +1,7 @@
 const PandoraBox = require('./../box/pandora-box')
 const PandoraBoxMetaSybil = require('./../meta-sybil/pandora-box-meta-sybil')
 const SybilProtect = require('../../sybil-protect/sybil-protect')
+const PandoraBoxSybilStreamliner = require('./streamliner/pandora-box-sybil-streamliner')
 
 module.exports = class PandoraBoxSybil extends PandoraBox{
 
@@ -19,6 +20,10 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
 
     }
 
+    get PandoraBoxStreamlinerClass(){
+        return PandoraBoxSybilStreamliner;
+    }
+
     get sybilProtect(){
         return this._sybilProtect;
     }
@@ -33,7 +38,7 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
 
     }
 
-    convertToPandoraBoxMetaSybil(){
+    convertToPandoraBoxMeta(){
         const array = this.toArray({description:true, streams:true });
         array.push([ ]);
         return new PandoraBoxMetaSybil(this._kademliaNode, ...array );

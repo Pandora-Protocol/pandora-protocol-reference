@@ -1,3 +1,6 @@
+const {Utils, CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
+const {setAsyncInterval, clearAsyncInterval} = require('pandora-protocol-kad-reference').helpers.AsyncInterval;
+
 const PandoraBoxHelper = require('./pandora-box-helper')
 const PandoraBoxStream = require('./stream/pandora-box-stream')
 const PandoraBoxStreamliner = require('./streamliner/pandora-box-streamliner')
@@ -33,7 +36,7 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
 
         this._description = description;
 
-        this.streamliner = new PandoraBoxStreamliner(kademliaNode, this);
+        this.streamliner = new this.PandoraBoxStreamlinerClass(kademliaNode, this);
 
         this.isDone = this.calculateIsDone;
 
@@ -42,6 +45,11 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
 
         this._keys.push('description', 'streams');
 
+        this._started = false;
+    }
+
+    get PandoraBoxStreamlinerClass(){
+        return PandoraBoxStreamliner;
     }
 
     static fromArray(kademliaNode, arr, boxClass = PandoraBoxMeta){
@@ -146,5 +154,7 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
         return box;
 
     }
+
+
 
 }

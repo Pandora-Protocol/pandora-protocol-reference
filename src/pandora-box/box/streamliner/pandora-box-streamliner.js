@@ -118,21 +118,14 @@ module.exports = class PandoraBoxStreamliner {
 
     async initialize( ){
 
-        console.log("initialize", this._pandoraBox._name, this._pandoraBox.hashHex, this._kademliaNode.contact.identityHex);
-
         const out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
         if (!out) return;
-
-        const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this._pandoraBox );
-        if (!out2) return;
 
         this._initialized = new Date().getTime();
 
         return true;
 
     }
-
-
 
     async work(worker){
 
