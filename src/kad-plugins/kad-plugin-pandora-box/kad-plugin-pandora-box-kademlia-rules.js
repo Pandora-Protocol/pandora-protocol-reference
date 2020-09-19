@@ -1,7 +1,6 @@
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
 const PandoraBoxSybil = require('../../pandora-box/box-sybil/pandora-box-sybil')
 const PandoraBoxMetaSybil = require('../../pandora-box/meta-sybil/pandora-box-meta-sybil')
-const PandoraBoxHelper = require('../../pandora-box/box/pandora-box-helper')
 const PandoraBoxMetaHelper = require('../../pandora-box/meta/pandora-box-meta-helper')
 const {CryptoUtils, ECCUtils} = require('pandora-protocol-kad-reference').helpers;
 
@@ -22,89 +21,132 @@ module.exports = function (options){
                 immutable: true,
             };
 
+            this._allowedStoreTables.meta = {
+                validation: this.validatePandoraBoxMeta.bind(this),
+                expiry: KAD_OPTIONS.T_STORE_KEY_EXPIRY,
+                immutable: false,
+            };
+
             this._allowedStoreSortedListTables.peers = {
                 validation: this.validatePeer.bind(this),
                 expiry: PANDORA_PROTOCOL_OPTIONS.T_STORE_PEER_KEY_EXPIRY,
+                immutable: false,
             };
 
             this._allowedStoreSortedListTables.name = {
                 validation: this.validateName.bind(this),
                 expiry: PANDORA_PROTOCOL_OPTIONS.T_STORE_KEY_EXPIRY,
+                immutable: false,
             };
 
         }
 
-        validatePandoraBox(srcContact, self, [table, key, value], old){
+        validatePandoraBox(srcContact, self, [table, key, value], oldExtra ){
 
             try {
 
                 const pandoraBox = PandoraBoxSybil.fromArray(this._kademliaNode, bencode.decode( value )  );
                 if (!pandoraBox.hash.equals(key)) return null;
 
-                if (!pandoraBox.sybilProtect.sybilProtectIndex) return null;
-                if (!pandoraBox.sybilProtect.sybilProtectTime) return null;
+                if (!pandoraBox._sybilProtect._sybilProtectIndex) return;
+                if (!pandoraBox._sybilProtect._sybilProtectTime) return;
 
-                return value;
+                return {value, extra: true};
 
             }catch(err){
             }
 
         }
 
-        validatePeer(srcContact, self, [table, masterKey, key, value, score], old ){
+        validatePandoraBoxMeta(srcContact, self, [table, key, value], oldExtra ){
+
+            try {
+
+                const decoded = bencode.decode( value );
+                let [ metaArray, totalVotes, sybilProtectTime ] = decoded;
+
+                if (oldExtra){
+                    if (oldExtra[0] < sybilProtectTime ) return; //last was better
+                    if (oldExtra[1] > totalVotes ) return; //last had more votes
+                    if (oldExtra[1] === totalVotes && oldExtra[0] === sybilProtectTime) return; //identical
+                }
+
+                const pandoraBoxMeta = PandoraBoxMetaSybil.fromArray(this._kademliaNode, metaArray );
+                if (!pandoraBoxMeta.hash.equals(key)) return;
+
+                if (!pandoraBoxMeta._sybilProtect._sybilProtectIndex) return;
+                if (!pandoraBoxMeta._sybilProtect._sybilProtectTime) return;
+
+                if (totalVotes !== pandoraBoxMeta.getTotalVotes() ) return;
+                if (sybilProtectTime !== pandoraBoxMeta._sybilProtect._sybilProtectTime) return;
+
+                return {value, extra: [sybilProtectTime, totalVotes ]};
+
+            }catch(err){
+            }
+
+        }
+
+        validatePeer(srcContact, self, [table, masterKey, key, value, score], oldExtra ){
 
             try{
 
-                if ( old && old.score >= score ) return null;
+                if ( oldExtra && oldExtra[0].score >= score ) return; //identical
 
                 const decoded = bencode.decode( value );
                 const contact = this._kademliaNode.createContact( decoded[0], false );
 
-                if ( score !== contact.timestamp ) {
-                    console.error("Timestamp is not matching with score", score, contact.timestamp );
-                    return null;
-                }
+                if ( score !== contact.timestamp ) return;
 
-                if ( !contact.verify( masterKey, decoded[1] ) ) return null;
+                if ( !contact.verify( masterKey, decoded[1] ) ) return;
 
-                return {value, score};
+                return {value, score, extra: [score] };
 
             }catch(err){
             }
 
         }
 
-        validateName(srcContact, self, [table, masterKey, key, value, score]){
+        validateName(srcContact, self, [table, masterKey, key, value, score], oldExtra){
             try{
 
                 const decoded = bencode.decode( value );
+                const [ metaArray, subset, sybilProtectTime, totalVotes ] = decoded;
 
-                const pandoraBoxMeta = PandoraBoxMetaSybil.fromArray(this._kademliaNode, decoded[0] );
-                if (!pandoraBoxMeta.hash.equals(key)) return null;
+                if (oldExtra){
+                    if (oldExtra[0] < sybilProtectTime ) return; //last was better
+                    if (oldExtra[1] > totalVotes ) return; //last had more votes
+                    if (oldExtra[1] === totalVotes && oldExtra[0] === sybilProtectTime) return; //identical
+                }
+
+                const pandoraBoxMeta = PandoraBoxMetaSybil.fromArray(this._kademliaNode, metaArray );
+                if (!pandoraBoxMeta.hash.equals(key)) return;
 
                 const boxScore = pandoraBoxMeta.getScore() ;
-                if ( score !== boxScore ) return null;
+                if ( score !== boxScore ) return;
+
+                if (totalVotes !== pandoraBoxMeta.getTotalVotes() ) return;
+                if (sybilProtectTime !== pandoraBoxMeta._sybilProtect._sybilProtectTime) return;
 
                 const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);
                 const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name);
 
-                const subset = decoded[1];
-                if (!subset || !Array.isArray(subset)) return null;
+                if (!subset || !Array.isArray(subset)) return;
 
                 const v = [];
                 for (const index of subset)
                     if (typeof index !== "number" || index >= words.length || index < 0)
-                        return false;
+                        return;
                     else
                         v.push( words[ index ] );
 
-                if (!v.length) return null;
+                if (!v.length) return;
 
                 const s = v.join(' ');
                 const hash = CryptoUtils.sha256(Buffer.from(s));
-                if (!masterKey.equals(hash)) return null;
+                if (!masterKey.equals(hash)) return;
 
-                return {value, score};
+                return { value, score, extra: [sybilProtectTime, totalVotes] };
 
             }catch(err){
 

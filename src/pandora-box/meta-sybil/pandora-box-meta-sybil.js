@@ -53,19 +53,26 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
         if (!this._sybilProtect._sybilProtectIndex || !this._sybilProtect._sybilProtectTime) return 0;
 
+        const ts = this._sybilProtect._sybilProtectTime -  PANDORA_PROTOCOL_OPTIONS.SYBIL_VOTE_DATE_OFFSET;
+
         let totalVotes = 0;
         for (const vote of this._sybilProtectVotes)
-            totalVotes += vote._sybilProtectVotes;
-
-        const ts = this._sybilProtect._sybilProtectTime -  PANDORA_PROTOCOL_OPTIONS.SYBIL_VOTE_DATE_OFFSET;
+            totalVotes += vote._sybilProtectVoteProtectVotesCount - vote._sybilProtectVoteProtectVotesDown;
 
         const x = 1 + totalVotes;
         const y = Math.sign(x);
         const z = Math.max(1, Math.abs(x) );
 
-        const score = Math.trunc( Math.log10( z + (y * ts) / 45000 ) );
+        return Math.trunc( Math.log10( z + (y * ts) / 45000 ) );
+    }
 
-        return score;
+    getTotalVotes(){
+        let totalVotes = 0;
+
+        for (const vote of this._sybilProtectVotes)
+            totalVotes += vote._sybilProtectVoteProtectVotesCount;
+
+        return totalVotes;
     }
 
     async boxMetaSybilProtectVoteSign(){

@@ -4,14 +4,22 @@ const PandoraBoxMeta = require('./../../pandora-box/meta/pandora-box-meta')
 const PandoraBoxMetaSybil = require('./../../pandora-box/meta-sybil/pandora-box-meta-sybil')
 const PandoraBoxMetaHelper = require('../../pandora-box/meta/pandora-box-meta-helper')
 const SubsetsHelper = require('./../../helpers/subsets-helper')
+const { CryptoUtils } = require('pandora-protocol-kad-reference').helpers;
+
 const tableBox =  Buffer.from('box', 'ascii');
+const tableBoxMeta =  Buffer.from('meta', 'ascii');
 const tablePeers =  Buffer.from('peers', 'ascii');
 const tableName =  Buffer.from('name', 'ascii');
-const { CryptoUtils } = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = function(options){
 
     return class MyCrawler extends options.Crawler {
+
+        /**
+         * Pandora Box
+         * @param pandoraBox
+         * @returns {*}
+         */
 
         iterativeStorePandoraBox( pandoraBox ){
             return this.iterativeStoreValue( tableBox, pandoraBox.hash, bencode.encode( pandoraBox.toArray() ) );
@@ -27,6 +35,31 @@ module.exports = function(options){
             return pandoraBox;
 
         }
+
+
+        /**
+         * Pandora Box Meta
+         * @param pandoraBoxMeta
+         */
+
+        iterativeStorePandoraBoxMeta( pandoraBoxMeta ){
+            return this.iterativeStoreValue( tableBoxMeta, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMeta.toArray(), pandoraBoxMeta.getTotalVotes(), pandoraBoxMeta.sybilProtect.sybilProtectTime ] ) );
+        }
+
+        async iterativeFindPandoraBoxMeta( hash ){
+
+            const out = await this.iterativeFindValue( tableBoxMeta, hash );
+
+            if (!out.result) throw `PandoraBoxMetaSybil couldn't be found`;
+            const pandoraBox = PandoraBoxMetaSybil.fromArray(this._kademliaNode, bencode.decode( out.result.value ) );
+
+            return pandoraBox;
+
+        }
+
+        /**
+         * Pandora Box Peers
+         */
 
         iterativeStorePandoraBoxPeer( pandoraBox, contact = this._kademliaNode.contact, date ){
 
@@ -80,6 +113,12 @@ module.exports = function(options){
             return peers;
         }
 
+        /**
+         * Pandora Box Name
+         * @param pandoraBoxMeta
+         * @returns {Promise<number>}
+         */
+
         async iterativeStorePandoraBoxName( pandoraBoxMeta ){
 
             if (pandoraBoxMeta instanceof PandoraBoxSybil) pandoraBoxMeta = pandoraBoxMeta.convertToPandoraBoxMetaSybil();
@@ -89,7 +128,10 @@ module.exports = function(options){
 
             const subsets = SubsetsHelper.generatePowerSet(words);
 
-            const pandoraBoxMetaArray = pandoraBoxMeta.toArray();
+            const metaArray = pandoraBoxMeta.toArray();
+
+            const score = pandoraBoxMeta.getScore();
+            const totalVotes = pandoraBoxMeta.getTotalVotes();
 
             const output = [];
 
@@ -105,7 +147,8 @@ module.exports = function(options){
                 const s = v.join(' ');
                 const hash = CryptoUtils.sha256( Buffer.from(s) );
 
-                const out = await this.iterativeStoreSortedListValue( tableName, hash, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMetaArray, subset ] ), pandoraBoxMeta.getScore() );
+
+                const out = await this.iterativeStoreSortedListValue( tableName, hash, pandoraBoxMeta.hash, bencode.encode( [ metaArray, subset, pandoraBoxMeta.sybilProtect.sybilProtectTime, totalVotes,  ] ), score );
                 output[index] = out;
 
             }
