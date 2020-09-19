@@ -45,13 +45,27 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
         return this._sybilProtectVotes;
     }
 
+    /**
+     * Based on https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9
+     * @returns {number}
+     */
     getScore(){
+
+        if (!this._sybilProtect._sybilProtectIndex || !this._sybilProtect._sybilProtectTime) return 0;
 
         let totalVotes = 0;
         for (const vote of this._sybilProtectVotes)
-            totalVotes += vote.sybilProtectVotes;
+            totalVotes += vote._sybilProtectVotes;
 
-        return totalVotes;
+        const ts = this._sybilProtect._sybilProtectTime -  PANDORA_PROTOCOL_OPTIONS.SYBIL_VOTE_DATE_OFFSET;
+
+        const x = 1 + totalVotes;
+        const y = Math.sign(x);
+        const z = Math.max(1, Math.abs(x) );
+
+        const score = Math.trunc( Math.log10( z + (y * ts) / 45000 ) );
+
+        return score;
     }
 
     async boxMetaSybilProtectVoteSign(){

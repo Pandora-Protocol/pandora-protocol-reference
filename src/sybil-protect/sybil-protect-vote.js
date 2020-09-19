@@ -16,7 +16,7 @@ module.exports = class SybilProtectVote {
         this._sybilProtectSignature = sybilProtectSignature
 
         this._keys = ['sybilProtectIndex','sybilProtectTime','sybilProtectVoteProtectVoteCount','sybilProtectSignature'];
-
+        this._keysFilter = {};
     }
 
     get sybilProtectIndex(){
@@ -44,6 +44,10 @@ module.exports = class SybilProtectVote {
 
     static fromArray(  arr ){
         return new SybilProtectVote( arr[0], arr[1], arr[2], arr[3]);
+    }
+
+    toJSON(hex = false){
+        return Utils.toJSON(this, this._keys, this._keysFilter, hex );
     }
 
 }

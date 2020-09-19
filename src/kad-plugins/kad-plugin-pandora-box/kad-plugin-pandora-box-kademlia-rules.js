@@ -82,7 +82,7 @@ module.exports = function (options){
                 const pandoraBoxMeta = PandoraBoxMetaSybil.fromArray(this._kademliaNode, decoded[0] );
                 if (!pandoraBoxMeta.hash.equals(key)) return null;
 
-                const boxScore = pandoraBoxMeta.sybilProtectTime;
+                const boxScore = pandoraBoxMeta.getScore() ;
                 if ( score !== boxScore ) return null;
 
                 const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);

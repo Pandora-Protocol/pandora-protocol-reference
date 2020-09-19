@@ -15,7 +15,7 @@ module.exports = class SybilProtect {
         this._sybilProtectSignature = sybilProtectSignature
 
         this._keys = ['sybilProtectIndex','sybilProtectTime','sybilProtectSignature'];
-
+        this._keysFilter = {};
     }
 
     get sybilProtectIndex(){
@@ -40,6 +40,10 @@ module.exports = class SybilProtect {
 
     static fromArray(  kademliaNode, arr ){
         return new SybilProtect( kademliaNode, arr[0], arr[1], arr[2]);
+    }
+
+    toJSON(hex = false){
+        return Utils.toJSON(this, this._keys, this._keysFilter, hex );
     }
 
 }

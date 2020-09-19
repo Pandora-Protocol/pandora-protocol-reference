@@ -83,7 +83,7 @@ async function execute() {
         console.log("streamliner done!");
     })
 
-    console.log( JSON.stringify( out3.pandoraBox.toJSON(), null, 4 ) );
+    console.log( JSON.stringify( out3.pandoraBox.toJSON(true), null, 4 ) );
     console.log('isDone', out3.pandoraBox.isDone)
 
 }
