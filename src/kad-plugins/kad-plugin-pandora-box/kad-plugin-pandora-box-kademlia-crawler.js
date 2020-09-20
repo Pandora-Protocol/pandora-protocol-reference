@@ -22,6 +22,7 @@ module.exports = function(options){
          */
 
         iterativeStorePandoraBox( pandoraBox ){
+            if (! (pandoraBox instanceof PandoraBoxSybil)) throw "PandoraBox is invalid";
             return this.iterativeStoreValue( tableBox, pandoraBox.hash, bencode.encode( pandoraBox.toArray() ) );
         }
 
@@ -43,6 +44,7 @@ module.exports = function(options){
          */
 
         iterativeStorePandoraBoxMeta( pandoraBoxMeta ){
+            if (! (pandoraBoxMeta instanceof PandoraBoxMetaSybil)) throw "PandoraBoxMeta is invalid";
             return this.iterativeStoreValue( tableBoxMeta, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMeta.toArray(), pandoraBoxMeta.getTotalVotes(), pandoraBoxMeta.sybilProtect.sybilProtectTime ] ) );
         }
 
@@ -123,7 +125,7 @@ module.exports = function(options){
 
         async iterativeStorePandoraBoxName( pandoraBoxMeta ){
 
-            if (pandoraBoxMeta instanceof PandoraBoxSybil) pandoraBoxMeta = pandoraBoxMeta.convertToPandoraBoxMeta();
+            if (! (pandoraBoxMeta instanceof PandoraBoxMetaSybil)) throw "PandoraBoxMeta is invalid";
 
             const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);
             const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name);

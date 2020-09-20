@@ -30,7 +30,7 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
 
     async boxSybilProtectSign(){
 
-        const out = await this._kademliaNode.sybilProtectSign.sign( {message: this.hash }, {includeTime: true} );
+        const out = await this._kademliaNode.sybilProtectSigner.sign( {message: this.hash }, {includeTime: true} );
 
         this._sybilProtect._sybilProtectIndex = out.index+1;
         this._sybilProtect._sybilProtectTime = out.time;

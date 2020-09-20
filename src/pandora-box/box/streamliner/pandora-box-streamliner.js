@@ -133,7 +133,6 @@ module.exports = class PandoraBoxStreamliner {
 
             if (!this._pandoraBox.isDone){
                 this._pandoraBox.isDone = this._pandoraBox.calculateIsDone;
-                this._pandoraBox.events.emit('streamliner/done', );
                 this._kademliaNode.pandoraBoxes.emit('pandora-box/done', {pandoraBox: this._pandoraBox} );
                 this.workers.refreshWorkers();
             }
@@ -158,7 +157,10 @@ module.exports = class PandoraBoxStreamliner {
                     this.removeQueueStream(it.stream);
 
                     it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
-                    this._pandoraBox.events.emit('stream/done', {stream: it.stream})
+                    this._kademliaNode.pandoraBoxes.emit('stream/done', {
+                        pandoraBox: it.stream._pandoraBox,
+                        stream: it.stream
+                    })
 
                 }catch(err){
                     return it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_NOT_INITIALIZED)
@@ -231,7 +233,10 @@ module.exports = class PandoraBoxStreamliner {
 
                                 this.removeQueueStream(it.stream);
                                 await it.stream.setStreamStatus( PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
-                                this._pandoraBox.events.emit('stream/done', {stream: it.stream})
+                                this._kademliaNode.pandoraBoxes.emit('stream/done', {
+                                    pandoraBox: it.stream._pandoraBox,
+                                    stream: it.stream
+                                })
 
                             } else {
 
@@ -240,12 +245,14 @@ module.exports = class PandoraBoxStreamliner {
 
                             }
 
-                            this._pandoraBox.events.emit('chunks/total-available', {
+                            this._kademliaNode.pandoraBoxes.emit('pandora-box/chunks/total-available', {
+                                pandoraBox: it.stream._pandoraBox,
                                 chunksTotalAvailable: it.stream._pandoraBox.chunksTotalAvailable,
-                                chunksTotal: it.stream._pandoraBox.chunksTotal
+                                chunksTotal: it.stream._pandoraBox.chunksTotal,
                             });
 
-                            this._pandoraBox.events.emit('stream-chunk/done', {
+                            this._kademliaNode.pandoraBoxes.emit('stream/chunk/done', {
+                                pandoraBox: it.stream._pandoraBox,
                                 stream: it.stream,
                                 chunkIndex: undoneChunk.index
                             });

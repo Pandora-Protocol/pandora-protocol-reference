@@ -55,35 +55,35 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    async savePandoraBoxStreamAs(pandoraBoxStream, name ){
+    async savePandoraBoxStreamAs(stream, name ){
 
-        if (!pandoraBoxStream || !(pandoraBoxStream instanceof PandoraBoxStream) ) throw 'PandoraBoxStream is invalid';
-        if (!pandoraBoxStream.isDone ) throw 'PandoraBoxStream is not done!';
-        if (pandoraBoxStream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) throw "In Browser you can't save a directory";
+        if (!stream || !(stream instanceof PandoraBoxStream) ) throw 'PandoraBoxStream is invalid';
+        if (!stream.isDone ) throw 'PandoraBoxStream is not done!';
+        if (stream.type === PandoraStreamType.PANDORA_LOCATION_TYPE_DIRECTORY) throw "In Browser you can't save a directory";
 
         if (!name)
-            name = this.extractLocationName(pandoraBoxStream.path, true);
+            name = this.extractLocationName(stream.path, true);
 
         const streamer = streamsaver.createWriteStream( name, { size: pandoraBoxStream.size })
         const writer = streamer.getWriter();
 
         let stopped = false;
 
-        for (let chunkIndex=0; chunkIndex < pandoraBoxStream.chunksCount; chunkIndex++){
+        for (let chunkIndex=0; chunkIndex < stream.chunksCount; chunkIndex++){
 
-            const buffer = await this.getLocationStreamChunk( pandoraBoxStream, chunkIndex);
+            const buffer = await this.getLocationStreamChunk( stream, chunkIndex);
 
             if (stopped) throw 'Stopped';
 
             await writer.write(buffer);
 
-            pandoraBoxStream._pandoraBox.events.emit('stream/save-stream', {pandoraBoxStream, chunkIndex: chunkIndex })
+            this._kademliaNode.pandoraBoxes.emit('stream/save-stream', {pandoraBox: stream._pandoraBox, stream, chunkIndex: chunkIndex })
 
         }
 
         await writer.close();
 
-        pandoraBoxStream._pandoraBox.events.emit('stream/save-stream', {pandoraBoxStream, done:true })
+        this._kademliaNode.pandoraBoxes.emit('stream/save-stream', {pandoraBox: stream._pandoraBox, stream, done:true })
 
         return {
             stop: ()=> stopped = true,
@@ -230,7 +230,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
         const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, size, finalCategories, metaDataHash, finalDescription, streams, 0, 0, Buffer.alloc(64) );
         pandoraBox.streamsSetPandoraBox();
 
-        const out = await this._kademliaNode.sybilProtectSign.sign( {message: pandoraBox.hash}, {includeTime: true} );
+        const out = await this._kademliaNode.sybilProtectSigner.sign( {message: pandoraBox.hash}, {includeTime: true} );
 
         pandoraBox._sybilProtectIndex = out.index+1;
         pandoraBox._sybilProtectTime = out.time;

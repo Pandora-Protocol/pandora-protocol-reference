@@ -67,7 +67,7 @@ module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner 
         const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxMeta( this._pandoraBoxMeta );
         if (!out2) return;
 
-        const out3 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this._pandoraBox );
+        const out3 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this._pandoraBoxMeta );
         if (!out3) return;
 
         this._initialized = new Date().getTime();

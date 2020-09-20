@@ -1,10 +1,6 @@
-const {Utils, CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
-const {setAsyncInterval, clearAsyncInterval} = require('pandora-protocol-kad-reference').helpers.AsyncInterval;
-
 const PandoraBoxHelper = require('./pandora-box-helper')
 const PandoraBoxStream = require('./stream/pandora-box-stream')
 const PandoraBoxStreamliner = require('./streamliner/pandora-box-streamliner')
-const EventEmitter = require('events')
 const PandoraBoxStreamType = require('./stream/pandora-box-stream-type')
 
 const bencode = require('pandora-protocol-kad-reference').library.bencode;
@@ -19,7 +15,6 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
 
         this.absolutePath = absolutePath;
         this._kademliaNode = kademliaNode;
-        this.events = new EventEmitter();
 
         description = description.toString();
 

@@ -77,7 +77,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
     async boxMetaSybilProtectVoteSign(){
 
-        const index = this._kademliaNode.sybilProtectSign.getRandomSybilIndex();
+        const index = this._kademliaNode.sybilProtectSigner.getRandomSybilIndex();
 
         let oldSignature,oldVotes;
 
@@ -87,7 +87,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
                 oldVotes = vote.sybilProtectVotes;
             }
 
-        const out = await this._kademliaNode.sybilProtectSign.sign( {message: this.hash }, {includeTime: true, includeVotes: true, votes: oldVotes, signature: oldSignature }, index );
+        const out = await this._kademliaNode.sybilProtectSigner.sign( {message: this.hash }, {includeTime: true, includeVotes: true, votes: oldVotes, signature: oldSignature }, index );
 
         const vote = new SybilProtectVote( this._kademliaNode,out.index+1, out.time, out.votes, out.signature);
 

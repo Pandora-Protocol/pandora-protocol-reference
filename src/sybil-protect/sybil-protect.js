@@ -31,7 +31,7 @@ module.exports = class SybilProtect {
     }
 
     validateSybilProtect(hash){
-        return this._kademliaNode.sybilProtectSign.validateSignature(this._sybilProtectIndex, [ this._sybilProtectTime ], this._sybilProtectSignature, hash);
+        return this._kademliaNode.sybilProtectSigner.validateSignature(this._sybilProtectIndex, [ this._sybilProtectTime ], this._sybilProtectSignature, hash);
     }
 
     toArray(keysFilter = {}){
