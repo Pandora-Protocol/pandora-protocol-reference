@@ -180,13 +180,15 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
     }
 
-    async createPandoraBox( boxLocation, name, description, categories, chunkSize, cbProgress){
+    async createPandoraBox( boxLocation, name, description, categories, chunkSize ){
 
         boxLocation = this.trailingSlash(boxLocation);
 
         for (const box of this._kademliaNode.pandoraBoxes.boxes)
             if ( box.absolutePath === box.absolutePath )
                 return box;
+
+        this._kademliaNode.pandoraBoxes.emit( 'pandora-box/creating', {name, status: 'initialization' });
 
         const streams = [], locations = [];
 
@@ -204,12 +206,12 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                 const sum = createHash('sha256');
                 const chunks = [];
 
-                cbProgress( {status: 'location/stream', path: location.path });
+                this._kademliaNode.pandoraBoxes.emit( 'pandora-box/creating', {name, status: 'location/stream', path: location.path });
 
-                await Streams.splitStreamIntoChunks( stream, chunkSize, ( { done, chunk, chunkIndex } )=>{
+                await Streams.splitStreamIntoChunks( stream, chunkSize, ( {  chunk, chunkIndex } )=>{
 
                     if ( chunkIndex % 25 === 0)
-                        cbProgress( {status: 'location/stream/update', path: location.path, chunkIndex });
+                        this._kademliaNode.pandoraBoxes.emit( 'pandora-box/creating', {name, status: 'location/stream/update', path: location.path, chunkIndex });
 
                     sum.update(chunk)
                     const hashChunk = createHash('sha256').update(chunk).digest();
@@ -217,7 +219,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
 
                 });
 
-                cbProgress( { status: 'location/stream/done', path: location.path });
+                this._kademliaNode.pandoraBoxes.emit( 'pandora-box/creating',{name, status: 'location/stream/done', path: location.path });
 
                 const pandoraStream = new PandoraBoxStream( this,
                     newPath,
@@ -252,7 +254,7 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
         const pandoraBox = new PandoraBoxSybil( this._kademliaNode, boxLocation, version, finalName, size, finalCategories, metaDataHash, finalDescription, chunkSize, streams, sybilProtect );
         await pandoraBox.boxSybilProtectSign();
 
-        cbProgress( {done: true });
+        this._kademliaNode.pandoraBoxes.emit( 'pandora-box/creating', {name, status: 'done' });
 
         return pandoraBox;
 

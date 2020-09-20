@@ -14,8 +14,10 @@ const PandoraBoxStreamStatus = require('../../pandora-box/box/stream/pandora-box
 const Streams = require('../../helpers/streams/streams')
 const PandoraBoxHelper = require('../../pandora-box/box/pandora-box-helper')
 const PandoraBoxStream = require('../../pandora-box/box/stream/pandora-box-stream')
-const PandoraBox = require('../../pandora-box/box/pandora-box')
+const PandoraBoxSybil = require('../../pandora-box/box-sybil/pandora-box-sybil')
 const PandoraBoxMetaVersion = require('../../pandora-box/meta/pandora-box-meta-version')
+const SybilProtect = require('../../sybil-protect/sybil-protect')
+
 const { Writer } = require("@transcend-io/conflux");
 
 module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations {
@@ -64,7 +66,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
         if (!name)
             name = this.extractLocationName(stream.path, true);
 
-        const streamer = streamsaver.createWriteStream( name, { size: pandoraBoxStream.size })
+        const streamer = streamsaver.createWriteStream( name, { size: stream.size })
         const writer = streamer.getWriter();
 
         let stopped = false;
@@ -95,7 +97,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         const self = this;
 
-        if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw 'PandoraBox is invalid'
+        if (!pandoraBox || !(pandoraBox instanceof PandoraBoxSybil) ) throw 'PandoraBox is invalid'
         if (!pandoraBox.isDone ) throw 'PandoraBox is not ready!';
 
         if (!name)
@@ -173,9 +175,11 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
     }
 
-    async createPandoraBox( selectedStreams, name, description, categories, chunkSize, cbProgress){
+    async createPandoraBox( selectedStreams, name, description, categories, chunkSize ){
 
         if (!selectedStreams || !Array.isArray(selectedStreams) || !selectedStreams.length) throw 'Selected streams needs to a non empty array';
+
+        this._kademliaNode.pandoraBoxes.emit( 'pandora-box/creating', {name, status: 'initialization' });
 
         const streams = [];
 
@@ -187,12 +191,12 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             const sum = createHash('sha256');
             const chunks = [];
 
-            cbProgress({ status: 'location/stream', path: newPath});
+            this._kademliaNode.pandoraBoxes.emit( 'pandora-box/creating', {name, status: 'location/stream', path: location.path });
 
             await Streams.splitStreamIntoChunks(selectedStream.stream, chunkSize, ({ chunk, chunkIndex}) => {
 
                 if (chunkIndex % 25 === 0)
-                    cbProgress({done: false, status: 'location/stream/update', path: newPath, chunkIndex});
+                    this._kademliaNode.pandoraBoxes.emit( 'pandora-box/creating', {name, status: 'location/stream/update', path: location.path, chunkIndex });
 
                 sum.update(chunk)
                 const hashChunk = createHash('sha256').update(chunk).digest();
@@ -200,7 +204,7 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
             });
 
-            cbProgress({ status: 'location/stream/done', path: newPath});
+            this._kademliaNode.pandoraBoxes.emit( 'pandora-box/creating',{name, status: 'location/stream/done', path: location.path });
 
             const pandoraStream = new PandoraBoxStream(this,
                 newPath,
@@ -227,14 +231,13 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
             size += stream.size;
 
         const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( finalDescription, chunkSize, streams )
-        const pandoraBox = new PandoraBox( this._kademliaNode, '', version, finalName, size, finalCategories, metaDataHash, finalDescription, chunkSize, streams, 0, 0, Buffer.alloc(64) );
+
+        const sybilProtect = new SybilProtect(this._kademliaNode, 0, 0, Buffer.alloc(64));
+
+        const pandoraBox = new PandoraBoxSybil( this._kademliaNode, '', version, finalName, size, finalCategories, metaDataHash, finalDescription, chunkSize, streams, sybilProtect );
         pandoraBox.streamsSetPandoraBox();
 
-        const out = await this._kademliaNode.sybilProtectSigner.sign( {message: pandoraBox.hash}, {includeTime: true} );
-
-        pandoraBox._sybilProtectIndex = out.index+1;
-        pandoraBox._sybilProtectTime = out.time;
-        pandoraBox._sybilProtectSignature = out.signature;
+        await pandoraBox.boxSybilProtectSign();
 
         for (const selectedStream of selectedStreams){
 
@@ -247,7 +250,8 @@ module.exports = class BrowserPandoraLocations extends InterfacePandoraLocations
 
         }
 
-        cbProgress( {done: true });
+        this._kademliaNode.pandoraBoxes.emit( 'pandora-box/creating', {name, status: 'done' });
+
         return pandoraBox;
 
     }

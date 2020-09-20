@@ -12,7 +12,6 @@ module.exports = {
                 if ( evt.target.error )
                     return reject( evt.target.error);
 
-
                 offset += (evt.target.result.length || evt.target.result.byteLength);
 
                 const chunk = Buffer.from(evt.target.result);
@@ -20,7 +19,7 @@ module.exports = {
                 await cbProgress( {chunk, chunkIndex: chunkIndex++} );
 
                 if (offset >= size)
-                    resolve(true);
+                    return resolve(true);
 
                 readBlock(offset, chunkSize, stream);
             }

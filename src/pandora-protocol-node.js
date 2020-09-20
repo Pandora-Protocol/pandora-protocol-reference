@@ -46,11 +46,13 @@ module.exports = class PandoraProtocolNode extends KAD.KademliaNode {
         this.pandoraBoxes.stopStreamlining();
     }
 
-    async seedPandoraBox( location, name, description, categories, chunkSize = 1*512*1024, cbProgress ){
+    async seedPandoraBox( location, name, description, categories, chunkSize = 1*512*1024 ){
 
-        const pandoraBox = await this.locations.createPandoraBox( location,  name, description, categories, chunkSize, cbProgress);
+        const pandoraBox = await this.locations.createPandoraBox( location,  name, description, categories, chunkSize);
 
         const initialized = await pandoraBox.streamliner.initialize();
+        if (!initialized)
+            throw "Pandora Box couldn't have been published"
 
         const stored = await this.pandoraBoxes.addPandoraBox( pandoraBox, true);
 
