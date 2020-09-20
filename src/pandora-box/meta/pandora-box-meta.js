@@ -22,7 +22,6 @@ module.exports = class PandoraBoxMeta {
         this._hashHex = this._hash.toString('hex');
 
         this._keys = ['version', 'name', 'size', 'categories', 'metaDataHash'];
-        this._keysFilter = {};
 
     }
 
@@ -55,7 +54,7 @@ module.exports = class PandoraBoxMeta {
     }
 
     toArray(keysFilter = {}){
-        return Utils.toArray(this, this._keys, {...keysFilter, ...this._keysFilter} );
+        return Utils.toArray(this, this._keys, keysFilter, this._keysFilter );
     }
 
     static fromArray(kademliaNode, arr, boxClass = PandoraBoxMeta ){

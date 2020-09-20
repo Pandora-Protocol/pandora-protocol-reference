@@ -15,7 +15,6 @@ module.exports = class SybilProtect {
         this._sybilProtectSignature = sybilProtectSignature
 
         this._keys = ['sybilProtectIndex','sybilProtectTime','sybilProtectSignature'];
-        this._keysFilter = {};
     }
 
     get sybilProtectIndex(){
@@ -35,7 +34,7 @@ module.exports = class SybilProtect {
     }
 
     toArray(keysFilter = {}){
-        return Utils.toArray(this, this._keys, {...keysFilter, ...this._keysFilter} );
+        return Utils.toArray(this, this._keys, keysFilter, this._keysFilter );
     }
 
     static fromArray(  kademliaNode, arr ){

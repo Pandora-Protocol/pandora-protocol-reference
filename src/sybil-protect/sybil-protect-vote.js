@@ -19,7 +19,6 @@ module.exports = class SybilProtectVote {
         this._sybilProtectSignature = sybilProtectSignature
 
         this._keys = ['sybilProtectIndex','sybilProtectTime','sybilProtectVoteProtectVotesCount','sybilProtectVoteProtectVotesDown','sybilProtectSignature'];
-        this._keysFilter = {};
     }
 
     get sybilProtectIndex(){
@@ -47,7 +46,7 @@ module.exports = class SybilProtectVote {
     }
 
     toArray(keysFilter = {}){
-        return Utils.toArray(this, this._keys, {...keysFilter, ...this._keysFilter} );
+        return Utils.toArray(this, this._keys, keysFilter, this._keysFilter );
     }
 
     static fromArray(  kademliaNode, arr ){

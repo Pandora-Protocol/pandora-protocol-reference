@@ -27,6 +27,14 @@ module.exports = class PandoraBoxes extends EventEmitter{
         return Object.values( this._boxesMap );
     }
 
+    get streamsMap(){
+        return this._streamsMap;
+    }
+
+    get streams(){
+        return Object.values( this._streamsMap );
+    }
+
     get startedStreamlinnig(){
         return this._startedStreamlining;
     }

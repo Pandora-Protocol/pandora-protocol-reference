@@ -5,9 +5,9 @@ const PandoraBoxSybilStreamliner = require('./streamliner/pandora-box-sybil-stre
 
 module.exports = class PandoraBoxSybil extends PandoraBox{
 
-    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, streams, sybilProtect ) {
+    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description,  chunkSize, streams, sybilProtect ) {
 
-        super(kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, streams)
+        super(kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, chunkSize, streams)
 
         if ( !(sybilProtect instanceof SybilProtect ))
             sybilProtect = SybilProtect.fromArray(kademliaNode, sybilProtect);
@@ -39,7 +39,7 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
     }
 
     convertToPandoraBoxMeta(){
-        const array = this.toArray({description:true, streams:true });
+        const array = this.toArray({description:true, streams:true, chunkSize:true, });
         array.push([ ]);
         return new PandoraBoxMetaSybil(this._kademliaNode, ...array );
     }

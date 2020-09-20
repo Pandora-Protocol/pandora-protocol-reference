@@ -10,7 +10,7 @@ module.exports.isSemiAbsolutePath = function (str) {
     return true;
 }
 
-module.exports.validatePandoraBoxStream = function (path, type, size, chunkSize, hash, ) {
+module.exports.validatePandoraBoxStream = function (path, type, size, hash, ) {
 
     const valid = this.isSemiAbsolutePath(path);
     if (!valid) throw new Error('Stream Path is invalid');
@@ -19,16 +19,12 @@ module.exports.validatePandoraBoxStream = function (path, type, size, chunkSize,
         throw new Error('Stream type is invalid');
 
     if (typeof size !== "number" || size < 0 || size >= Number.MAX_SAFE_INTEGER ) throw new Error('Stream.size is not a number');
-    if (typeof chunkSize !== "number" ) throw new Error('Stream.chunkSize is not a number');
 
     if ( !Buffer.isBuffer(hash) ) throw new Error('Stream.hash is not a buffer');
 
-    if (type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM ) {
-        if (chunkSize < 1024 || chunkSize >= 256 * 1024 * 1024) throw new Error('Stream.size is invalid');
+    if (type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM )
         if (  hash.length !== KAD_OPTIONS.NODE_ID_LENGTH ) throw new Error('Stream.hash is invalid');
-    } else if (type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_DIRECTORY ) {
-        if (chunkSize !== 0) throw new Error('Stream.size is invalid');
+    else if (type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_DIRECTORY )
         if ( hash.length ) throw new Error('Stream.hash is invalid');
-    }
 
 }

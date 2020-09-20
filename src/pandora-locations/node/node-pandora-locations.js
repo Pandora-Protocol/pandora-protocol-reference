@@ -223,8 +223,8 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
                     newPath,
                     location.info.type,
                     location.info.size,
-                    chunkSize,
                     sum.digest(),
+                    chunkSize,
                     chunks,
                     new Array(chunks.length).fill(1),
                     PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
@@ -245,11 +245,11 @@ module.exports = class NodePandoraLocations extends InterfacePandoraLocations {
         for (const stream of streams)
             size += stream.size;
 
-        const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( finalDescription, streams )
+        const metaDataHash = PandoraBoxHelper.computePandoraBoxMetaDataHash( finalDescription, chunkSize, streams )
 
         const sybilProtect = new SybilProtect(this._kademliaNode, 0, 0, Buffer.alloc(64));
 
-        const pandoraBox = new PandoraBoxSybil( this._kademliaNode, boxLocation, version, finalName, size, finalCategories, metaDataHash, finalDescription, streams, sybilProtect );
+        const pandoraBox = new PandoraBoxSybil( this._kademliaNode, boxLocation, version, finalName, size, finalCategories, metaDataHash, finalDescription, chunkSize, streams, sybilProtect );
         await pandoraBox.boxSybilProtectSign();
 
         cbProgress( {done: true });

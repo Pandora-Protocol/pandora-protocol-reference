@@ -9,7 +9,7 @@ const PandoraBoxMeta = require('../meta/pandora-box-meta')
 module.exports = class PandoraBox extends PandoraBoxMeta {
 
     // size and metaDataHash are not required for this constructor, but we kept it
-    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, streams, ) {
+    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, chunkSize, streams, ) {
 
         super(kademliaNode, version, name, size, categories, metaDataHash )
 
@@ -20,15 +20,16 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
 
         for (let i=0; i < streams.length; i++)
             if ( !(streams[i] instanceof PandoraBoxStream) )
-                streams[i] = PandoraBoxStream.fromArray( this, streams[i] );
+                streams[i] = PandoraBoxStream.fromArray( this, chunkSize, streams[i] );
 
-        PandoraBoxHelper.validatePandoraBox(version, description,  this._metaDataHash, streams);
+        PandoraBoxHelper.validatePandoraBox(version, description, chunkSize, this._metaDataHash, streams);
 
         this.absolutePath = absolutePath;
 
         this._streams = streams;
         this.streamsSetPandoraBox();
 
+        this._chunkSize = chunkSize;
         this._description = description;
 
         this.streamliner = new this.PandoraBoxStreamlinerClass(kademliaNode, this);
@@ -38,9 +39,13 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
         this.chunksTotal = this._calculateChunksTotal(false);
         this.chunksTotalAvailable = this._calculateChunksTotal(true);
 
-        this._keys.push('description', 'streams');
+        this._keys.push('description', 'chunkSize', 'streams');
 
         this._started = false;
+    }
+
+    get chunkSize(){
+        return this._chunkSize;
     }
 
     get PandoraBoxStreamlinerClass(){
