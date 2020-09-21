@@ -57,7 +57,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
         let totalVotes = 0;
         for (const vote of this._sybilProtectVotes)
-            totalVotes += vote._sybilProtectVoteProtectVotesCount - vote._sybilProtectVoteProtectVotesDown;
+            totalVotes += vote._sybilProtectVotesCount - 2*vote._sybilProtectVotesDown;
 
         const x = 1 + totalVotes;
         const y = Math.sign(x);
@@ -70,7 +70,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
         let totalVotes = 0;
 
         for (const vote of this._sybilProtectVotes)
-            totalVotes += vote._sybilProtectVoteProtectVotesCount;
+            totalVotes += vote._sybilProtectVotesCount;
 
         return totalVotes;
     }
@@ -79,19 +79,83 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
         const index = this._kademliaNode.sybilProtectSigner.getRandomSybilIndex();
 
-        let oldSignature,oldVotes;
+        let oldSignature, oldVotesCount, oldVotesDown, oldTime;
 
         for (const vote of this._sybilProtectVotes)
             if (vote.sybilProtectIndex === index){
+                oldTime = vote.sybilProtectTime;
+                oldVotesCount = vote.sybilProtectVotesCount;
+                oldVotesDown = vote.sybilProtectVotesDown;
                 oldSignature = vote.sybilProtectSignature;
-                oldVotes = vote.sybilProtectVotes;
             }
 
-        const out = await this._kademliaNode.sybilProtectSigner.sign( {message: this.hash }, {includeTime: true, includeVotes: true, votes: oldVotes, signature: oldSignature }, index );
+        const out = await this._kademliaNode.sybilProtectSigner.sign( {
+            message: this.hash
+        }, {
+            includeTime: true,
+            includeVotes: true,
+            old: {
+                time: oldTime,
+                votesCount: oldVotesCount,
+                votesDown: oldVotesDown,
+                signature: oldSignature
+            },
 
-        const vote = new SybilProtectVote( this._kademliaNode,out.index+1, out.time, out.votes, out.signature);
+        }, index );
+
+        const vote = new SybilProtectVote( this._kademliaNode,out.index+1, out.time, out.votesCount, out.votesDown, out.signature);
 
 
+    }
+
+    async mergePandoraBoxMeta(){
+
+        try{
+
+            let changes;
+
+            const pandoraBoxMeta = await this._kademliaNode.crawler.iterativeFindPandoraBoxMeta( this._pandoraBox.hash );
+
+            if (!pandoraBoxMeta) return;
+
+            if (!this._sybilProtect._sybilProtectIndex || this._sybilProtect._sybilProtectTime < pandoraBoxMeta._sybilProtect._sybilProtectTime)
+                this._sybilProtect = new SybilProtect(this._kademliaNode, ...pandoraBoxMeta._sybilProtect.toArray() );
+
+
+            for (const vote of pandoraBoxMeta._sybilProtectVotes){
+                let found = false;
+
+                for (let i=0; i < this._sybilProtectVotes.length; i++) {
+
+                    const vote2 = this._sybilProtectVotes[i];
+
+                    if (vote2._sybilProtectIndex === vote._sybilProtectIndex) {
+                        found = true;
+
+                        if (vote2._sybilProtectVotesCount < vote._sybilProtectVotesCount) {
+                            const newVote = new SybilProtectVote(this._kademliaNode, ...vote.toArray());
+                            this._sybilProtectVotes[i] = newVote;
+                            changes = true;
+                        }
+
+                        break;
+                    }
+                }
+
+                if (!found){
+                    const vote = new SybilProtectVote(this._kademliaNode, ...vote.toArray() );
+                    this._sybilProtectVotes.push( vote );
+                    changes = true;
+                }
+
+            }
+
+            if (changes)
+                this._kademliaNode.pandoraBoxes.emit('pandora-box/meta-updated', { pandoraBoxMeta: this });
+
+        }catch(err){
+
+        }
     }
 
     static fromArray(kademliaNode, arr, boxClass = PandoraBoxMetaSybil){

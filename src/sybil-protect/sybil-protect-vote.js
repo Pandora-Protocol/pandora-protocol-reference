@@ -2,23 +2,23 @@ const { Utils } = require('pandora-protocol-kad-reference').helpers;
 
 module.exports = class SybilProtectVote {
 
-    constructor(  kademliaNode, sybilProtectIndex, sybilProtectTime, sybilProtectVoteProtectVotesCount, sybilProtectVoteProtectVotesDown, sybilProtectSignature) {
+    constructor(  kademliaNode, sybilProtectIndex, sybilProtectTime, sybilProtectVotesCount, sybilProtectVotesDown, sybilProtectSignature) {
 
         this._kademliaNode = kademliaNode;
 
         if (typeof sybilProtectIndex !== "number") throw "invalid sybilProtectIndex";
         if (typeof sybilProtectTime !== "number") throw "invalid sybilProtectTime";
-        if (typeof sybilProtectVoteProtectVotesCount !== "number" || !sybilProtectVoteProtectVotesCount) throw "invalid sybilProtectVoteProtectVotesCount";
-        if (typeof sybilProtectVoteProtectVotesDown !== "number" ) throw "invalid || sybilProtectVoteProtectVotesDown";
+        if (typeof sybilProtectVotesCount !== "number" || !sybilProtectVotesCount) throw "invalid sybilProtectVotesCount";
+        if (typeof sybilProtectVotesDown !== "number" ) throw "invalid sybilProtectVotesDown";
         if (!Buffer.isBuffer(sybilProtectSignature) || sybilProtectSignature.length !== 2*KAD_OPTIONS.NODE_ID_LENGTH) throw "invalid sybilProtectSignature";
 
-        this._sybilProtectIndex = sybilProtectIndex
-        this._sybilProtectTime = sybilProtectTime
-        this._sybilProtectVoteProtectVotesCount = sybilProtectVoteProtectVotesCount
-        this._sybilProtectVoteProtectVotesDown = sybilProtectVoteProtectVotesDown
-        this._sybilProtectSignature = sybilProtectSignature
+        this._sybilProtectIndex = sybilProtectIndex;
+        this._sybilProtectTime = sybilProtectTime;
+        this._sybilProtectVotesCount = sybilProtectVotesCount;
+        this._sybilProtectVotesDown = sybilProtectVotesDown;
+        this._sybilProtectSignature = sybilProtectSignature;
 
-        this._keys = ['sybilProtectIndex','sybilProtectTime','sybilProtectVoteProtectVotesCount','sybilProtectVoteProtectVotesDown','sybilProtectSignature'];
+        this._keys = ['sybilProtectIndex','sybilProtectTime','sybilProtectVotesCount','sybilProtectVotesDown','sybilProtectSignature'];
     }
 
     get sybilProtectIndex(){
@@ -29,12 +29,12 @@ module.exports = class SybilProtectVote {
         return this._sybilProtectTime;
     }
 
-    get sybilProtectVoteProtectVotesCount(){
-        return this._sybilProtectVoteProtectVotesCount;
+    get sybilProtectVotesCount(){
+        return this._sybilProtectVotesCount;
     }
 
-    get sybilProtectVoteProtectVotesDown(){
-        return this._sybilProtectVoteProtectVotesDown;
+    get sybilProtectVotesDown(){
+        return this._sybilProtectVotesDown;
     }
 
     get sybilProtectSignature(){
@@ -42,7 +42,7 @@ module.exports = class SybilProtectVote {
     }
 
     validateSybilProtectVote(hash){
-        return this._kademliaNode.sybilProtectSigner.validateSignature(this._sybilProtectIndex, [ this._sybilProtectTime, this._sybilProtectVoteProtectVotesCount, this._sybilProtectVoteProtectVotesDown ], this._sybilProtectSignature, hash);
+        return this._kademliaNode.sybilProtectSigner.validateSignature(this._sybilProtectIndex, [ this._sybilProtectTime, this._sybilProtectVotesCount, this._sybilProtectVotesDown ], this._sybilProtectSignature, hash);
     }
 
     toArray(keysFilter = {}){
