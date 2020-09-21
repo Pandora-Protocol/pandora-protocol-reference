@@ -5,9 +5,9 @@ const PandoraBoxSybilStreamliner = require('./streamliner/pandora-box-sybil-stre
 
 module.exports = class PandoraBoxSybil extends PandoraBox{
 
-    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description,  chunkSize, streams, sybilProtect ) {
+    constructor ( kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description,  chunkSize, streams, sybilProtect, onlyValidation ) {
 
-        super(kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, chunkSize, streams)
+        super(kademliaNode, absolutePath, version, name, size, categories, metaDataHash, description, chunkSize, streams, onlyValidation)
 
         if ( !(sybilProtect instanceof SybilProtect ))
             sybilProtect = SybilProtect.fromArray(kademliaNode, sybilProtect);
@@ -17,6 +17,9 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
         this._sybilProtect = sybilProtect;
 
         this._keys.push('sybilProtect');
+
+        if (!onlyValidation)
+            this.streamliner.createPandoraBoxMetaBox();
 
     }
 
@@ -35,6 +38,12 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
         this._sybilProtect._sybilProtectIndex = out.index+1;
         this._sybilProtect._sybilProtectTime = out.time;
         this._sybilProtect._sybilProtectSignature = out.signature;
+
+        if (this.streamliner) {
+            this.streamliner._pandoraBoxMeta.sybilProtect._sybilProtectIndex = out.index + 1;
+            this.streamliner._pandoraBoxMeta.sybilProtect._sybilProtectTime = out.time;
+            this.streamliner._pandoraBoxMeta.sybilProtect._sybilProtectSignature = out.signature;
+        }
 
     }
 

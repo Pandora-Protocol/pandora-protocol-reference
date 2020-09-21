@@ -1,7 +1,6 @@
 const PandoraBoxMeta = require('../meta/pandora-box-meta')
 const SybilProtectVote = require('../../sybil-protect/sybil-protect-vote');
 const SybilProtect = require('../../sybil-protect/sybil-protect');
-
 module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
     constructor(kademliaNode, version, name, size, categories, metaDataHash, sybilProtect, sybilProtectVotes ) {
@@ -108,13 +107,13 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
     }
 
-    async mergePandoraBoxMeta(){
+    async mergePandoraBoxMetaSybil(){
 
         try{
 
             let changes;
 
-            const pandoraBoxMeta = await this._kademliaNode.crawler.iterativeFindPandoraBoxMeta( this._pandoraBox.hash );
+            const pandoraBoxMeta = await this._kademliaNode.crawler.iterativeFindPandoraBoxMeta( this._hash );
 
             if (!pandoraBoxMeta) return;
 
@@ -151,7 +150,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
             }
 
             if (changes)
-                this._kademliaNode.pandoraBoxes.emit('pandora-box/meta-updated', { pandoraBoxMeta: this });
+                this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/updated-sybil', this );
 
         }catch(err){
 

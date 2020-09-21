@@ -1,22 +1,26 @@
 const PandoraBoxStreamliner = require('../../box/streamliner/pandora-box-streamliner')
-const SybilProtect = require('../../../sybil-protect/sybil-protect')
-const SybilProtectVote = require('../../../sybil-protect/sybil-protect-vote')
+
 
 module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner {
+
+    constructor() {
+        super(...arguments);
+    }
+
+    createPandoraBoxMetaBox(){
+        this._pandoraBoxMeta = this._pandoraBox.convertToPandoraBoxMeta();
+    }
 
     async initialize( ){
 
         try{
-
-            if (!this._pandoraBoxMeta)
-                this._pandoraBoxMeta = this._pandoraBox.convertToPandoraBoxMeta();
 
             console.log("initialize", this._pandoraBox._name, this._pandoraBox.hashHex, this._kademliaNode.contact.identityHex);
 
             const out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
             if (!out) return;
 
-            await this._pandoraBoxMeta.mergePandoraBoxMeta();
+            await this._pandoraBoxMeta.mergePandoraBoxMetaSybil();
 
             const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxMeta( this._pandoraBoxMeta );
             if (!out2) return;
