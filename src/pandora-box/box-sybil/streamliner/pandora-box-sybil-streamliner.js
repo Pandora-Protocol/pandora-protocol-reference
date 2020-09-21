@@ -8,7 +8,7 @@ module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner 
     }
 
     createPandoraBoxMetaBox(){
-        this._pandoraBoxMeta = this._pandoraBox.convertToPandoraBoxMeta();
+        this.pandoraBoxMeta = this._pandoraBox.convertToPandoraBoxMeta();
     }
 
     async initialize( ){
@@ -20,12 +20,12 @@ module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner 
             const out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
             if (!out) return;
 
-            await this._pandoraBoxMeta.mergePandoraBoxMetaSybil();
+            await this.pandoraBoxMeta.mergePandoraBoxMetaSybil();
 
-            const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxMeta( this._pandoraBoxMeta );
+            const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxMeta( this.pandoraBoxMeta );
             if (!out2) return;
 
-            const out3 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this._pandoraBoxMeta );
+            const out3 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this.pandoraBoxMeta );
             if (!out3) return;
 
             this._initialized = new Date().getTime();

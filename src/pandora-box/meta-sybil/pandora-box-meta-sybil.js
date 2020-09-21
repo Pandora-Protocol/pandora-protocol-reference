@@ -74,6 +74,24 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
         return totalVotes;
     }
 
+    getVotes(){
+
+        let upVotes = 0, downVotes = 0, totalVotes = 0;
+
+        for (const vote of this._sybilProtectVotes) {
+            totalVotes += vote._sybilProtectVotesCount;
+            downVotes += vote._sybilProtectVotesDown;
+            upVotes += vote._sybilProtectVotesCount - 2 * vote._sybilProtectVotesDown;
+        }
+
+        return {
+            upVotes,
+            downVotes,
+            totalVotes,
+        };
+
+    }
+
     async boxMetaSybilProtectVoteSign(){
 
         const index = this._kademliaNode.sybilProtectSigner.getRandomSybilIndex();

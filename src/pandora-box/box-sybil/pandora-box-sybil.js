@@ -40,9 +40,9 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
         this._sybilProtect._sybilProtectSignature = out.signature;
 
         if (this.streamliner) {
-            this.streamliner._pandoraBoxMeta.sybilProtect._sybilProtectIndex = out.index + 1;
-            this.streamliner._pandoraBoxMeta.sybilProtect._sybilProtectTime = out.time;
-            this.streamliner._pandoraBoxMeta.sybilProtect._sybilProtectSignature = out.signature;
+            this.streamliner.pandoraBoxMeta.sybilProtect._sybilProtectIndex = out.index + 1;
+            this.streamliner.pandoraBoxMeta.sybilProtect._sybilProtectTime = out.time;
+            this.streamliner.pandoraBoxMeta.sybilProtect._sybilProtectSignature = out.signature;
         }
 
     }
