@@ -76,52 +76,68 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
     getVotes(){
 
-        let upVotes = 0, downVotes = 0, totalVotes = 0;
+        let votesUp = 0, votesDown = 0, votesTotal = 0;
 
         for (const vote of this._sybilProtectVotes) {
-            totalVotes += vote._sybilProtectVotesCount;
-            downVotes += vote._sybilProtectVotesDown;
-            upVotes += vote._sybilProtectVotesCount - 2 * vote._sybilProtectVotesDown;
+            votesTotal += vote._sybilProtectVotesCount;
+            votesDown += vote._sybilProtectVotesDown;
         }
 
+        votesUp = votesTotal - 2 * votesDown;
+
         return {
-            upVotes,
-            downVotes,
-            totalVotes,
+            votesUp,
+            votesDown,
+            votesTotal,
         };
 
     }
 
-    async boxMetaSybilProtectVoteSign(){
+    async sybilProtectVoteSign( vote = true ){
 
         const index = this._kademliaNode.sybilProtectSigner.getRandomSybilIndex();
 
-        let oldSignature, oldVotesCount, oldVotesDown, oldTime;
+        let found, oldSignature, oldVotesCount = 0, oldVotesDown = 0, oldTime;
 
-        for (const vote of this._sybilProtectVotes)
-            if (vote.sybilProtectIndex === index){
+        for (let i=0; i < this._sybilProtectVotes.length; i++ ) {
+            const vote = this._sybilProtectVotes[i];
+
+            if (vote.sybilProtectIndex === index) {
+                found = i;
                 oldTime = vote.sybilProtectTime;
                 oldVotesCount = vote.sybilProtectVotesCount;
                 oldVotesDown = vote.sybilProtectVotesDown;
                 oldSignature = vote.sybilProtectSignature;
             }
+        }
 
         const out = await this._kademliaNode.sybilProtectSigner.sign( {
             message: this.hash
         }, {
             includeTime: true,
             includeVotes: true,
-            old: {
+            oldVotes: {
                 time: oldTime,
                 votesCount: oldVotesCount,
                 votesDown: oldVotesDown,
                 signature: oldSignature
             },
+            vote,
 
         }, index );
 
-        const vote = new SybilProtectVote( this._kademliaNode,out.index+1, out.time, out.votesCount, out.votesDown, out.signature);
+        if (out.votesCount !== oldVotesCount + 1) throw "The new votesCount is not right";
+        if (vote && out.votesDown !== oldVotesDown) throw "The new votesDown is not right";
+        if (!vote && out.votesDown !== oldVotesDown + 1) throw "The new votesDown is not right";
 
+        const newVote = new SybilProtectVote( this._kademliaNode,out.index+1, out.time, out.votesCount, out.votesDown, out.signature);
+
+        if (found === undefined)
+            this._sybilProtectVotes.push(newVote);
+        else
+            this._sybilProtectVotes[found] = newVote;
+
+        this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/updated-sybil', this );
 
     }
 
@@ -173,6 +189,8 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
         }catch(err){
 
         }
+
+        return true;
     }
 
     static fromArray(kademliaNode, arr, boxClass = PandoraBoxMetaSybil){

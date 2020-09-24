@@ -81,6 +81,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
         const out =  await this.saveManager.save(pandoraBox);
         this._addedBox(pandoraBox);
 
+        return true;
     }
 
     async removeBox(pandoraBox){
