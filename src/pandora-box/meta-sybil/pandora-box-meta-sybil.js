@@ -18,7 +18,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
         for (let i=0; i < sybilProtectVotes.length; i++) {
 
             if ( !(sybilProtectVotes[i] instanceof SybilProtectVote ))
-                sybilProtectVotes[i] = SybilProtectVote.fromArray(sybilProtectVotes[i]);
+                sybilProtectVotes[i] = SybilProtectVote.fromArray(this._kademliaNode, sybilProtectVotes[i] );
 
             const vote = sybilProtectVotes[i];
 
@@ -27,7 +27,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
             indexAlready[vote._sybilProtectIndex] = true;
 
-            vote.validateSybilProtectVote(vote._sybilProtectIndex, [vote._sybilProtectTime, vote._sybilProtectVotes ], vote._sybilProtectSignature, this._hash);
+            vote.validateSybilProtectVote( this._hash );
         }
 
         this._sybilProtectVotes = sybilProtectVotes;
@@ -95,14 +95,16 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
     async sybilProtectVoteSign( vote = true ){
 
+        await this.mergePandoraBoxMetaSybil();
+
         const index = this._kademliaNode.sybilProtectSigner.getRandomSybilIndex();
 
         let found, oldSignature, oldVotesCount = 0, oldVotesDown = 0, oldTime;
 
         for (let i=0; i < this._sybilProtectVotes.length; i++ ) {
-            const vote = this._sybilProtectVotes[i];
 
-            if (vote.sybilProtectIndex === index) {
+            const vote = this._sybilProtectVotes[i];
+            if (vote.sybilProtectIndex === index+1) {
                 found = i;
                 oldTime = vote.sybilProtectTime;
                 oldVotesCount = vote.sybilProtectVotesCount;
@@ -138,6 +140,8 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
             this._sybilProtectVotes[found] = newVote;
 
         this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/updated-sybil', this );
+
+        await this.publishPandoraBoxMetaSybil();
 
     }
 
@@ -189,6 +193,17 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
         }catch(err){
 
         }
+
+        return true;
+    }
+
+    async publishPandoraBoxMetaSybil(){
+
+        const out = await this._kademliaNode.crawler.iterativeStorePandoraBoxMeta( this );
+        if (!out) return;
+
+        const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this );
+        if (!out2) return;
 
         return true;
     }

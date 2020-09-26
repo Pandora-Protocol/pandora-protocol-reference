@@ -50,7 +50,7 @@ module.exports = class SybilProtectVote {
     }
 
     static fromArray(  kademliaNode, arr ){
-        return new SybilProtectVote( kademliaNode, arr[0], arr[1], arr[2], arr[3]);
+        return new SybilProtectVote( kademliaNode, ...arr);
     }
 
     toJSON(hex = false){

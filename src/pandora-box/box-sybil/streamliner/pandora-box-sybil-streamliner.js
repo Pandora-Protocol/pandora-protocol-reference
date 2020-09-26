@@ -3,10 +3,6 @@ const PandoraBoxStreamliner = require('../../box/streamliner/pandora-box-streaml
 
 module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner {
 
-    constructor() {
-        super(...arguments);
-    }
-
     createPandoraBoxMetaBox(){
         this.pandoraBoxMeta = this._pandoraBox.convertToPandoraBoxMeta();
     }
@@ -22,11 +18,7 @@ module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner 
 
             await this.pandoraBoxMeta.mergePandoraBoxMetaSybil();
 
-            const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxMeta( this.pandoraBoxMeta );
-            if (!out2) return;
-
-            const out3 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this.pandoraBoxMeta );
-            if (!out3) return;
+            await this.pandoraBoxMeta.publishPandoraBoxMetaSybil();
 
             this._initialized = new Date().getTime();
 
