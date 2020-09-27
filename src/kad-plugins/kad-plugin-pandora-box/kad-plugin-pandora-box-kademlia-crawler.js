@@ -87,14 +87,14 @@ module.exports = function(options){
 
             const out = await this.iterativeFindSortedList( tablePeers, pandoraBox );
 
-            if ( !out.result) return null;
+            if ( !out) return null;
 
             const peers = [];
-            for (const peerId in out.result){
+            for (const peerId in out){
 
                 try{
 
-                    const peer = out.result[peerId];
+                    const peer = out[peerId];
 
                     const decoded = bencode.decode( peer.value );
                     const contact = this._kademliaNode.createContact( decoded[0] )
@@ -171,13 +171,13 @@ module.exports = function(options){
 
             const out = await this.iterativeFindSortedList( tableName, hash );
 
-            if (!out.result) return null;
+            if (!out) return null;
 
-            for (const key in out.result){
-                const decoded = bencode.decode( out.result[key].value );
+            for (const key in out){
+                const decoded = bencode.decode( out[key].value );
                 const pandoraBoxMeta = PandoraBoxMetaSybil.fromArray(this._kademliaNode, decoded[0]  );
 
-                out.result[key] = pandoraBoxMeta;
+                out[key] = pandoraBoxMeta;
             }
 
             return out;

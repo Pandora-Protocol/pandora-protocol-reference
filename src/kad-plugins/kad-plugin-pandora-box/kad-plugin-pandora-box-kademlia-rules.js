@@ -30,12 +30,14 @@ module.exports = function (options){
             this._allowedStoreSortedListTables.peers = {
                 validation: this.validatePeer.bind(this),
                 expiry: PANDORA_PROTOCOL_OPTIONS.T_STORE_PEER_KEY_EXPIRY,
+                maxCount: KAD_OPTIONS.PLUGINS.STORES.SORTED_LIST.MAX_SORTED_LIST_COUNT,
                 immutable: false,
             };
 
             this._allowedStoreSortedListTables.name = {
                 validation: this.validateName.bind(this),
                 expiry: PANDORA_PROTOCOL_OPTIONS.T_STORE_KEY_EXPIRY,
+                maxCount: KAD_OPTIONS.PLUGINS.STORES.SORTED_LIST.MAX_SORTED_LIST_COUNT,
                 immutable: false,
             };
 

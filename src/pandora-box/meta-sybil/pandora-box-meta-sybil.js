@@ -83,7 +83,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
             votesDown += vote._sybilProtectVotesDown;
         }
 
-        votesUp = votesTotal - 2 * votesDown;
+        votesUp = votesTotal - votesDown;
 
         return {
             votesUp,
