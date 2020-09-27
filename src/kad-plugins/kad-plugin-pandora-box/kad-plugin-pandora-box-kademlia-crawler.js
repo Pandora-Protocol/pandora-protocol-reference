@@ -30,8 +30,8 @@ module.exports = function(options){
 
             const out = await this.iterativeFindValue( tableBox, hash );
 
-            if (!out.result) return null;
-            const pandoraBox = PandoraBoxSybil.fromArray(this._kademliaNode, bencode.decode( out.result.value ) );
+            if (!out) return null;
+            const pandoraBox = PandoraBoxSybil.fromArray(this._kademliaNode, bencode.decode( out.value ) );
 
             return pandoraBox;
 
@@ -52,9 +52,9 @@ module.exports = function(options){
 
             const out = await this.iterativeFindValue( tableBoxMeta, hash );
 
-            if (!out.result) return null;
+            if (!out) return null;
 
-            const decoded = bencode.decode( out.result.value );
+            const decoded = bencode.decode( out.value );
             const pandoraBoxMeta = PandoraBoxMetaSybil.fromArray(this._kademliaNode, decoded[0] );
 
             return pandoraBoxMeta;

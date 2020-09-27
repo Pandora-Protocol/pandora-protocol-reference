@@ -57,8 +57,34 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
         return super.fromArray(kademliaNode, arr, boxClass);
     }
 
-    static async load(kademliaNode, hash, boxClass = PandoraBoxSybil){
-        return super.load(kademliaNode, hash, boxClass);
+    async save(){
+        const out = await super.save();
+
+        if (this.streamliner)
+            await this.streamliner.pandoraBoxMeta.save();
+
+        return out;
+    }
+
+    async remove(){
+        const out = await super.remove();
+
+        if (this.streamliner)
+            await this.streamliner.pandoraBoxMeta.remove();
+
+        return out;
+    }
+
+    static async load(){
+        const box = await super.load(...arguments)
+        if (box && box.streamliner){
+
+            const pandoraBoxMeta = await PandoraBoxMetaSybil.load(...arguments);
+            if (pandoraBoxMeta)
+                box.streamliner.pandoraBoxMeta = pandoraBoxMeta;
+
+        }
+        return box;
     }
 
 }

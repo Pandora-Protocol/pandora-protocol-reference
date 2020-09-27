@@ -1,6 +1,8 @@
 const PandoraBoxMeta = require('../meta/pandora-box-meta')
 const SybilProtectVote = require('../../sybil-protect/sybil-protect-vote');
 const SybilProtect = require('../../sybil-protect/sybil-protect');
+const bencode = require('pandora-protocol-kad-reference').library.bencode;
+
 module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
     constructor(kademliaNode, version, name, size, categories, metaDataHash, sybilProtect, sybilProtectVotes ) {
@@ -187,8 +189,13 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
             }
 
-            if (changes)
-                this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/updated-sybil', this );
+            if (changes) {
+                this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/updated-sybil', this);
+
+                const out = await this._kademliaNode.storage.getItem('pandoraBoxes:box:hash:exists:'+this.hashHex);
+                if (out && out === "1")
+                    await this.save();
+            }
 
         }catch(err){
 
@@ -196,6 +203,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
         return true;
     }
+
 
     async publishPandoraBoxMetaSybil(){
 
@@ -211,5 +219,38 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
     static fromArray(kademliaNode, arr, boxClass = PandoraBoxMetaSybil){
         return super.fromArray(kademliaNode, arr, boxClass);
     }
+
+    async save(){
+
+        const json = {
+            encoded: bencode.encode( this.toArray() ).toString('base64'),
+        }
+
+        await this._kademliaNode.storage.setItem('pandoraBoxes:meta-box:hash:'+this.hashHex, JSON.stringify( json ) );
+
+        return true;
+    }
+
+    async remove(){
+
+        await this._kademliaNode.storage.removeItem('pandoraBoxes:meta-box:hash:'+this.hashHex);
+        return true;
+
+    }
+
+
+    static async load(kademliaNode, hash){
+
+        let out = await kademliaNode.storage.getItem('pandoraBoxes:meta-box:hash:'+hash);
+        if (!out) return null;
+
+        const json = JSON.parse(out);
+
+        const decoded = bencode.decode( Buffer.from( json.encoded, 'base64') );
+        const box = this.fromArray( kademliaNode, decoded ) ;
+
+        return box;
+    }
+
 
 }

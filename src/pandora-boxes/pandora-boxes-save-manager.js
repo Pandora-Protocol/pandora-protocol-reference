@@ -19,7 +19,7 @@ module.exports = class PandoraBoxesSaveManager {
 
         for (let i=0; i < boxes.length; i++){
 
-            if (box && boxes[i] !== box) return;
+            if (box && boxes[i] !== box) continue;
 
             out = await this._kademliaNode.storage.setItem('pandoraBoxes:box:index:'+i, boxes[i].hashHex);
 

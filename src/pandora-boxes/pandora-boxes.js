@@ -75,13 +75,13 @@ module.exports = class PandoraBoxes extends EventEmitter{
             if (!stream.hash.equals(KAD_OPTIONS.NODE_ID_EMPTY) && !this._streamsMap[stream.hashHex])
                 this._streamsMap[stream.hashHex] = stream;
 
-        if (!save)
-            return this._addedBox(pandoraBox);
+        if (save){
+            const out =  await this.saveManager.save(pandoraBox);
+        }
 
-        const out =  await this.saveManager.save(pandoraBox);
         this._addedBox(pandoraBox);
-
         return true;
+
     }
 
     async removeBox(pandoraBox){

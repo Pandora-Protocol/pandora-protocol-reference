@@ -104,45 +104,42 @@ module.exports = class PandoraBox extends PandoraBoxMeta {
 
     async save(){
 
-        let out = await this._kademliaNode.storage.getItem('pandoraBoxes:box:hash-exists:'+this.hashHex);
-
-        if ( out && out === "1" ) return false;
-
         const json = {
             encoded: bencode.encode( this.toArray() ).toString('base64'),
             absolutePath: this.absolutePath,
         }
 
-        out = await this._kademliaNode.storage.setItem('pandoraBoxes:box:hash:'+this.hashHex, JSON.stringify(json) );
-
-        out = await this._kademliaNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex, "1" );
+        await this._kademliaNode.storage.setItem('pandoraBoxes:box:hash:'+this.hashHex, JSON.stringify(json) );
 
         for (const stream of this.streams)
             await stream.saveStatus();
 
+        await this._kademliaNode.storage.setItem('pandoraBoxes:box:hash:exists:'+this.hashHex, "1" );
+
+        return true;
     }
 
     async remove(){
 
-        let out = await this._kademliaNode.storage.removeItem('pandoraBoxes:box:hash:'+this.hashHex);
-
-        out = await this._kademliaNode.storage.setItem('pandoraBoxes:box:hash-exists:'+this.hashHex);
+        await this._kademliaNode.storage.removeItem('pandoraBoxes:box:hash:'+this.hashHex);
 
         for (const stream of this.streams)
             await stream.removeStatus();
 
+        await this._kademliaNode.storage.removeItem('pandoraBoxes:box:hash:exists:'+this.hashHex);
+
+        return true;
     }
 
-    static async load(kademliaNode, hash, boxClass = PandoraBox){
+    static async load(kademliaNode, hash){
 
         let out = await kademliaNode.storage.getItem('pandoraBoxes:box:hash:'+hash);
-
-        if (!out) throw 'PandoraBox was not found by hash';
+        if (!out) return null;
 
         const json = JSON.parse(out);
 
         const decoded = bencode.decode( Buffer.from( json.encoded, 'base64') );
-        const box = boxClass.fromArray( kademliaNode, decoded ) ;
+        const box = this.fromArray( kademliaNode, decoded ) ;
         box.absolutePath = json.absolutePath;
 
         for (const stream of box.streams)
