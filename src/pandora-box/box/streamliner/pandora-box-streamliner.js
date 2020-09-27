@@ -212,7 +212,10 @@ module.exports = class PandoraBoxStreamliner {
                                 if (out2 !== true) throw "Error saving data";
 
                             }catch(err){
-                                this.workers.removeWorker(worker);
+
+                                if (err !== "Busy" )
+                                    this.workers.removeWorker(worker);
+
                                 undoneChunk.pending = false;
                                 it.stream.statusUndoneChunksPending -= 1;
                                 return;

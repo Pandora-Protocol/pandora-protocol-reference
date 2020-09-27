@@ -75,8 +75,6 @@ module.exports = function(options){
 
             const signature = contact.sign( pandoraBox );
 
-            console.log("iterativeStorePandoraBoxPeer", contact.identityHex);
-
             return this.iterativeStoreSortedListValue( tablePeers, pandoraBox, contact.identity, bencode.encode( [ contact.toArray(), signature] ), contact.timestamp );
         }
 

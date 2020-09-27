@@ -7,4 +7,10 @@ module.exports = {
     T_STORE_PEER_KEY_EXPIRY: 30*1000,
     T_STORE_PEER_KEY_EXPIRY_CONVOY: 10*1000,
 
+    PLUGINS: {
+        STREAMLINER:{
+            MAX_STREAMLINER_SENDING_CHUNKS_QUEUE_COUNT: 200,
+        }
+    }
+
 }
