@@ -5,6 +5,7 @@ module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner 
 
     createPandoraBoxMetaBox(){
         this.pandoraBoxMeta = this._pandoraBox.convertToPandoraBoxMeta();
+        this.pandoraBoxMeta.autoSave = true;
     }
 
     async initialize( ){

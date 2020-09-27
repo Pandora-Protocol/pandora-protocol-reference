@@ -35,6 +35,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
         this._sybilProtectVotes = sybilProtectVotes;
 
         this._keys.push('sybilProtect','sybilProtectVotes');
+        this.autoSave = false;
 
     }
 
@@ -142,6 +143,7 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
             this._sybilProtectVotes[found] = newVote;
 
         this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/updated-sybil', this );
+        if (this.autoSave) await this.save();
 
         await this.publishPandoraBoxMetaSybil();
 
@@ -182,23 +184,22 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
                 }
 
                 if (!found){
-                    const vote = new SybilProtectVote(this._kademliaNode, ...vote.toArray() );
-                    this._sybilProtectVotes.push( vote );
+                    const newVote = new SybilProtectVote(this._kademliaNode, ...vote.toArray() );
+                    this._sybilProtectVotes.push( newVote );
                     changes = true;
                 }
 
             }
 
             if (changes) {
-                this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/updated-sybil', this);
 
-                const out = await this._kademliaNode.storage.getItem('pandoraBoxes:box:hash:exists:'+this.hashHex);
-                if (out && out === "1")
-                    await this.save();
+                this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/updated-sybil', this);
+                if (this.autoSave) await this.save();
+
             }
 
         }catch(err){
-
+            console.error(err);
         }
 
         return true;

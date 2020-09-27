@@ -80,8 +80,10 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
         if (box && box.streamliner){
 
             const pandoraBoxMeta = await PandoraBoxMetaSybil.load(...arguments);
-            if (pandoraBoxMeta)
+            if (pandoraBoxMeta) {
                 box.streamliner.pandoraBoxMeta = pandoraBoxMeta;
+                box.streamliner.pandoraBoxMeta.autoSave = true;
+            }
 
         }
         return box;
