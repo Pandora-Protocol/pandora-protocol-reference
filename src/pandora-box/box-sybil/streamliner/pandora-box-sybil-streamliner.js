@@ -8,7 +8,7 @@ module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner 
         this.pandoraBoxMeta.autoSave = true;
     }
 
-    async initialize( ){
+    async initializeStreamliner( ){
 
         try{
 

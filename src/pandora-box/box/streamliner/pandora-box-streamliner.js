@@ -34,7 +34,7 @@ module.exports = class PandoraBoxStreamliner {
 
         this.workers.start();
 
-        this.initialize( )
+        this.initializeStreamliner( )
 
         this._streamlinerInitializeAsyncInterval = setAsyncInterval(
             this._workStreamlinerInitialize.bind(this),
@@ -60,7 +60,7 @@ module.exports = class PandoraBoxStreamliner {
         const time = new Date().getTime();
 
         if ( this._initialized < time - KAD_OPTIONS.T_REPLICATE_TO_NEW_NODE_EXPIRY + Utils.preventConvoy( KAD_OPTIONS.T_REPLICATE_TO_NEW_NODE_EXPIRY_CONVOY ) )
-            return this.initialize();
+            return this.initializeStreamliner();
 
     }
 
@@ -116,7 +116,7 @@ module.exports = class PandoraBoxStreamliner {
 
     }
 
-    async initialize( ){
+    async initializeStreamliner( ){
 
         const out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
         if (!out) return;

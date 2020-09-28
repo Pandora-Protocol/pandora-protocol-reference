@@ -67,8 +67,10 @@ async function execute() {
 
     console.info('pandora box hash', out.pandoraBox.hash.toString('hex'))
 
+    await out.pandoraBox.streamliner.initializeStreamliner();
+
     const out2 = await nodes[4].findPandoraBoxesByName('box simple');
-    if (!out) throw "pandora box was not found by name";
+    if (!out2) throw "pandora box was not found by name";
 
     console.info('pandora box found', !!out2[out.pandoraBox.hash.toString('hex')] )
 
