@@ -57,17 +57,25 @@ async function execute() {
     for (let i = 0; i < nodes.length; i++)
         console.log(i, nodes[i].routingTable.count, nodes[i].routingTable.array.map(it => it.contact.contactType));
 
-    const out = await nodes[3].seedPandoraBox( './examples/public/data1',  'Example 1 box simple', 'Example1 Description', ['category1','category2'],  undefined,
-        (out) => {
+    const name = 'Example 1 box simple';
+    const out = await nodes[3].seedPandoraBox( './examples/public/data1',  name, 'Example1 Description', ['category1','category2'] );
 
-            if (out.chunkIndex % 100 === 0)
-                console.log("update", out.chunkIndex, out.path );
+    nodes[3].pandoraBoxes.on( 'pandora-box/creating', (data) =>{
 
-        });
+        if (data.name === name){
+            console.log(data.status);
+            if (data.chunkIndex && data.chunkIndex % 100 === 0)
+                console.log("update", data.chunkIndex, data.path );
+
+        }
+
+    });
 
     console.info('pandora box hash', out.pandoraBox.hash.toString('hex'))
 
-    await out.pandoraBox.streamliner.initializeStreamliner();
+    let initialized = false;
+    while (!initialized)
+        initialized = await out.pandoraBox.streamliner.initializeStreamliner();
 
     const out2 = await nodes[4].findPandoraBoxesByName('box simple');
     if (!out2) throw "pandora box was not found by name";

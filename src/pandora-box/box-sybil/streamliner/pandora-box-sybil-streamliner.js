@@ -14,12 +14,13 @@ module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner 
 
             console.log("initialize", this._pandoraBox._name, this._pandoraBox.hashHex, this._kademliaNode.contact.identityHex);
 
-            const out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
+            let out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
             if (!out) return;
 
-            await this.pandoraBoxMeta.mergePandoraBoxMetaSybil();
+            out = await this.pandoraBoxMeta.mergePandoraBoxMetaSybil();
 
-            await this.pandoraBoxMeta.publishPandoraBoxMetaSybil();
+            out = await this.pandoraBoxMeta.publishPandoraBoxMetaSybil();
+            if (!out) return;
 
             this._initialized = new Date().getTime();
 

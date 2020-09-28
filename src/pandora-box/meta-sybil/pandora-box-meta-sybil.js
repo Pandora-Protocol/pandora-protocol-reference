@@ -55,17 +55,17 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
         if (!this._sybilProtect._sybilProtectIndex || !this._sybilProtect._sybilProtectTime) return 0;
 
-        const ts = this._sybilProtect._sybilProtectTime -  PANDORA_PROTOCOL_OPTIONS.SYBIL_VOTE_DATE_OFFSET;
-
         let totalVotes = 0;
         for (const vote of this._sybilProtectVotes)
             totalVotes += vote._sybilProtectVotesCount - 2*vote._sybilProtectVotesDown;
 
-        const x = 1 + totalVotes;
-        const y = Math.sign(x);
-        const z = Math.max(1, Math.abs(x) );
+        const s = totalVotes;
+        const order = Math.log( Math.max(s, 1) );
+        const sign = Math.sign(order );
 
-        return Math.trunc( Math.log10( z + (y * ts) / 45000 ) );
+        const seconds = this._sybilProtect._sybilProtectTime - PANDORA_PROTOCOL_OPTIONS.SYBIL_VOTE_DATE_OFFSET;
+
+        return Math.round((sign * order + seconds / 45000) * 10000000 );
     }
 
     getTotalVotes(){
@@ -198,11 +198,12 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
             }
 
+            return true;
+
         }catch(err){
             console.error(err);
         }
 
-        return true;
     }
 
 
