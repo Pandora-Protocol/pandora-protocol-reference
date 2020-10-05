@@ -85,14 +85,14 @@ module.exports = class PandoraBoxStream {
     get calculateIsDone(){
 
         if (this.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_DIRECTORY){
-            return this.streamStatus === PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;
+            return this._streamStatus === PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;
         } if (this.type === PandoraBoxStreamType.PANDORA_LOCATION_TYPE_STREAM) {
 
             for (let i=0; i < this.chunks; i++)
                 if ( !this.statusChunks[i] )
                     return false;
 
-            return this.streamStatus  === PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;
+            return this._streamStatus  === PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED;
         } else throw new Error("Invalid type");
 
     }

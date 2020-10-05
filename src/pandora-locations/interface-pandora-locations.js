@@ -83,7 +83,6 @@ module.exports = class InterfacePandoraLocations {
                     0,
                     [],
                     [],
-                    [],
                     PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED,
                 );
 
