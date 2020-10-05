@@ -75,7 +75,7 @@ module.exports = class PandoraBoxStreamlinerWorkers {
 
     refreshWorkers(){
 
-        if ( !this._pandoraBoxStreamliner._started || this._pandoraBoxStreamliner.isDone ){
+        if ( !this._pandoraBoxStreamliner._started || this._pandoraBox.isDone ){
 
             for (let i = this._workers.length-1; i >= 0; i--)
                 this.removeWorker( this._workers[i] )
