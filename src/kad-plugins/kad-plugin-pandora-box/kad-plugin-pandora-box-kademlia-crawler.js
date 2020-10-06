@@ -43,9 +43,16 @@ module.exports = function(options){
          * @param pandoraBoxMeta
          */
 
-        iterativeStorePandoraBoxMeta( pandoraBoxMeta ){
+        async iterativeStorePandoraBoxMeta( pandoraBoxMeta ){
+
+            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-hash', {hash: pandoraBoxMeta.hash, status: "storing"});
+
             if (! (pandoraBoxMeta instanceof PandoraBoxMetaSybil)) throw "PandoraBoxMeta is invalid";
-            return this.iterativeStoreValue( tableBoxMeta, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMeta.toArray(), pandoraBoxMeta.getTotalVotes(), pandoraBoxMeta.sybilProtect.sybilProtectTime ] ) );
+            const out = await this.iterativeStoreValue( tableBoxMeta, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMeta.toArray(), pandoraBoxMeta.getTotalVotes(), pandoraBoxMeta.sybilProtect.sybilProtectTime ] ) );
+
+            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-hash', {hash: pandoraBoxMeta.hash, status: "stored"});
+
+            return out;
         }
 
         async iterativeFindPandoraBoxMeta( hash ){
@@ -137,6 +144,8 @@ module.exports = function(options){
 
             const output = [];
 
+            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-name', {hash: pandoraBoxMeta.hash, status: "storing", count: subsets.length });
+
             for (let index = 0; index < subsets.length; index++ ){
 
                 const subset = subsets[index];
@@ -153,7 +162,11 @@ module.exports = function(options){
                 const out = await this.iterativeStoreSortedListValue( tableName, hash, pandoraBoxMeta.hash, bencode.encode( [ metaArray, subset, pandoraBoxMeta.sybilProtect.sybilProtectTime, totalVotes,  ] ), score );
                 output[index] = out;
 
+                this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-name', {hash: pandoraBoxMeta.hash, status: "storing", index, count: subsets.length });
+
             }
+
+            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-name', {hash: pandoraBoxMeta.hash, status: "stored", count: subsets.length });
 
             return output.length;
 

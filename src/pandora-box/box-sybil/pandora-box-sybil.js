@@ -76,6 +76,7 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
     }
 
     static async load(){
+
         const box = await super.load(...arguments)
         if (box && box.streamliner){
 
@@ -86,6 +87,7 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
             }
 
         }
+
         return box;
     }
 

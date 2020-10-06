@@ -28,7 +28,6 @@ module.exports = class PandoraBoxStreamlinerWorkers {
             5*1000,
         );
 
-
     }
 
     stop(){
