@@ -79,7 +79,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
             const out =  await this.saveManager.save(pandoraBox);
         }
 
-        this._addedBox(pandoraBox);
+        await this._addedBox(pandoraBox);
         return true;
 
     }
@@ -104,10 +104,10 @@ module.exports = class PandoraBoxes extends EventEmitter{
 
     }
 
-    _addedBox(pandoraBox){
+    async _addedBox(pandoraBox){
 
         if (this._startedStreamlining)
-            pandoraBox.streamliner.start();
+            await pandoraBox.streamliner.start();
 
         this.emit('pandora-box/added', pandoraBox);
 

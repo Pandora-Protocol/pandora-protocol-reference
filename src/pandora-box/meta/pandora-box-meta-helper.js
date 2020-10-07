@@ -1,5 +1,6 @@
 const {CryptoUtils} = require('pandora-protocol-kad-reference').helpers;
 const PandoraBoxMetaVersion = require('./pandora-box-meta-version')
+const SubsetsHelper = require('./../../helpers/subsets-helper')
 
 module.exports.validatePandoraBoxMeta = function (version, name, size, categories, metaDataHash ){
 
@@ -22,6 +23,13 @@ module.exports.processPandoraBoxMetaName = function (name){
 
 module.exports.splitPandoraBoxMetaName = function (name){
     return name.split(/[\s`~'";,.\-+=_ :{}\[\]|\\\/!@#$%^&*()]+/).slice(0, PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_FIND_BY_NAME_MAX_WORDS ).sort( (a, b) => a.localeCompare( b ) );
+}
+
+module.exports.computePandoraBoxMetaNameSubsets = function (name){
+    name = this.processPandoraBoxMetaName(name);
+    const words = this.splitPandoraBoxMetaName(name);
+    const subsets = SubsetsHelper.generatePowerSet(words);
+    return {words, subsets};
 }
 
 module.exports.computePandoraBoxMetaBuffer = function (version,  name, size, categories, metaDataHash){

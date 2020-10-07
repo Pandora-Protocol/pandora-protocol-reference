@@ -21,8 +21,9 @@ module.exports = function(options){
          * @returns {*}
          */
 
-        iterativeStorePandoraBox( pandoraBox ){
+        async iterativeStorePandoraBox( pandoraBox ){
             if (! (pandoraBox instanceof PandoraBoxSybil)) throw "PandoraBox is invalid";
+
             return this.iterativeStoreValue( tableBox, pandoraBox.hash, bencode.encode( pandoraBox.toArray() ) );
         }
 
@@ -45,14 +46,8 @@ module.exports = function(options){
 
         async iterativeStorePandoraBoxMeta( pandoraBoxMeta ){
 
-            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-hash', {hash: pandoraBoxMeta.hash, status: "storing"});
-
             if (! (pandoraBoxMeta instanceof PandoraBoxMetaSybil)) throw "PandoraBoxMeta is invalid";
-            const out = await this.iterativeStoreValue( tableBoxMeta, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMeta.toArray(), pandoraBoxMeta.getTotalVotes(), pandoraBoxMeta.sybilProtect.sybilProtectTime ] ) );
-
-            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-hash', {hash: pandoraBoxMeta.hash, status: "stored"});
-
-            return out;
+            return this.iterativeStoreValue( tableBoxMeta, pandoraBoxMeta.hash, bencode.encode( [ pandoraBoxMeta.toArray(), pandoraBoxMeta.getTotalVotes(), pandoraBoxMeta.sybilProtect.sybilProtectTime ] ) );
         }
 
         async iterativeFindPandoraBoxMeta( hash ){
@@ -128,14 +123,15 @@ module.exports = function(options){
          * @returns {Promise<number>}
          */
 
-        async iterativeStorePandoraBoxName( pandoraBoxMeta ){
+        async iterativeStorePandoraBoxName( pandoraBoxMeta, subsets, words, cbProgress ){
 
             if (! (pandoraBoxMeta instanceof PandoraBoxMetaSybil)) throw "PandoraBoxMeta is invalid";
 
-            const name = PandoraBoxMetaHelper.processPandoraBoxMetaName(pandoraBoxMeta.name);
-            const words = PandoraBoxMetaHelper.splitPandoraBoxMetaName(name);
-
-            const subsets = SubsetsHelper.generatePowerSet(words);
+            if (!subsets) {
+                const out = PandoraBoxMetaHelper.computePandoraBoxMetaNameSubsets(pandoraBoxMeta.name);
+                subsets = out.subsets;
+                words = out.subsets;
+            }
 
             const metaArray = pandoraBoxMeta.toArray();
 
@@ -143,8 +139,6 @@ module.exports = function(options){
             const totalVotes = pandoraBoxMeta.getTotalVotes();
 
             const output = [];
-
-            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-name', {hash: pandoraBoxMeta.hash, status: "storing", count: subsets.length });
 
             for (let index = 0; index < subsets.length; index++ ){
 
@@ -162,11 +156,8 @@ module.exports = function(options){
                 const out = await this.iterativeStoreSortedListValue( tableName, hash, pandoraBoxMeta.hash, bencode.encode( [ metaArray, subset, pandoraBoxMeta.sybilProtect.sybilProtectTime, totalVotes,  ] ), score );
                 output[index] = out;
 
-                this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-name', {hash: pandoraBoxMeta.hash, status: "storing", index, count: subsets.length });
-
+                if (cbProgress) cbProgress({index});
             }
-
-            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-name', {hash: pandoraBoxMeta.hash, status: "stored", count: subsets.length });
 
             return output.length;
 

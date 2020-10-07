@@ -19,7 +19,7 @@ module.exports = class PandoraBoxStreamliner {
         this._started = false;
     }
 
-    start(){
+    async start(){
 
         if (this._started) return true;
 
@@ -34,7 +34,7 @@ module.exports = class PandoraBoxStreamliner {
 
         this.workers.start();
 
-        this.initializeStreamliner( )
+        await this.initializeStreamliner( )
 
         this._streamlinerInitializeAsyncInterval = setAsyncInterval(
             this._workStreamlinerInitialize.bind(this),
