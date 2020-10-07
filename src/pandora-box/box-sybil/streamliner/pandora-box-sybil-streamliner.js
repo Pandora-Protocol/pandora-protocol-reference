@@ -8,21 +8,23 @@ module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner 
         this.pandoraBoxMeta.autoSave = true;
     }
 
-    async initializeStreamliner( ){
+    async initializeStreamliner( statusName ){
 
         try{
 
             console.log("initialize", this._pandoraBox._name, this._pandoraBox.hashHex, this._kademliaNode.contact.identityHex);
 
             const {words, subsets} =  PandoraBoxMetaHelper.computePandoraBoxMetaNameSubsets(this._pandoraBox._name);
-            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/count-operations', {hash: this._pandoraBox.hash, count: subsets.length + 3 });
+            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/count-operations', {hash: this._pandoraBox.hash, count: subsets.length + 3, statusName });
 
             let out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
             if (!out) return;
 
-            this._kademliaNode.pandoraBoxes.emit('pandora-box/crawler/store/by-hash', {hash: this._pandoraBox.hash, status: "stored"});
+            this._kademliaNode.pandoraBoxes.emit('pandora-box/crawler/store/by-hash', {hash: this._pandoraBox.hash, status: "stored", statusName});
 
-            out = await this.pandoraBoxMeta.publishPandoraBoxMetaSybil(subsets, words);
+            await this.pandoraBoxMeta.mergePandoraBoxMetaSybil(statusName);
+
+            out = await this.pandoraBoxMeta.publishPandoraBoxMetaSybil(statusName, subsets, words);
             if (!out) return;
 
             this._initialized = new Date().getTime();

@@ -19,7 +19,7 @@ module.exports = class PandoraBoxStreamliner {
         this._started = false;
     }
 
-    async start(){
+    async start(statusName = 'initialization'){
 
         if (this._started) return true;
 
@@ -34,7 +34,7 @@ module.exports = class PandoraBoxStreamliner {
 
         this.workers.start();
 
-        await this.initializeStreamliner( )
+        await this.initializeStreamliner( statusName )
 
         this._streamlinerInitializeAsyncInterval = setAsyncInterval(
             this._workStreamlinerInitialize.bind(this),
@@ -116,7 +116,7 @@ module.exports = class PandoraBoxStreamliner {
 
     }
 
-    async initializeStreamliner( ){
+    async initializeStreamliner( statusName ){
 
         const out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
         if (!out) return;

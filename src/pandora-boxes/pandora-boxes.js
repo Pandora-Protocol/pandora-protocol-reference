@@ -62,7 +62,7 @@ module.exports = class PandoraBoxes extends EventEmitter{
         this.emit('status', false);
     }
 
-    async addPandoraBox( pandoraBox, save = true ){
+    async addPandoraBox( pandoraBox, save = true, startInitialization ){
 
         if (!pandoraBox || !(pandoraBox instanceof PandoraBox) ) throw 'PandoraBox arg is invalid';
 
@@ -75,11 +75,11 @@ module.exports = class PandoraBoxes extends EventEmitter{
             if (!stream.hash.equals(KAD_OPTIONS.NODE_ID_EMPTY) && !this._streamsMap[stream.hashHex])
                 this._streamsMap[stream.hashHex] = stream;
 
-        if (save){
-            const out =  await this.saveManager.save(pandoraBox);
+        if (save) {
+            const out = await this.saveManager.save(pandoraBox);
         }
 
-        await this._addedBox(pandoraBox);
+        await this._addedBox(pandoraBox, startInitialization);
         return true;
 
     }
@@ -104,12 +104,12 @@ module.exports = class PandoraBoxes extends EventEmitter{
 
     }
 
-    async _addedBox(pandoraBox){
-
-        if (this._startedStreamlining)
-            await pandoraBox.streamliner.start();
+    async _addedBox(pandoraBox, startInitialization = true){
 
         this.emit('pandora-box/added', pandoraBox);
+
+        if (this._startedStreamlining && startInitialization)
+            await pandoraBox.streamliner.start();
 
         return pandoraBox;
     }

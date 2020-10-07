@@ -97,9 +97,12 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
     }
 
-    async sybilProtectVoteSign( vote = true ){
+    async sybilProtectVoteSign( statusName, vote = true ){
 
-        await this.mergePandoraBoxMetaSybil();
+        const {subsets, words} =  PandoraBoxMetaHelper.computePandoraBoxMetaNameSubsets(this.name);
+        this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/count-operations', {hash: this.hash, count: subsets.length + 1, statusName });
+
+        await this.mergePandoraBoxMetaSybil(statusName);
 
         const index = this._kademliaNode.sybilProtectSigner.getRandomSybilIndex();
 
@@ -146,14 +149,11 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
         this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/updated-sybil', this );
         if (this.autoSave) await this.save();
 
-        const {subsets, words} =  PandoraBoxMetaHelper.computePandoraBoxMetaNameSubsets(this.name);
-        this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/count-operations', {hash: this.hash, count: subsets.length + 1 });
-
-        await this.publishPandoraBoxMetaSybil(subsets, words);
+        await this.publishPandoraBoxMetaSybil( statusName, subsets, words);
 
     }
 
-    async mergePandoraBoxMetaSybil(){
+    async mergePandoraBoxMetaSybil(statusName){
 
         try{
 
@@ -202,6 +202,8 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
             }
 
+            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/merge-by-hash', {hash: this.hash, status: "stored", statusName});
+
             return true;
 
         }catch(err){
@@ -211,14 +213,12 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
     }
 
 
-    async publishPandoraBoxMetaSybil(subsets, words){
+    async publishPandoraBoxMetaSybil(statusName, subsets, words){
 
-        await this.mergePandoraBoxMetaSybil();
-
-        const out = await this._kademliaNode.crawler.iterativeStorePandoraBoxMeta( this, ()=>  this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-hash', {hash: this.hash, status: "stored"}) );
+        const out = await this._kademliaNode.crawler.iterativeStorePandoraBoxMeta( this, ()=>  this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-hash', {hash: this.hash, status: "stored", statusName}) );
         if (!out) return;
 
-        const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this, subsets, words, ({index})=>  this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-name', {hash: this.hash, status: "stored", index, count: subsets.length }) );
+        const out2 = await this._kademliaNode.crawler.iterativeStorePandoraBoxName( this, subsets, words, ({index})=>  this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/by-name', {hash: this.hash, status: "stored", index, count: subsets.length, statusName }) );
 
         if (!out2) return;
 
