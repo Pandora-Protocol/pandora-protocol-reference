@@ -17,10 +17,23 @@ npm link pandora-protocol-kad-reference ;
 npm link webpack-config ;
 ```
 
+### Deploying a Pandora Protocol reference network
+
+a. Creating a new network.
+
+1. Follow the `spartacus-provider-demo` tutorial
+2. run `npm run start`
+3. copy the Bootstrap contact info (it is a hex string)
+
+b. Joining a network
+
+1. Set `SYBIL_PUBLIC_KEYS` of the network you want to connect.
+2. run `PORT=10010 BOOTSTRAP=XXX npm run start` where XXX is the bootstrap contact info in hex.
+3. you should see `BOOTSTRAPPING... X` (how many nodes you connected to)
 
 # To Do:
 
-1. Garlic Circuit Encryptions 
+1. Garlic Circuit Encryption 
 
 
 
