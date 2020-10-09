@@ -53,10 +53,6 @@ module.exports = class PandoraBoxSybil extends PandoraBox{
         return new PandoraBoxMetaSybil(this._kademliaNode, ...array );
     }
 
-    static fromArray(kademliaNode, arr, boxClass = PandoraBoxSybil){
-        return super.fromArray(kademliaNode, arr, boxClass);
-    }
-
     async save(){
         const out = await super.save();
 

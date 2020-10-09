@@ -30,9 +30,9 @@ module.exports = function(options){
         async iterativeFindPandoraBox( hash ){
 
             const out = await this.iterativeFindValue( tableBox, hash );
-
             if (!out) return null;
-            const pandoraBox = PandoraBoxSybil.fromArray(this._kademliaNode, bencode.decode( out.value ) );
+
+            const pandoraBox = PandoraBoxSybil.fromBuffer(this._kademliaNode, out.value);
 
             return pandoraBox;
 

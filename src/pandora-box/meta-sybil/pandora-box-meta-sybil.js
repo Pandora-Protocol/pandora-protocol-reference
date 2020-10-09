@@ -202,12 +202,13 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
 
             }
 
-            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/merge-by-hash', {hash: this.hash, status: "stored", statusName});
-
             return true;
 
         }catch(err){
             console.error(err);
+        }finally{
+            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/merge-by-hash', {hash: this.hash, status: "stored", statusName});
+
         }
 
     }
@@ -223,10 +224,6 @@ module.exports = class PandoraBoxMetaSybil extends PandoraBoxMeta{
         if (!out2) return;
 
         return true;
-    }
-
-    static fromArray(kademliaNode, arr, boxClass = PandoraBoxMetaSybil){
-        return super.fromArray(kademliaNode, arr, boxClass);
     }
 
     async save(){

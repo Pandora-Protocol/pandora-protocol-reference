@@ -47,10 +47,8 @@ module.exports = function (options){
 
             try {
 
-                const arr = bencode.decode( value );
-                arr.push(true); //onlyValidation = true
 
-                const pandoraBox = PandoraBoxSybil.fromArray(this._kademliaNode, arr, undefined );
+                const pandoraBox = PandoraBoxSybil.fromBuffer( this._kademliaNode, value, true );
                 if (!pandoraBox.hash.equals(key)) return null;
 
                 if (!pandoraBox._sybilProtect._sybilProtectIndex) return;

@@ -57,8 +57,13 @@ module.exports = class PandoraBoxMeta {
         return Utils.toArray(this, this._keys, keysFilter, this._keysFilter );
     }
 
-    static fromArray(kademliaNode, arr, boxClass = PandoraBoxMeta ){
-        return new boxClass(  kademliaNode, ...arr);
+    static fromArray(kademliaNode, arr){
+        return new this(  kademliaNode, ...arr);
+    }
+
+    static fromBuffer(kademliaNode, buffer){
+        if (!Buffer.isBuffer(buffer) || buffer.length > PANDORA_PROTOCOL_OPTIONS.PANDORA_BOX_META_MAX_SIZE) throw "data is not a buffer or too big";
+        return this.fromArray(kademliaNode, bencode.decode(buffer) );
     }
 
     toJSON(hex = false){

@@ -8,14 +8,14 @@ module.exports = class PandoraBoxSybilStreamliner extends PandoraBoxStreamliner 
         this.pandoraBoxMeta.autoSave = true;
     }
 
-    async initializeStreamliner( statusName ){
+    async initializeStreamliner( statusName = 'seed' ){
 
         try{
 
             console.log("initialize", this._pandoraBox._name, this._pandoraBox.hashHex, this._kademliaNode.contact.identityHex);
 
             const {words, subsets} =  PandoraBoxMetaHelper.computePandoraBoxMetaNameSubsets(this._pandoraBox._name);
-            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/count-operations', {hash: this._pandoraBox.hash, count: subsets.length + 3, statusName });
+            this._kademliaNode.pandoraBoxes.emit('pandora-box-meta/crawler/store/count-operations', {hash: this._pandoraBox.hash, count: subsets.length + 2, statusName });
 
             let out = await this._kademliaNode.crawler.iterativeStorePandoraBox( this._pandoraBox );
             if (!out) return;
