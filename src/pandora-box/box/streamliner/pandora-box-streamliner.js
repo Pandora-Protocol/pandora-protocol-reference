@@ -152,9 +152,7 @@ module.exports = class PandoraBoxStreamliner {
                 try{
 
                     const out = await this._kademliaNode.locations.createEmptyDirectory( it.stream.absolutePath );
-                    if (!out)
-
-                    this.removeQueueStream(it.stream);
+                    if (out) this.removeQueueStream(it.stream);
 
                     it.stream.setStreamStatus(PandoraBoxStreamStatus.STREAM_STATUS_FINALIZED, true);
                     this._kademliaNode.pandoraBoxes.emit('stream/done', {
